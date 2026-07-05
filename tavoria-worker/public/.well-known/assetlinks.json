@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.k3ysolutions.gigi",
+      "sha256_cert_fingerprints": ["PLACEHOLDER:REPLACE_AFTER_FIRST_EAS_BUILD"]
+    }
+  }
+]

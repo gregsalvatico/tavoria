@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #FAFAF7;
+  --foreground: #0B0F1A;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Editorial polish — ligatures, kerning, stylistic set 01 */
+  font-feature-settings: "liga" 1, "kern" 1, "ss01" 1;
+  letter-spacing: -0.011em;
+}
+
+/* Tabular numerals — apply with class="tnum" on prices, step numbers, etc. */
+.tnum {
+  font-feature-settings: "tnum" 1, "lnum" 1, "kern" 1;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Hairline rules — 0.5px brass at 30% opacity. Use class="hairline" or "hairline-v" */
+.hairline {
+  height: 1px;
+  width: 100%;
+  background: rgba(201, 169, 97, 0.3);
+  transform: scaleY(0.5);
+  transform-origin: 0 0;
+}
+.hairline-v {
+  width: 1px;
+  background: rgba(201, 169, 97, 0.3);
+  transform: scaleX(0.5);
+  transform-origin: 0 0;
+}
+
+/* Editorial label — small caps, brass, tracked uppercase */
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #C9A961;
+  font-weight: 600;
+}
+
+/* Brass-glow CTA — adds an inset radial brass shimmer on hover */
+.btn-glow:hover {
+  background-image: radial-gradient(
+    120% 80% at 50% 0%,
+    rgba(201, 169, 97, 0.28) 0%,
+    rgba(201, 169, 97, 0) 60%
+  );
+}
+
+/* Outline button: navy stroke → brass on hover */
+.btn-outline-brass:hover {
+  border-color: #C9A961 !important;
+  color: #C9A961 !important;
+  background-color: transparent !important;
+}
+
+/* Underline-grow on hover for inline links */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 280ms ease;
+}
+.link-underline:hover::after {
+  transform: scaleX(1);
+}
+
+/* Subtle selection color so highlights feel branded */
+::selection {
+  background: #FF5A1F;
+  color: #FFFFFF;
+}

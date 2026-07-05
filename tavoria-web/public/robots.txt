@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /oli-blu/
+Disallow: /admin

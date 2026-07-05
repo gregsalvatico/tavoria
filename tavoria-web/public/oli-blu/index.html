@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<meta name="googlebot" content="noindex, nofollow">
+<title>Scuola d'Estate ☀️</title>
+<style>
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --ink:#1f2937; --muted:#6b7280;
+    --line:#e5e9f0; --shadow:0 6px 24px rgba(20,40,80,.07);
+    --radius:18px;
+    --good:#16a34a; --good-bg:#e9f9ef; --bad:#dc2626; --bad-bg:#fdeaea;
+    --accent:#2563eb; --accent-soft:#e8f0ff;
+  }
+  /* per-profile accent */
+  body.blu{ --accent:#7c5cff; --accent-soft:#efeaff; }
+  body.oli{ --accent:#0ea5a3; --accent-soft:#e3f7f6; }
+  /* dyslexia-friendly mode */
+  body.dys{ --ink:#222; }
+  body.dys .readzone{
+    font-family:Verdana, Tahoma, sans-serif;
+    letter-spacing:.04em; word-spacing:.12em; line-height:1.9;
+  }
+  body.dys .opt, body.dys .q-text{ font-size:1.18rem; }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:860px; margin:0 auto; padding:18px 16px 80px;}
+  header.topbar{
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    margin-bottom:18px;
+  }
+  .topbar h1{font-size:1.25rem; margin:0; flex:1;}
+  /* sync status — tiny, only visible when something is happening */
+  .sync{
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--card); border:1px solid var(--line); border-radius:999px;
+    padding:4px 10px; font-size:.72rem; color:var(--muted);
+    transition:opacity .3s, background .2s, border-color .2s;
+  }
+  .sync.hidden{ opacity:0; pointer-events:none; }
+  .sync.ok{ border-color:#bbf7d0; background:#f0fdf4; color:#15803d; }
+  .sync.err{ border-color:#fecaca; background:#fef2f2; color:#b91c1c; }
+  .sync.busy{ border-color:#fde68a; background:#fffbeb; color:#a16207; }
+
+  .pill{
+    background:var(--card); border:1px solid var(--line); border-radius:999px;
+    padding:6px 12px; font-size:.85rem; color:var(--muted); box-shadow:var(--shadow);
+    display:inline-flex; gap:6px; align-items:center;
+  }
+  .btn{
+    border:none; border-radius:12px; padding:11px 16px; font-size:1rem;
+    cursor:pointer; font-weight:600; background:var(--accent); color:#fff;
+    transition:transform .05s ease, filter .15s;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn.ghost{background:var(--card); color:var(--ink); border:1px solid var(--line);}
+  .btn.small{padding:7px 12px; font-size:.85rem;}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:20px; margin-bottom:16px;
+  }
+  .grid{display:grid; gap:14px;}
+  @media(min-width:620px){ .grid.two{grid-template-columns:1fr 1fr;} }
+
+  /* ---- profile picker ---- */
+  .profiles{display:grid; gap:16px; grid-template-columns:1fr 1fr; margin-top:30px;}
+  @media(max-width:540px){ .profiles{grid-template-columns:1fr;} }
+  .profile{
+    border:2px solid var(--line); border-radius:22px; padding:26px 18px; text-align:center;
+    background:var(--card); cursor:pointer; box-shadow:var(--shadow); transition:.15s;
+  }
+  .profile:hover{transform:translateY(-3px);}
+  .profile .ava{font-size:3.2rem; line-height:1;}
+  .profile h3{margin:12px 0 4px;}
+  .profile p{margin:0; color:var(--muted); font-size:.9rem;}
+  .pf-blu{border-color:#cdbdff;}
+  .pf-oli{border-color:#9fe3e0;}
+
+  /* ---- menu tiles ---- */
+  .tiles{display:grid; gap:14px; grid-template-columns:1fr 1fr;}
+  @media(max-width:540px){ .tiles{grid-template-columns:1fr;} }
+  .tile{
+    border:1px solid var(--line); border-radius:var(--radius); padding:20px; cursor:pointer;
+    background:var(--card); box-shadow:var(--shadow); transition:.15s; position:relative;
+  }
+  .tile:hover{transform:translateY(-2px); border-color:var(--accent);}
+  .tile .ico{font-size:2rem;}
+  .tile h3{margin:10px 0 4px; font-size:1.1rem;}
+  .tile p{margin:0; color:var(--muted); font-size:.88rem;}
+  .tile .done-badge{
+    position:absolute; top:14px; right:14px; background:var(--good-bg); color:var(--good);
+    border-radius:999px; font-size:.75rem; padding:3px 9px; font-weight:700; display:none;
+  }
+  .tile.done .done-badge{display:inline-block;}
+  .lvl-row{display:flex; align-items:center; gap:8px; margin-top:12px;}
+  .lvl-bar{flex:1; height:8px; background:var(--line); border-radius:999px; overflow:hidden;}
+  .lvl-bar > i{display:block; height:100%; background:var(--accent); width:0; transition:width .4s;}
+  .lvl-num{font-size:.74rem; color:var(--muted); font-weight:800; white-space:nowrap;}
+
+  /* ---- quiz ---- */
+  .q-text{font-size:1.3rem; font-weight:700; margin:6px 0 18px; line-height:1.45;}
+  .opts{display:grid; gap:12px;}
+  .opt{
+    text-align:left; border:2px solid var(--line); background:var(--card); color:var(--ink);
+    border-radius:14px; padding:15px 16px; font-size:1.05rem; cursor:pointer; transition:.12s;
+  }
+  .opt:hover{border-color:var(--accent); background:var(--accent-soft);}
+  .opt.correct{border-color:var(--good); background:var(--good-bg); color:#0f7a39;}
+  .opt.wrong{border-color:var(--bad); background:var(--bad-bg); color:#b51d1d;}
+  .opt:disabled{cursor:default;}
+  .feedback{margin-top:16px; font-size:1.05rem; min-height:26px; font-weight:600;}
+  .feedback.ok{color:var(--good);} .feedback.no{color:var(--bad);}
+  .progress{height:10px; background:var(--line); border-radius:999px; overflow:hidden; margin:4px 0 16px;}
+  .progress > i{display:block; height:100%; background:var(--accent); width:0; transition:width .3s;}
+
+  .speak{
+    border:1px solid var(--line); background:var(--card); border-radius:12px; padding:8px 12px;
+    cursor:pointer; font-size:.95rem; display:inline-flex; gap:7px; align-items:center; color:var(--ink);
+  }
+  .speak:hover{background:var(--accent-soft);}
+
+  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .spacer{flex:1;}
+  .muted{color:var(--muted);}
+  .big-num{font-size:2.6rem; font-weight:800; letter-spacing:.02em;}
+  .counter-dots{display:flex; gap:8px; margin:10px 0;}
+  .counter-dots span{width:20px; height:20px; border-radius:50%; background:var(--line);}
+  .counter-dots span.on{background:var(--good);}
+
+  /* exercises */
+  .ex{display:flex; gap:14px; padding:14px 0; border-bottom:1px solid var(--line); align-items:flex-start;}
+  .ex:last-child{border-bottom:none;}
+  .ex .n{font-size:1.6rem; width:40px; text-align:center;}
+  .ex h4{margin:0 0 3px;}
+  .ex p{margin:0; color:var(--muted); font-size:.92rem;}
+  .tag{display:inline-block; font-size:.72rem; background:var(--accent-soft); color:var(--accent);
+       padding:2px 8px; border-radius:999px; font-weight:700; margin-left:6px;}
+
+  .toggle{display:inline-flex; align-items:center; gap:8px; font-size:.85rem; color:var(--muted); cursor:pointer;}
+  .switch{width:40px; height:22px; background:var(--line); border-radius:999px; position:relative; transition:.2s;}
+  .switch i{position:absolute; top:2px; left:2px; width:18px; height:18px; background:#fff; border-radius:50%; transition:.2s;}
+  .toggle.on .switch{background:var(--accent);}
+  .toggle.on .switch i{left:20px;}
+
+  .hidden{display:none !important;}
+  .center{text-align:center;}
+  .streak{font-weight:800; color:var(--accent);}
+  .celebrate{font-size:3rem; text-align:center; margin:10px 0;}
+  .star-row{font-size:1.4rem; letter-spacing:4px; text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ HOME / PROFILE PICKER ============ -->
+  <section id="view-home">
+    <div class="center" style="margin-top:24px">
+      <div style="font-size:3rem">☀️📚</div>
+      <h1 style="margin:8px 0 2px">Scuola d'Estate</h1>
+      <p class="muted">Un po' ogni giorno: matematica, storia, scienze e movimento.</p>
+    </div>
+    <div class="profiles">
+      <div class="profile pf-blu" onclick="chooseProfile('blu')">
+        <div class="ava">🦋</div>
+        <h3>Blu</h3>
+        <p>12 anni · 2ª media</p>
+      </div>
+      <div class="profile pf-oli" onclick="chooseProfile('oli')">
+        <div class="ava">⚽</div>
+        <h3 id="oliName">Oli</h3>
+        <p>10 anni · 1ª media</p>
+      </div>
+    </div>
+    <p class="center muted" style="margin-top:26px; font-size:.8rem">
+      Suggerimento: salva questa pagina nei preferiti del telefono per aprirla ogni mattina.
+    </p>
+  </section>
+
+  <!-- ============ DASHBOARD ============ -->
+  <section id="view-dash" class="hidden">
+    <header class="topbar">
+      <button class="btn ghost small" onclick="goHome()">← Cambia</button>
+      <h1 id="dashTitle">Ciao!</h1>
+      <span id="syncStatus" class="sync hidden">💾 <span id="syncTxt">Sincronizzato</span></span>
+      <span class="pill">🔥 Serie: <span class="streak" id="streakNum">0</span></span>
+    </header>
+
+    <div class="card" id="welcomeCard">
+      <div class="row">
+        <div style="flex:1; min-width:200px">
+          <h2 id="welcomeMsg" style="margin:0 0 4px">Pronto per oggi?</h2>
+          <p class="muted" id="dateLine" style="margin:0"></p>
+        </div>
+        <label class="toggle" id="dysToggle" onclick="toggleDys()">
+          <span>Testo facile</span><span class="switch"><i></i></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="tiles" id="tiles"></div>
+  </section>
+
+  <!-- ============ ACTIVITY VIEW ============ -->
+  <section id="view-act" class="hidden">
+    <header class="topbar">
+      <button class="btn ghost small" onclick="backToDash()">← Indietro</button>
+      <h1 id="actTitle">Attività</h1>
+    </header>
+    <div id="actBody"></div>
+  </section>
+
+</div>
+
+<script>
+/* ============================================================
+   DATA / STATE
+   ============================================================ */
+const TODAY = new Date();
+const todayKey = TODAY.toISOString().slice(0,10);
+const ITDAYS = ["domenica","lunedì","martedì","mercoledì","giovedì","venerdì","sabato"];
+const ITMON = ["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
+
+let current = null; // 'blu' | 'oli'
+
+function store(){ try{return JSON.parse(localStorage.getItem('scuolaEstate')||'{}');}catch(e){return {};} }
+function save(d){ localStorage.setItem('scuolaEstate', JSON.stringify(d)); }
+function pdata(p){
+  const d = store();
+  d[p] = d[p] || {streak:0, lastDay:null, days:{}, dys:(p==='blu')};
+  return d[p];
+}
+function setPdata(p, obj){
+  const d=store();
+  d[p]=obj;
+  save(d);
+  // Push to cloud — debounced so a burst of saves only fires one POST.
+  schedulePush(p);
+}
+
+/* ============================================================
+   CLOUD SYNC (Supabase via /api/kids-progress)
+   ============================================================
+   - On profile choose: pull from cloud. If cloud is newer than local
+     (or local is empty), merge into local + re-render dashboard.
+   - On every setPdata: push profile to cloud, debounced 800ms.
+   - All saves are non-blocking. If offline, localStorage still wins;
+     next online save will overwrite cloud with current state.
+   ============================================================ */
+const SYNC = { url:'/api/kids-progress', _timers:{} };
+
+function setSyncStatus(state, text){
+  // state: '' (hidden) | 'busy' | 'ok' | 'err'
+  const el = document.getElementById('syncStatus');
+  const tx = document.getElementById('syncTxt');
+  if (!el || !tx) return;
+  el.classList.remove('hidden','ok','err','busy');
+  if (!state){ el.classList.add('hidden'); return; }
+  el.classList.add(state);
+  tx.textContent = text;
+}
+
+async function pullFromCloud(p){
+  if (!('fetch' in window)) return;
+  try {
+    setSyncStatus('busy','Carico…');
+    const r = await fetch(`${SYNC.url}?profile=${encodeURIComponent(p)}`,
+      { cache:'no-store' });
+    if (!r.ok) throw new Error('http '+r.status);
+    const { data, updated_at } = await r.json();
+    // Decide which side to trust:
+    //   - If cloud has data AND (local is empty OR cloud is strictly newer),
+    //     overwrite local.
+    //   - Otherwise leave local alone; the next save will push it back up.
+    const localAll = store();
+    const localP = localAll[p];
+    const hasCloud = data && Object.keys(data).length > 0;
+    const localEmpty = !localP || (!localP.lastDay && Object.keys(localP.days||{}).length===0);
+    const cloudNewer = updated_at && localP && localP._syncedAt
+      && new Date(updated_at) > new Date(localP._syncedAt);
+    if (hasCloud && (localEmpty || cloudNewer)){
+      data._syncedAt = updated_at;
+      localAll[p] = data;
+      save(localAll);
+      setSyncStatus('ok','Sincronizzato');
+      setTimeout(()=>setSyncStatus('',''), 1500);
+      return true; // signal: caller should re-render
+    }
+    setSyncStatus('ok','Sincronizzato');
+    setTimeout(()=>setSyncStatus('',''), 1200);
+  } catch (e) {
+    console.warn('[oli-blu] pull failed, using local only:', e);
+    setSyncStatus('err','Offline');
+    setTimeout(()=>setSyncStatus('',''), 1500);
+  }
+  return false;
+}
+
+function schedulePush(p){
+  // Debounce — coalesce rapid saves (e.g. answering many quiz questions
+  // in a row) into one POST.
+  clearTimeout(SYNC._timers[p]);
+  SYNC._timers[p] = setTimeout(()=>pushToCloud(p), 800);
+}
+
+async function pushToCloud(p){
+  if (!('fetch' in window)) return;
+  const d = store(); const profileData = d[p]; if (!profileData) return;
+  try {
+    setSyncStatus('busy','Salvo…');
+    // Strip _syncedAt before sending — it's a client-side hint, not part
+    // of the kid's actual progress.
+    const { _syncedAt, ...payload } = profileData;
+    const r = await fetch(SYNC.url, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ profile:p, data: payload }),
+    });
+    if (!r.ok) throw new Error('http '+r.status);
+    // Stamp local with successful sync time so future pulls can compare.
+    const all = store();
+    if (all[p]){ all[p]._syncedAt = new Date().toISOString(); save(all); }
+    setSyncStatus('ok','Sincronizzato');
+    setTimeout(()=>setSyncStatus('',''), 1200);
+  } catch (e) {
+    console.warn('[oli-blu] push failed, will retry on next save:', e);
+    setSyncStatus('err','Offline');
+    setTimeout(()=>setSyncStatus('',''), 1500);
+  }
+}
+function today(p){
+  const o = pdata(p);
+  o.days[todayKey] = o.days[todayKey] || {};
+  return o;
+}
+
+/* deterministic daily seed so "questions of the day" stay stable per day */
+function seedFromString(s){ let h=2166136261; for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);} return (h>>>0); }
+function mulberry32(a){ return function(){ a|=0;a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function rng(tag){ return mulberry32(seedFromString(todayKey+'|'+current+'|'+tag)); }
+function pick(arr,r){ return arr[Math.floor(r()*arr.length)]; }
+function shuffle(arr,r){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+
+/* ============================================================
+   READ ALOUD (Italian)
+   ============================================================ */
+function speak(text){
+  if(!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang='it-IT'; u.rate=0.92;
+  const v = window.speechSynthesis.getVoices().find(v=>v.lang && v.lang.toLowerCase().startsWith('it'));
+  if(v) u.voice=v;
+  window.speechSynthesis.speak(u);
+}
+if('speechSynthesis' in window){ window.speechSynthesis.onvoiceschanged=()=>{}; }
+
+/* ============================================================
+   MATH QUESTION GENERATORS  (QCM = multiple choice)
+   ============================================================ */
+function mcq(question, correct, distractors, opts={}){
+  return {type:'mcq', question, correct:String(correct),
+          options: distractors.concat([String(correct)]), spoken: opts.spoken||question};
+}
+function nearbyWrong(correct, r, spread=8){
+  const set=new Set(); let guard=0;
+  while(set.size<3 && guard<50){
+    guard++;
+    let d = correct + (Math.floor(r()*spread*2)-spread);
+    if(d===correct || d<0) d = correct + (set.size+1);
+    if(d!==correct) set.add(d);
+  }
+  return [...set].map(String);
+}
+
+/* difficulty helpers: d goes 1..100, exercises scale from easy to hard */
+function ri(r,min,max){ if(max<min)max=min; return min+Math.floor(r()*(max-min+1)); }
+function fmtN(x){ return Number.isInteger(x)?x:Math.round(x*100)/100; }
+function lvlMax(d,easy,hard){ d=d||1; return Math.max(easy, Math.round(easy+(hard-easy)*Math.min(1,d/100))); }
+
+/* Blu: MULTIPLICATION — grows from tiny tables to 2-digit products */
+function genMultiplication(r,d){
+  d=d||1; let a,b;
+  if(d<=70){ const m=Math.min(12, 9+Math.floor(d/12)); a=ri(r,2,m); b=ri(r,2,m); }  // full tables from the start, grow to ×12
+  else if(d<=88){ a=ri(r,11,19); b=ri(r,2,9); }
+  else { a=ri(r,12,25); b=ri(r,11,20); }
+  const c=a*b;
+  return mcq(`Quanto fa ${a} × ${b} ?`, c, nearbyWrong(c,r,Math.max(8,Math.round(c*0.15))), {spoken:`Quanto fa ${a} per ${b}?`});
+}
+/* Blu: mixed — division, %, addition, (later) subtraction; numbers grow with d */
+function genBluMixed(r,d){
+  d=d||1;
+  const kind=Math.floor(r()*(d>40?4:3));
+  if(kind===0){ const m=Math.min(12,8+Math.floor(d/12)); const b=ri(r,2,m), c=ri(r,2,m), a=b*c;
+    return mcq(`Quanto fa ${a} ÷ ${b} ?`, c, nearbyWrong(c,r,5), {spoken:`Quanto fa ${a} diviso ${b}?`}); }
+  if(kind===1){ const base=pick(d<30?[10,20,50,100]:[20,40,60,80,120,200],r); const pct=pick(d<30?[10,50]:[10,25,50,75],r);
+    const c=fmtN(base*pct/100); return mcq(`Quanto è il ${pct}% di ${base} ?`, c, nearbyWrong(Math.round(c),r,Math.max(4,Math.round(base/4))),
+      {spoken:`Quanto è il ${pct} per cento di ${base}?`}); }
+  if(kind===2){ const hi=lvlMax(d,30,99); const a=ri(r,11,hi), b=ri(r,11,hi), c=a+b;
+    return mcq(`Quanto fa ${a} + ${b} ?`, c, nearbyWrong(c,r,7)); }
+  const hi=lvlMax(d,40,99); const a=ri(r,20,hi), b=ri(r,5,a-1), c=a-b;
+  return mcq(`Quanto fa ${a} − ${b} ?`, c, nearbyWrong(c,r,7));
+}
+/* Leo (1a media): more question types unlock and numbers grow with d */
+function genLeoMath(r,d){
+  d=d||1;
+  const kinds = d<25?4 : d<60?6 : 7;
+  const kind=Math.floor(r()*kinds);
+  if(kind===0){ const m=lvlMax(d,11,30); const a=ri(r,2,m), b=ri(r,2,m), c=a*b;
+    return mcq(`${a} × ${b} = ?`, c, nearbyWrong(c,r,Math.max(10,Math.round(c*0.15)))); }
+  if(kind===1){ const m=lvlMax(d,11,16); const b=ri(r,2,m), c=ri(r,2,m), a=b*c;
+    return mcq(`${a} ÷ ${b} = ?`, c, nearbyWrong(c,r,6), {spoken:`${a} diviso ${b}?`}); }
+  if(kind===2){ const base=pick(d<40?[20,40,60,80]:[120,200,250,400,500],r), pct=pick([10,25,50,75],r);
+    const c=fmtN(base*pct/100); return mcq(`Quanto è il ${pct}% di ${base}?`, c, nearbyWrong(Math.round(c),r,Math.round(base/4)),
+      {spoken:`Quanto è il ${pct} per cento di ${base}?`}); }
+  if(kind===3){ const l=ri(r,3,lvlMax(d,11,25)), w=ri(r,2,lvlMax(d,8,18));
+    if(r()<0.5){ const c=l*w; return mcq(`Rettangolo ${l} cm × ${w} cm: qual è l'AREA? (cm²)`, c, nearbyWrong(c,r,10),
+        {spoken:`Rettangolo di base ${l} e altezza ${w}: qual è l'area?`}); }
+    const c=2*(l+w); return mcq(`Rettangolo ${l} cm × ${w} cm: qual è il PERIMETRO? (cm)`, c, nearbyWrong(c,r,8),
+        {spoken:`Rettangolo di base ${l} e altezza ${w}: qual è il perimetro?`}); }
+  if(kind===4){ const a=ri(r,1,50)/10, b=ri(r,1,50)/10, c=Math.round((a+b)*10)/10;
+    const ws=[c+0.1,c-0.1,Math.round((c+1)*10)/10].map(x=>String(Math.round(x*10)/10));
+    return mcq(`${a.toFixed(1)} + ${b.toFixed(1)} = ?`, c.toFixed(1), ws); }
+  if(kind===5){ const den=pick([2,3,4,5],r), k=ri(r,2,8), N=den*k, num=ri(r,1,den-1), c=(N/den)*num;
+    return mcq(`Quanto sono i ${num}/${den} di ${N}?`, c, nearbyWrong(c,r,Math.max(4,Math.round(c*0.3)+1))); }
+  const a=ri(r,2,9), b=ri(r,2,9), cc=ri(r,2,9), res=a+b*cc;
+  return mcq(`${a} + ${b} × ${cc} = ?  (prima la moltiplicazione)`, res, nearbyWrong(res,r,10));
+}
+
+/* ============================================================
+   STEP-BY-STEP PROBLEM GENERATORS
+   each returns {prompt, steps:[in correct order], decoys:[wrong moves]}
+   ============================================================ */
+// ---- Blu (gentle, builds automaticity) — scales with d ----
+function sB_orderOps(r,d){ const a=ri(r,2,lvlMax(d,9,40)),b=ri(r,2,lvlMax(d,6,9)),c=ri(r,2,lvlMax(d,6,9)),p=b*c,res=a+p;
+  return {prompt:`Risolvi:  ${a} + ${b} × ${c}`,
+    steps:[`Prima la moltiplicazione: ${b} × ${c} = ${p}`,`Poi l'addizione: ${a} + ${p} = ${res}`,`Risultato: ${res}`],
+    decoys:[`Faccio prima l'addizione: ${a} + ${b} = ${a+b}`,`Sommo tutto: ${a}+${b}+${c} = ${a+b+c}`]}; }
+function sB_oneStep(r,d){ const a=ri(r,2,lvlMax(d,9,40)),x=ri(r,2,lvlMax(d,9,40)),b=a+x;
+  return {prompt:`Trova x:   x + ${a} = ${b}`,
+    steps:[`Tolgo ${a} da tutti e due i lati`,`x = ${b} − ${a}`,`x = ${x}`],
+    decoys:[`x = ${b} + ${a} = ${b+a}`,`Moltiplico: x = ${b} × ${a}`]}; }
+function sB_mulEq(r,d){ const a=ri(r,2,lvlMax(d,9,12)),x=ri(r,2,lvlMax(d,9,15)),b=a*x;
+  return {prompt:`Trova x:   ${a} · x = ${b}`,
+    steps:[`Divido tutti e due i lati per ${a}`,`x = ${b} ÷ ${a}`,`x = ${x}`],
+    decoys:[`x = ${b} × ${a} = ${b*a}`,`x = ${b} − ${a} = ${b-a}`]}; }
+function sB_percent(r,d){ const N=pick(d<30?[20,40,50,100]:[40,60,80,120,200,400],r),p=pick([10,25,50],r),one=N/100,res=fmtN(N*p/100);
+  return {prompt:`Quanto è il ${p}% di ${N}?`,
+    steps:[`Trovo l'1%: ${N} ÷ 100 = ${fmtN(one)}`,`Moltiplico per ${p}: ${fmtN(one)} × ${p}`,`Risultato: ${res}`],
+    decoys:[`Faccio ${N} × ${p} = ${N*p}`,`Faccio ${N} ÷ ${p}`]}; }
+function sB_word(r,d){ const price=ri(r,2,lvlMax(d,5,12)),qty=ri(r,2,lvlMax(d,4,6)),cost=price*qty,paid=Math.floor(cost/10)*10+10,change=paid-cost;
+  return {prompt:`Compri ${qty} quaderni da €${price} l'uno e paghi con €${paid}. Quanto ti danno di resto?`,
+    steps:[`Quanto spendo: ${qty} × ${price} = ${cost}`,`Il resto: ${paid} − ${cost} = ${change}`,`Resto: €${change}`],
+    decoys:[`Sommo: ${qty} + ${price} = ${qty+price}`,`Faccio ${paid} + ${cost} = ${paid+cost}`]}; }
+
+// ---- Oli (1a media) — scales with d ----
+function sL_paren(r,d){ const a=ri(r,2,lvlMax(d,9,40)),b=ri(r,2,lvlMax(d,9,40)),c=ri(r,2,lvlMax(d,6,12)),s=a+b,res=s*c;
+  return {prompt:`Risolvi:  (${a} + ${b}) × ${c}`,
+    steps:[`Prima la parentesi: (${a} + ${b}) = ${s}`,`Poi moltiplico: ${s} × ${c} = ${res}`,`Risultato: ${res}`],
+    decoys:[`Moltiplico subito: ${b} × ${c} = ${b*c}`,`Sommo tutto: ${a}+${b}+${c} = ${a+b+c}`]}; }
+function sL_twoStep(r,d){ const a=ri(r,2,lvlMax(d,5,12)),x=ri(r,2,lvlMax(d,9,20)),b=ri(r,1,lvlMax(d,9,30)),c=a*x+b;
+  return {prompt:`Trova x:   ${a}x + ${b} = ${c}`,
+    steps:[`Tolgo ${b}: ${a}x = ${c} − ${b} = ${c-b}`,`Divido per ${a}: x = ${c-b} ÷ ${a}`,`x = ${x}`],
+    decoys:[`Divido subito per ${a}: x = ${c} ÷ ${a}`,`Sommo ${b}: ${a}x = ${c} + ${b} = ${c+b}`]}; }
+function sL_area(r,d){ const l=ri(r,4,lvlMax(d,12,40)),w=ri(r,3,lvlMax(d,9,25)),res=l*w;
+  return {prompt:`Un rettangolo ha base ${l} cm e altezza ${w} cm. Trova l'AREA.`,
+    steps:[`L'area = base × altezza`,`= ${l} × ${w}`,`= ${res} cm²`],
+    decoys:[`Sommo i lati: ${l} + ${w} = ${l+w}`,`Perimetro: 2 × (${l}+${w}) = ${2*(l+w)}`]}; }
+function sL_frac(r,d){ const den=pick([2,3,4,5],r),k=ri(r,2,lvlMax(d,6,15)),N=den*k,n=ri(r,1,den-1),res=(N/den)*n;
+  return {prompt:`Quanto sono i ${n}/${den} di ${N}?`,
+    steps:[`Divido per il denominatore: ${N} ÷ ${den} = ${N/den}`,`Moltiplico per il numeratore: ${N/den} × ${n} = ${res}`,`Risultato: ${res}`],
+    decoys:[`Faccio ${N} × ${n} = ${N*n}`,`Faccio ${N} ÷ ${n}`]}; }
+function sL_percent(r,d){ const N=pick(d<40?[40,60,80,120]:[200,400,500,800,1000],r),p=pick([10,25,50,75],r),one=N/100,res=fmtN(N*p/100);
+  return {prompt:`Quanto è il ${p}% di ${N}?`,
+    steps:[`Trovo l'1%: ${N} ÷ 100 = ${fmtN(one)}`,`Moltiplico per ${p}: ${fmtN(one)} × ${p}`,`Risultato: ${res}`],
+    decoys:[`Faccio ${N} × ${p} = ${N*p}`,`Faccio ${N} ÷ ${p}`]}; }
+
+function genStepsProblem(p, r, d){
+  const pool = (p==='blu') ? [sB_orderOps,sB_oneStep,sB_mulEq,sB_percent,sB_word]
+                           : [sL_paren,sL_twoStep,sL_area,sL_frac,sL_percent];
+  return pick(pool, r)(r, d);
+}
+
+/* ============================================================
+   QUIZ BANKS (history / science) — randomized per day
+   ============================================================ */
+const BANKS = {
+  // 1a media history = Medioevo
+  oli_history:[
+    {q:"Quale impero cadde nel 476 d.C. segnando l'inizio del Medioevo?",a:"L'Impero Romano d'Occidente",d:["L'Impero Egizio","L'Impero Ottomano","L'Impero Inca"],e:"Nel 476 d.C. il re barbaro Odoacre depose l'ultimo imperatore romano d'Occidente. Da quel momento inizia il Medioevo."},
+    {q:"Come si chiamavano i guerrieri a cavallo del Medioevo che servivano un signore?",a:"Cavalieri",d:["Faraoni","Gladiatori","Legionari"],e:"I cavalieri erano guerrieri a cavallo che giuravano fedeltà a un signore in cambio di terre e protezione."},
+    {q:"Il sistema medievale basato su signori e vassalli si chiama:",a:"Feudalesimo",d:["Democrazia","Capitalismo","Comunismo"],e:"Nel feudalesimo il re concedeva terre (feudi) ai nobili, che in cambio offrivano fedeltà e soldati."},
+    {q:"Chi fu incoronato imperatore nell'800 d.C. la notte di Natale?",a:"Carlo Magno",d:["Giulio Cesare","Napoleone","Cristoforo Colombo"],e:"Carlo Magno fu incoronato imperatore dal Papa a Roma nell'800, la notte di Natale."},
+    {q:"Dove vivevano e pregavano i monaci nel Medioevo?",a:"Nei monasteri",d:["Nelle piramidi","Nei castelli reali","Nelle caverne"],e:"I monaci vivevano nei monasteri, dove pregavano, lavoravano e copiavano a mano i libri antichi."},
+    {q:"Le grandi chiese medievali con archi a punta sono in stile:",a:"Gotico",d:["Moderno","Egizio","Barocco"],e:"Lo stile gotico usa archi a punta e grandi vetrate, rendendo le cattedrali altissime e luminose."},
+    {q:"La peste che colpì l'Europa nel 1300 è ricordata come:",a:"La Peste Nera",d:["L'influenza spagnola","Il colera","Il vaiolo"],e:"La Peste Nera (1347-1351) uccise circa un terzo della popolazione europea."},
+    {q:"I contadini che lavoravano la terra del signore erano chiamati:",a:"Servi della gleba",d:["Re","Mercanti","Cavalieri"],e:"I servi della gleba erano contadini legati alla terra del signore, che dovevano coltivare per lui."},
+    {q:"Le spedizioni militari cristiane verso la Terra Santa si chiamano:",a:"Crociate",d:["Olimpiadi","Rivoluzioni","Migrazioni"],e:"Le Crociate furono spedizioni militari dei cristiani per riconquistare Gerusalemme e la Terra Santa."},
+    {q:"Il documento del 1215 che limitò il potere del re inglese è la:",a:"Magna Carta",d:["Costituzione","Bibbia","Enciclopedia"],e:"La Magna Carta (1215) obbligò il re d'Inghilterra a rispettare alcune leggi: un primo limite al suo potere."}
+  ],
+  // 2a media history = età moderna
+  blu_history:[
+    {q:"In che anno Cristoforo Colombo arrivò in America?",a:"1492",d:["1789","1215","1900"],e:"Nel 1492 Colombo, partito dalla Spagna, raggiunse l'America cercando una nuova rotta per le Indie."},
+    {q:"Come si chiama la rinascita dell'arte e della cultura iniziata in Italia nel '400?",a:"Rinascimento",d:["Medioevo","Illuminismo","Romanticismo"],e:"Il Rinascimento nacque in Italia nel '400: rinascono arte, scienza e cultura ispirate agli antichi."},
+    {q:"Chi dipinse la Gioconda e l'Ultima Cena?",a:"Leonardo da Vinci",d:["Michelangelo","Raffaello","Caravaggio"],e:"Leonardo fu pittore, scienziato e inventore: sue sono la Gioconda e l'Ultima Cena."},
+    {q:"Chi guidò la riforma protestante nel 1517?",a:"Martin Lutero",d:["Galileo Galilei","Napoleone","Colombo"],e:"Nel 1517 Lutero criticò la Chiesa con le 95 tesi, dando inizio alla Riforma protestante."},
+    {q:"Lo scienziato che sostenne che la Terra gira intorno al Sole fu:",a:"Galileo Galilei",d:["Cristoforo Colombo","Dante","Garibaldi"],e:"Galileo, usando il cannocchiale, difese l'idea che la Terra gira intorno al Sole (teoria copernicana)."},
+    {q:"La Rivoluzione Francese iniziò nel:",a:"1789",d:["1492","1861","1945"],e:"La Rivoluzione Francese (1789) abbatté la monarchia assoluta in nome di libertà e uguaglianza."},
+    {q:"Il simbolo della Rivoluzione Francese, preso d'assalto nel 1789, era la:",a:"Bastiglia",d:["Torre Eiffel","Colosseo","Muraglia cinese"],e:"Il 14 luglio 1789 il popolo di Parigi assaltò la Bastiglia, prigione simbolo del potere del re."},
+    {q:"La macchina che diede inizio alla Rivoluzione Industriale fu:",a:"La macchina a vapore",d:["Il computer","L'automobile","Il telefono"],e:"La macchina a vapore mise in moto fabbriche e treni: così nacque la Rivoluzione Industriale."},
+    {q:"I tre principi della Rivoluzione Francese erano: Libertà, Uguaglianza e…",a:"Fraternità",d:["Ricchezza","Potere","Gloria"],e:"Il motto era 'Libertà, Uguaglianza, Fraternità', i tre ideali della Rivoluzione Francese."},
+    {q:"L'invenzione della stampa a caratteri mobili si deve a:",a:"Gutenberg",d:["Edison","Marconi","Einstein"],e:"Intorno al 1450 Gutenberg inventò la stampa a caratteri mobili: i libri diventano molti e meno costosi."}
+  ],
+  oli_science:[
+    {q:"Qual è l'unità di base di tutti gli esseri viventi?",a:"La cellula",d:["L'atomo","Il muscolo","Il sangue"],e:"La cellula è il mattone di base dei viventi: alcuni esseri ne hanno una sola, noi miliardi."},
+    {q:"Quale organo pompa il sangue nel corpo?",a:"Il cuore",d:["I polmoni","Lo stomaco","Il cervello"],e:"Il cuore è un muscolo che pompa il sangue in tutto il corpo, battendo senza fermarsi mai."},
+    {q:"Le piante producono il loro cibo grazie alla:",a:"Fotosintesi",d:["Digestione","Respirazione","Evaporazione"],e:"Con la fotosintesi le piante usano luce, acqua e anidride carbonica per creare cibo e liberare ossigeno."},
+    {q:"Quanti sono gli stati della materia che conosciamo di base?",a:"Tre (solido, liquido, gassoso)",d:["Uno","Due","Dieci"],e:"La materia esiste di base in tre stati: solido, liquido e gassoso (ghiaccio, acqua, vapore)."},
+    {q:"Con quale organo respiriamo?",a:"I polmoni",d:["Il fegato","I reni","La pelle"],e:"Con i polmoni prendiamo ossigeno dall'aria ed eliminiamo l'anidride carbonica."},
+    {q:"Gli animali che mangiano solo piante si chiamano:",a:"Erbivori",d:["Carnivori","Onnivori","Insetti"],e:"Gli erbivori mangiano solo piante; i carnivori carne; gli onnivori entrambe le cose."},
+    {q:"L'acqua a 0°C diventa:",a:"Ghiaccio (solido)",d:["Vapore","Gas","Plasma"],e:"A 0°C l'acqua si solidifica e diventa ghiaccio (passaggio da liquido a solido)."},
+    {q:"Lo scheletro umano è fatto principalmente di:",a:"Ossa",d:["Muscoli","Sangue","Acqua"],e:"Lo scheletro è formato dalle ossa: sostiene il corpo e protegge gli organi."},
+    {q:"Il Sole è una:",a:"Stella",d:["Pianeta","Luna","Cometa"],e:"Il Sole è una stella: un'enorme sfera di gas caldissimo che produce luce e calore."},
+    {q:"Quale gas respiriamo e ci serve per vivere?",a:"Ossigeno",d:["Anidride carbonica","Elio","Azoto"],e:"Respiriamo l'ossigeno dell'aria: serve alle cellule per produrre energia."}
+  ],
+  blu_science:[
+    {q:"La parte più piccola di un elemento chimico è:",a:"L'atomo",d:["La cellula","La molecola","Il neutrone"],e:"L'atomo è la parte più piccola di un elemento. Più atomi uniti formano una molecola."},
+    {q:"L'acqua è formata da idrogeno e:",a:"Ossigeno",d:["Azoto","Carbonio","Ferro"],e:"L'acqua (H₂O) è formata da due atomi di idrogeno e uno di ossigeno."},
+    {q:"La forza che ci tiene attaccati alla Terra è la:",a:"Gravità",d:["Elettricità","Magnetismo","Pressione"],e:"La gravità è la forza con cui la Terra attira gli oggetti verso il suo centro."},
+    {q:"L'apparato che digerisce il cibo è l'apparato:",a:"Digerente",d:["Respiratorio","Circolatorio","Nervoso"],e:"L'apparato digerente (bocca, stomaco, intestino) scompone il cibo per ricavarne energia."},
+    {q:"Le cellule del sangue che trasportano l'ossigeno sono:",a:"I globuli rossi",d:["I globuli bianchi","Le piastrine","I neuroni"],e:"I globuli rossi contengono emoglobina e portano l'ossigeno a tutto il corpo."},
+    {q:"L'unità di misura della forza è il:",a:"Newton",d:["Litro","Grammo","Secondo"],e:"La forza si misura in newton (N), dal nome dello scienziato Isaac Newton."},
+    {q:"La trasformazione di un liquido in gas si chiama:",a:"Evaporazione",d:["Fusione","Solidificazione","Condensazione"],e:"L'evaporazione è il passaggio da liquido a gas, come l'acqua che bolle e diventa vapore."},
+    {q:"Il sistema che controlla il corpo tramite il cervello è il sistema:",a:"Nervoso",d:["Muscolare","Scheletrico","Linfatico"],e:"Il sistema nervoso (cervello, midollo e nervi) comanda e coordina tutto il corpo."},
+    {q:"La fotosintesi produce ossigeno e:",a:"Zuccheri (glucosio)",d:["Sale","Plastica","Ferro"],e:"Con la fotosintesi le piante producono glucosio (zucchero) e liberano ossigeno."},
+    {q:"Una sostanza con pH inferiore a 7 è:",a:"Acida",d:["Basica","Neutra","Salata"],e:"Una sostanza con pH minore di 7 è acida (es. il limone); con pH maggiore di 7 è basica."}
+  ]
+};
+// ---- extra questions, so the feed keeps changing ----
+BANKS.oli_history.push(
+  {q:"I Comuni medievali italiani erano:",a:"città che si governavano da sole",d:["grandi fattorie","accampamenti militari","monasteri"],e:"I Comuni erano città che si autogovernavano, libere dal controllo di un singolo signore."},
+  {q:"Chi razziava le coste europee arrivando dal mare del Nord?",a:"I Vichinghi",d:["I Romani","Gli Aztechi","Gli Egizi"],e:"I Vichinghi, abili navigatori scandinavi, assalivano le coste europee dall'VIII secolo."},
+  {q:"Il capo della Chiesa cattolica è il:",a:"Papa",d:["Re","Imperatore","Sultano"],e:"Nel Medioevo il Papa, capo della Chiesa, aveva grande potere anche politico."},
+  {q:"La religione fondata dal profeta Maometto è l':",a:"Islam",d:["Buddismo","Induismo","Cristianesimo"],e:"L'Islam nacque nel VII secolo in Arabia e si diffuse rapidamente in Asia, Africa ed Europa."},
+  {q:"A cosa serviva soprattutto il castello?",a:"a difendersi dagli attacchi",d:["a coltivare il grano","a commerciare","a pregare"],e:"Il castello, con mura e torri, proteggeva il signore e gli abitanti durante gli assalti."},
+  {q:"Di quale popolo era re Carlo Magno?",a:"I Franchi",d:["I Romani","I Greci","Gli Egizi"],e:"Carlo Magno guidò i Franchi e costruì un grande impero in Europa occidentale."},
+  {q:"Le corporazioni medievali riunivano:",a:"artigiani dello stesso mestiere",d:["soldati","re","contadini"],e:"Le corporazioni univano artigiani e mercanti dello stesso mestiere per difendere i loro interessi."},
+  {q:"Marco Polo è famoso per il suo lungo viaggio fino in:",a:"Cina",d:["America","Australia","Egitto"],e:"Marco Polo, mercante veneziano, raggiunse la Cina e raccontò il viaggio ne 'Il Milione'."}
+);
+BANKS.blu_history.push(
+  {q:"Chi compì il primo giro del mondo via mare?",a:"La spedizione di Magellano",d:["Colombo","Marco Polo","Napoleone"],e:"La spedizione di Magellano (1519-1522) fu la prima a circumnavigare il globo."},
+  {q:"Tra '400 e '500 l'epoca dei grandi viaggi è detta età delle:",a:"scoperte geografiche",d:["crociate","piramidi","rivoluzioni"],e:"In quel periodo gli europei esplorarono nuove rotte e continenti: le scoperte geografiche."},
+  {q:"Chi era il re di Francia rovesciato dalla Rivoluzione del 1789?",a:"Luigi XVI",d:["Napoleone","Carlo Magno","Giulio Cesare"],e:"Luigi XVI era re assoluto; la Rivoluzione del 1789 ne abbatté il potere."},
+  {q:"Napoleone Bonaparte era un generale:",a:"francese",d:["inglese","tedesco","russo"],e:"Napoleone, generale francese, divenne imperatore e dominò gran parte d'Europa a inizio '800."},
+  {q:"La Dichiarazione dei Diritti dell'Uomo (1789) dice che gli uomini nascono:",a:"liberi e uguali",d:["sudditi del re","soldati","ricchi"],e:"La Dichiarazione del 1789 proclama che tutti gli uomini nascono liberi e uguali nei diritti."},
+  {q:"Le prime fabbriche della Rivoluzione Industriale erano mosse da:",a:"carbone e vapore",d:["elettricità","energia solare","vento"],e:"Le macchine bruciavano carbone per produrre il vapore che le faceva funzionare."},
+  {q:"Secondo Copernico, al centro del sistema c'è:",a:"il Sole",d:["la Terra","la Luna","Marte"],e:"Copernico propose la teoria eliocentrica: il Sole, non la Terra, è al centro."},
+  {q:"Dopo Lutero l'Europa cristiana si divise tra cattolici e:",a:"protestanti",d:["musulmani","ebrei","buddisti"],e:"La Riforma divise i cristiani d'Europa tra Chiesa cattolica e nuove Chiese protestanti."}
+);
+BANKS.oli_science.push(
+  {q:"Gli animali che si nutrono di carne si chiamano:",a:"Carnivori",d:["Erbivori","Vegetali","Minerali"],e:"I carnivori mangiano altri animali; per esempio il leone."},
+  {q:"A livello del mare l'acqua bolle a circa:",a:"100°C",d:["0°C","50°C","10°C"],e:"A 100°C l'acqua bolle e passa da liquido a vapore."},
+  {q:"A cosa servono le radici di una pianta?",a:"assorbire acqua e sali dal terreno",d:["produrre luce","far volare la pianta","produrre miele"],e:"Le radici fissano la pianta al suolo e assorbono acqua e sali minerali."},
+  {q:"Quante zampe hanno gli insetti?",a:"Sei",d:["Quattro","Otto","Due"],e:"Tutti gli insetti, come api e formiche, hanno sei zampe."},
+  {q:"La catena alimentare di solito comincia con:",a:"le piante",d:["i leoni","gli uomini","le rocce"],e:"Le piante sono i produttori: trasformano la luce in cibo e stanno alla base della catena."},
+  {q:"Dopo l'impollinazione, quale parte del fiore diventa frutto?",a:"il fiore stesso",d:["la radice","la foglia","il tronco"],e:"Il fiore, una volta impollinato, si trasforma in frutto che racchiude i semi."},
+  {q:"Il nostro pianeta è:",a:"la Terra",d:["Marte","Giove","la Luna"],e:"La Terra è il terzo pianeta dal Sole, l'unico conosciuto con la vita."},
+  {q:"Il sangue scorre nel corpo dentro:",a:"i vasi sanguigni",d:["i nervi","le ossa","i polmoni"],e:"Il sangue circola in arterie e vene, spinto dal cuore."}
+);
+BANKS.blu_science.push(
+  {q:"Il simbolo chimico dell'ossigeno è:",a:"O",d:["Os","Ox","On"],e:"Ogni elemento ha un simbolo: l'ossigeno è O, l'idrogeno è H."},
+  {q:"La velocità si calcola dividendo lo spazio per il:",a:"tempo",d:["peso","la massa","la forza"],e:"Velocità = spazio ÷ tempo: lo spazio percorso diviso il tempo impiegato."},
+  {q:"Qual è l'organo più esteso del corpo umano?",a:"la pelle",d:["il cuore","il cervello","il fegato"],e:"La pelle è l'organo più grande: ci protegge e regola la temperatura."},
+  {q:"Le ossa si muovono tra loro grazie alle:",a:"articolazioni",d:["vene","cellule","molle"],e:"Le articolazioni, come ginocchio e gomito, permettono il movimento delle ossa."},
+  {q:"Una calamita attira soprattutto il:",a:"ferro",d:["legno","vetro","plastica"],e:"I magneti attraggono i materiali ferromagnetici come il ferro."},
+  {q:"Il passaggio dell'acqua da vapore a liquido si chiama:",a:"condensazione",d:["evaporazione","fusione","ebollizione"],e:"La condensazione è il passaggio da gas a liquido, come la rugiada al mattino."},
+  {q:"Per la fotosintesi le piante usano luce, acqua e:",a:"anidride carbonica",d:["plastica","metallo","sale"],e:"La fotosintesi usa luce, acqua e anidride carbonica (CO₂) per produrre zuccheri e ossigeno."},
+  {q:"La parte più piccola di una sostanza che ne mantiene le proprietà è la:",a:"molecola",d:["cellula","caloria","galassia"],e:"La molecola è formata da due o più atomi legati insieme, es. H₂O per l'acqua."}
+);
+// Blu studies BOTH 1ª and 2ª media programmes (combined banks)
+BANKS.blu_hist_all = BANKS.oli_history.concat(BANKS.blu_history);
+BANKS.blu_sci_all  = BANKS.oli_science.concat(BANKS.blu_science);
+function bankQuestion(bankKey, r){
+  const item = pick(BANKS[bankKey], r);
+  return {type:'mcq', question:item.q, correct:item.a, options:item.d.concat([item.a]), spoken:item.q, explain:item.e||''};
+}
+
+/* ============================================================
+   PHYSICAL TRAINING ROUTINES
+   ============================================================ */
+const TRAINING = {
+  oli:{ title:"⚽ Allenamento calcio", intro:"Riscaldati sempre 5 minuti prima (corsa leggera + saltelli). Bevi acqua!",
+    items:[
+      {n:"🤹",h:"Palleggi (juggling)",p:"Tieni la palla in aria coi piedi. Obiettivo di oggi: battere il tuo record. Continua per 5 minuti.",t:"Tecnica"},
+      {n:"🎯",h:"Tiri al muro",p:"20 passaggi contro il muro col destro, 20 col sinistro. Controlla e ripassa subito.",t:"Passaggio"},
+      {n:"🏃",h:"Dribbling tra i coni",p:"Metti 5 oggetti in fila e slalom con la palla, 5 volte. Sempre più veloce.",t:"Agilità"},
+      {n:"⚡",h:"Scatti brevi",p:"6 scatti da 15 metri con recupero camminando. Per la velocità in campo.",t:"Velocità"},
+      {n:"💪",h:"Core (addominali)",p:"Plank 3×45 secondi + 10 sit-up su una gamba (5 per lato). Una schiena forte = tiri più potenti.",t:"Forza"},
+      {n:"🧘",h:"Stretching finale",p:"Allunga gambe e schiena per 5 minuti. Aiuta a non farti male.",t:"Defaticamento"}
+    ]},
+  blu:{ title:"🌸 Movimento & benessere", intro:"Niente gara, niente fretta: muoviti e divertiti. Bastano 20-30 minuti.",
+    items:[
+      {n:"🤸",h:"Riscaldamento allegro",p:"5 minuti di saltelli, braccia e gambe sciolte. Metti la tua canzone preferita!",t:"Inizio"},
+      {n:"💃",h:"Balla 1-2 canzoni",p:"Scegli 2 brani e balla liberamente. È cardio mascherato da festa.",t:"Cardio"},
+      {n:"🚲",h:"Bici o camminata",p:"Un giro in bici o una camminata veloce di 15-20 minuti, anche con la famiglia.",t:"All'aperto"},
+      {n:"🧘‍♀️",h:"Yoga / stretching dolce",p:"5 posizioni semplici tenute 20 secondi. Respira piano. Rilassa le spalle.",t:"Flessibilità"},
+      {n:"🪢",h:"Salto della corda",p:"3 serie da 30 saltelli (o quanti riesci). Pausa quando vuoi.",t:"Coordinazione"},
+      {n:"💧",h:"Acqua & relax",p:"Bevi acqua e finisci con 3 respiri profondi. Bravissima per aver finito!",t:"Fine"}
+    ]}
+};
+
+/* ============================================================
+   WRITING CURRICULUM (Scrittura) — full ladder media -> superiori
+   ============================================================ */
+const WRITING = {
+  levels:[
+    {id:'l1', name:'Livello 1 · Le basi', note:'Da qui si parte (1ª–2ª media)'},
+    {id:'l2', name:'Livello 2 · I tipi di testo', note:'Il cuore della scuola media'},
+    {id:'l3', name:'Livello 3 · Scrivere con stile', note:'Fine media → biennio superiori'},
+    {id:'l4', name:'Livello 4 · Superiori', note:'Per gli anni delle superiori'}
+  ],
+  lessons:[
+    {id:'w11', lvl:'l1', ico:'🧱', title:'La frase efficace',
+     obiettivo:"Scrivere frasi chiare. Regola: una frase = una sola idea.",
+     struttura:["1. CHI / CHE COSA (il soggetto)","2. FA / È (il verbo)","3. il resto: a chi, dove, quando, come","Regola d'oro: se una frase supera le due righe, spezzala in due."],
+     parole:[{g:"Verbi che danno forza (invece di 'essere' e 'avere')", w:["corre","afferra","osserva","decide","trasforma","scopre"]}],
+     esempio:"Debole: «C'era un cane che era nel giardino e aveva fame.»\nForte: «Un cane affamato aspettava nel giardino.»",
+     prova:{prompt:"Riscrivi rendendola più forte: «C'era una bambina che era felice perché aveva un regalo.»", starters:["Una bambina felice…"]},
+     checklist:["Ogni frase ha soggetto e verbo?","Una frase = una sola idea?","Nessuna frase troppo lunga?"]},
+
+    {id:'w12', lvl:'l1', ico:'🧩', title:'Il paragrafo',
+     obiettivo:"Costruire un paragrafo: una frase-guida + 2-3 frasi che la spiegano.",
+     struttura:["1. Frase-guida (l'idea principale)","2. Spiegazione o esempio","3. Un dettaglio in più","4. (a volte) una frase-ponte verso il paragrafo dopo"],
+     parole:[{g:"Per collegare le frasi dentro al paragrafo", w:["infatti","per esempio","inoltre","perciò","tuttavia"]}],
+     esempio:"«L'estate è la mia stagione preferita. Infatti le giornate sono lunghe e calde. Per esempio posso fare il bagno fino a sera. Per questo aspetto giugno tutto l'anno.»",
+     prova:{prompt:"Scrivi un paragrafo (3-4 frasi) sulla tua materia preferita, partendo da una frase-guida.", starters:["La mia materia preferita è…"]},
+     checklist:["C'è una frase-guida all'inizio?","Le frasi parlano della stessa idea?","Hai usato almeno un connettivo?"]},
+
+    {id:'w13', lvl:'l1', ico:'❓', title:'La punteggiatura',
+     obiettivo:"Usare i segni di punteggiatura per farti capire e dare ritmo al testo.",
+     struttura:["Punto . = stop, fine di un'idea","Virgola , = piccola pausa, separa gli elementi di un elenco","Due punti : = sto per spiegare o elencare","Punto e virgola ; = pausa media tra due idee collegate","? = domanda    ! = emozione (usalo poco)"],
+     parole:[{g:"Trucco", w:["Leggi ad alta voce: dove ti fermi a respirare, di solito va una virgola o un punto."]}],
+     esempio:"Senza virgola: «Andiamo a mangiare nonna.»\nCon virgola: «Andiamo a mangiare, nonna!» — la virgola salva la nonna 😄",
+     prova:{prompt:"Aggiungi la punteggiatura: «che bella giornata andiamo al parco poi prendiamo un gelato»", starters:[]},
+     checklist:["Ogni frase finisce con . ? o !","Hai messo la virgola negli elenchi?","Non troppi punti esclamativi?"]},
+
+    {id:'w14', lvl:'l1', ico:'🔗', title:'I connettivi',
+     obiettivo:"Collegare le idee con la parola giusta, così il testo 'scorre'.",
+     struttura:["Scegli il connettivo in base a cosa vuoi fare: aggiungere, spiegare una causa, mostrare una conseguenza, contrapporre, ordinare nel tempo o concludere."],
+     parole:[
+       {g:"Aggiungere", w:["inoltre","anche","oltre a ciò"]},
+       {g:"Causa (perché)", w:["poiché","dato che","a causa di"]},
+       {g:"Conseguenza (quindi)", w:["perciò","di conseguenza","così"]},
+       {g:"Contrasto (ma)", w:["tuttavia","invece","al contrario"]},
+       {g:"Tempo", w:["prima","poi","mentre","infine"]},
+       {g:"Concludere", w:["in conclusione","insomma","per questo"]}],
+     esempio:"«Volevo uscire; tuttavia pioveva, perciò sono rimasto a casa. Alla fine ho letto un libro.»",
+     prova:{prompt:"Unisci con i connettivi: «Ho studiato molto. Ho preso un bel voto.»", starters:["Ho studiato molto, perciò…"]},
+     checklist:["Hai variato i connettivi (non sempre 'e' o 'poi')?","Il connettivo esprime il legame giusto?"]},
+
+    {id:'w21', lvl:'l2', ico:'🖼️', title:'Il testo descrittivo',
+     obiettivo:"Descrivere una persona, un luogo o un oggetto facendolo 'vedere' al lettore.",
+     struttura:["1. Sguardo d'insieme (l'impressione generale)","2. Dettagli dal generale al particolare","3. Usa i 5 sensi: vista, udito, olfatto, tatto, gusto","4. Un dettaglio che lo rende unico","5. Come ti fa sentire"],
+     parole:[{g:"Aggettivi per i 5 sensi", w:["luminoso","silenzioso","profumato","ruvido","dolce","gelido","accogliente"]}],
+     esempio:"«La cucina della nonna era piccola e calda. Profumava di pane appena sfornato. Sul tavolo di legno ruvido c'era una tovaglia a quadri rossi. Mi sentivo al sicuro.»",
+     prova:{prompt:"Descrivi la tua stanza usando almeno 3 sensi diversi.", starters:["La mia stanza è…","Appena entri senti…"]},
+     checklist:["Hai usato almeno 3 sensi?","Vai dal generale al particolare?","Si capisce come ti fa sentire?"]},
+
+    {id:'w22', lvl:'l2', ico:'📖', title:'Il racconto (testo narrativo)',
+     obiettivo:"Scrivere una storia con inizio, sviluppo e finale, che tenga incollato il lettore.",
+     struttura:["1. SITUAZIONE INIZIALE: chi, dove, quando","2. ROTTURA: succede qualcosa che cambia tutto (il problema)","3. SVILUPPO: cosa fanno i personaggi, gli ostacoli","4. CULMINE: il momento di massima tensione","5. CONCLUSIONE: come si risolve e cosa resta"],
+     parole:[
+       {g:"Per scandire il tempo", w:["all'improvviso","poco dopo","nel frattempo","alla fine"]},
+       {g:"Verbi d'azione", w:["balzò","sussurrò","fuggì","afferrò","esitò"]}],
+     esempio:"«Era una sera d'estate (situazione). All'improvviso la luce si spense (rottura). Marco cercò una candela al buio, col cuore in gola (sviluppo). Quando aprì il cassetto, una mano fredda toccò la sua… (culmine). Era solo il gatto: Marco rise, sollevato (conclusione).»",
+     prova:{prompt:"Scrivi una mini-storia (5 frasi) usando i 5 momenti. Parti da una scena tranquilla che poi si rompe.", starters:["Era un giorno come tanti, finché…"]},
+     checklist:["Ci sono tutti e 5 i momenti?","C'è un problema da risolvere?","Il finale chiude davvero la storia?"]},
+
+    {id:'w23', lvl:'l2', ico:'📊', title:'Il testo espositivo',
+     obiettivo:"Spiegare un argomento in modo chiaro e ordinato (come in una relazione o ricerca).",
+     struttura:["1. Introduzione: di cosa parli e perché","2. Corpo: un'idea per paragrafo, dalla più importante","3. Aggiungi dati, esempi, definizioni","4. Conclusione: riepilogo di ciò che hai spiegato"],
+     parole:[{g:"Per spiegare", w:["consiste in","si tratta di","ciò significa che","in altre parole","ad esempio"]}],
+     esempio:"«Il riciclo è la trasformazione dei rifiuti in nuovi materiali. Si divide in carta, plastica, vetro e organico. Ad esempio, dal vetro usato si producono nuove bottiglie. Così si riducono i rifiuti.»",
+     prova:{prompt:"Spiega in un paragrafo come funziona qualcosa che conosci bene (uno sport, un gioco, una ricetta).", starters:["… consiste in…"]},
+     checklist:["L'introduzione dice di cosa parli?","Un'idea per ogni paragrafo?","Hai aggiunto esempi o dati?"]},
+
+    {id:'w24', lvl:'l2', ico:'✂️', title:'Il riassunto',
+     obiettivo:"Ridurre un testo mantenendo solo le informazioni importanti, con parole tue.",
+     struttura:["1. Leggi tutto e trova l'idea principale di ogni parte","2. Cancella esempi, ripetizioni e dettagli","3. Riscrivi con parole TUE, in terza persona","4. Resta coerente col tempo verbale scelto","5. Niente opinioni personali"],
+     parole:[{g:"Per collegare i fatti", w:["all'inizio","successivamente","infine","perché","quindi"]}],
+     esempio:"Da un lungo racconto di viaggio → «Un ragazzo parte per un viaggio, supera molte difficoltà e infine torna a casa cambiato.»",
+     prova:{prompt:"Prendi una favola che conosci e riassumila in 3 frasi.", starters:["All'inizio…","Poi…","Infine…"]},
+     checklist:["Hai usato parole tue?","Hai tolto i dettagli inutili?","Niente opinioni personali?","È più corto dell'originale?"]},
+
+    {id:'w31', lvl:'l3', ico:'🚪', title:"L'introduzione (i 4 attacchi)",
+     obiettivo:"Aprire un testo in modo che il lettore voglia continuare a leggere.",
+     struttura:["L'introduzione fa 3 cose: 1) cattura l'attenzione, 2) presenta l'argomento, 3) anticipa cosa dirai.","Per la prima frase scegli UNO dei 4 attacchi qui sotto."],
+     parole:[
+       {g:"1 · La domanda", w:["Vi siete mai chiesti perché…?"]},
+       {g:"2 · La scena", w:["Sono le sette del mattino e la città dorme ancora…"]},
+       {g:"3 · Il dato / la citazione", w:["Ogni anno milioni di…","«La lettura è un viaggio», diceva…"]},
+       {g:"4 · L'affermazione forte", w:["Lo sport non è solo gioco: è la palestra della vita."]}],
+     esempio:"«Vi siete mai chiesti perché ci affascinano le stelle? (attacco) In questo testo parlerò del cielo notturno e di cosa possiamo osservare a occhio nudo. (argomento + anticipazione)»",
+     prova:{prompt:"Scrivi 2 introduzioni per il tema 'Le vacanze estive': una con la domanda, una con la scena.", starters:["Vi siete mai chiesti…","Sono le otto del mattino e…"]},
+     checklist:["La prima frase cattura l'attenzione?","Si capisce l'argomento?","Hai anticipato cosa dirai?"]},
+
+    {id:'w32', lvl:'l3', ico:'🎬', title:'La conclusione',
+     obiettivo:"Chiudere un testo lasciando un'impressione, senza ripetere tutto.",
+     struttura:["1. Riprendi l'idea principale con parole nuove","2. Aggiungi un pensiero finale: una riflessione, un augurio o una domanda aperta","3. NON introdurre argomenti nuovi","Trucco: l'introduzione apre un cerchio, la conclusione lo chiude."],
+     parole:[{g:"Per concludere", w:["in conclusione","per tutti questi motivi","alla fine","ecco perché"]}],
+     esempio:"«Per tutti questi motivi il cielo notturno mi affascina. La prossima volta che alzerete lo sguardo, ricordate: ogni stella è un piccolo viaggio.»",
+     prova:{prompt:"Scrivi una conclusione per 'Le vacanze estive' che richiami la domanda iniziale.", starters:["In conclusione…"]},
+     checklist:["Hai ripreso l'idea principale?","C'è un pensiero finale?","Niente argomenti nuovi?"]},
+
+    {id:'w33', lvl:'l3', ico:'📝', title:'Il tema (dall\'inizio alla fine)',
+     obiettivo:"Scrivere un tema completo e ordinato, dalla traccia alla rilettura.",
+     struttura:["1. Leggi la traccia e sottolinea le parole chiave","2. SCALETTA: butta giù 3-4 idee PRIMA di scrivere","3. INTRODUZIONE (vedi lezione apposita)","4. SVILUPPO: un paragrafo per ogni idea della scaletta","5. CONCLUSIONE","6. Rileggi e correggi"],
+     parole:[{g:"Per ordinare i paragrafi", w:["prima di tutto","in secondo luogo","inoltre","infine"]}],
+     esempio:"Traccia: «Racconta un'esperienza che ti ha insegnato qualcosa.» Scaletta: 1) cos'è successo 2) come mi sono sentito 3) cosa ho imparato → poi sviluppo ogni punto in un paragrafo.",
+     prova:{prompt:"Fai SOLO la scaletta (3 punti) per: «Descrivi il tuo amico del cuore e perché è importante».", starters:["1)…  2)…  3)…"]},
+     checklist:["Hai fatto la scaletta prima di scrivere?","Ci sono introduzione, sviluppo e conclusione?","Ogni paragrafo = un'idea?","Hai riletto per gli errori?"]},
+
+    {id:'w34', lvl:'l3', ico:'✉️', title:'Lettera, email e diario',
+     obiettivo:"Scrivere testi della vita reale con il tono giusto.",
+     struttura:["LETTERA/EMAIL: 1) saluto iniziale 2) motivo 3) corpo 4) saluto finale 5) firma","DIARIO: data + 'Caro diario' + racconto in prima persona + emozioni","Tono: formale (a un prof) ≠ informale (a un amico)"],
+     parole:[
+       {g:"Aperture formali", w:["Gentile Professore,","Spett.le …,"]},
+       {g:"Aperture informali", w:["Ciao Luca!","Cara nonna,"]},
+       {g:"Chiusure", w:["Cordiali saluti","Un abbraccio","A presto"]}],
+     esempio:"«Gentile Professoressa, le scrivo per chiederle un chiarimento sul compito di storia. … La ringrazio. Cordiali saluti, Blu.»",
+     prova:{prompt:"Scrivi una breve email al tuo prof per giustificare un'assenza (4-5 righe).", starters:["Gentile Professore/ssa,"]},
+     checklist:["Saluto iniziale e finale?","Tono adatto al destinatario?","Hai firmato?"]},
+
+    {id:'w41', lvl:'l4', ico:'⚖️', title:'Il testo argomentativo / saggio breve',
+     obiettivo:"Sostenere una tua tesi con argomenti e convincere il lettore.",
+     struttura:["1. TESI: la tua posizione, chiara, in una frase","2. ARGOMENTI: 2-3 motivi a favore, ognuno con un esempio o un dato","3. ANTITESI: cosa direbbe chi non è d'accordo…","4. CONFUTAZIONE: …e perché la tua tesi resta più forte","5. CONCLUSIONE: ribadisci la tesi rafforzata"],
+     parole:[
+       {g:"Per argomentare", w:["a sostegno di ciò","un dato lo conferma","è dimostrato che"]},
+       {g:"Per l'antitesi", w:["c'è chi sostiene che","si potrebbe obiettare che"]},
+       {g:"Per confutare", w:["tuttavia","in realtà","questo non tiene conto di"]}],
+     esempio:"«I compiti estivi sono utili (tesi): mantengono allenata la mente (argomento). C'è chi dice che tolgono il riposo (antitesi); tuttavia bastano pochi minuti al giorno (confutazione). Per questo andrebbero mantenuti (conclusione).»",
+     prova:{prompt:"Scrivi solo TESI + 2 argomenti su: «I telefoni andrebbero vietati a scuola?»", starters:["Secondo me…","Il primo motivo è…"]},
+     checklist:["La tesi è chiara?","Almeno 2 argomenti con esempi?","Hai considerato l'opinione opposta?"]},
+
+    {id:'w42', lvl:'l4', ico:'🔎', title:'L\'analisi del testo (poesia e prosa)',
+     obiettivo:"Capire e commentare una poesia o un brano, non solo riassumerlo.",
+     struttura:["1. COMPRENSIONE: di cosa parla (breve riassunto)","2. ANALISI della forma — poesia: versi, strofe, rime, figure retoriche; prosa: narratore, tempo, personaggi","3. INTERPRETAZIONE: il messaggio dell'autore","4. COMMENTO personale motivato"],
+     parole:[{g:"Figure retoriche", w:["similitudine (come…)","metafora","personificazione","ripetizione","climax"]}],
+     esempio:"«La poesia parla della pioggia (comprensione). L'autore usa la similitudine 'come lacrime' (analisi) per esprimere tristezza (interpretazione). Mi colpisce perché… (commento).»",
+     prova:{prompt:"Prendi 2 versi di una canzone che ti piace: di cosa parlano? C'è una figura retorica?", starters:["Questi versi parlano di…","C'è una metafora:…"]},
+     checklist:["Hai distinto comprensione, analisi e interpretazione?","Hai trovato almeno una figura retorica?","C'è un commento personale motivato?"]},
+
+    {id:'w43', lvl:'l4', ico:'🌍', title:'Il tema di attualità',
+     obiettivo:"Discutere un tema di attualità in modo informato ed equilibrato.",
+     struttura:["1. Presenta il problema (cos'è, perché conta oggi)","2. Esponi i fatti e i diversi punti di vista","3. Aggiungi dati o esempi reali","4. La tua opinione, motivata e rispettosa","5. Conclusione con una proposta o riflessione"],
+     parole:[{g:"Per restare equilibrato", w:["da un lato… dall'altro","secondo alcuni… secondo altri","è importante considerare"]}],
+     esempio:"«L'inquinamento è un problema urgente. Da un lato l'industria crea lavoro, dall'altro danneggia l'aria. Secondo me servono energie pulite, perché…»",
+     prova:{prompt:"Scegli un tema (ambiente, sport, tecnologia) e scrivi: il problema + un punto di vista a favore + uno contro.", starters:["Oggi si parla molto di…"]},
+     checklist:["Hai mostrato più punti di vista?","Hai usato fatti o esempi?","La tua opinione è motivata e rispettosa?"]},
+
+    {id:'w44', lvl:'l4', ico:'🎤', title:'Rispondere alle domande (con eloquenza)',
+     obiettivo:"Rispondere a una domanda di verifica o interrogazione in modo completo e sicuro.",
+     struttura:["Metodo R.R.M.: 1) RIPRENDI la domanda nella risposta, 2) RISPONDI in modo diretto, 3) MOTIVA con un esempio o un perché.","All'orale: parla lento, fai esempi, collega ad altre cose che sai.","Non rispondere mai con una sola parola o solo 'sì'."],
+     parole:[
+       {g:"Per iniziare la risposta", w:["La domanda chiede…","Per rispondere…"]},
+       {g:"Per motivare", w:["questo perché","un esempio è","ciò significa che"]},
+       {g:"Per concludere", w:["quindi","in sintesi","ecco perché"]}],
+     esempio:"Domanda: «Perché cadde l'Impero Romano?» → «L'Impero Romano cadde (riprendi) per più cause (rispondi): invasioni barbariche e crisi interna. Per esempio nel 476 un re barbaro depose l'imperatore (motiva). Ecco perché segna la fine di un'epoca.»",
+     prova:{prompt:"Rispondi col metodo R.R.M.: «Qual è la tua materia preferita e perché?»", starters:["La mia materia preferita è… perché…","Un esempio è…"]},
+     checklist:["Hai ripreso la domanda?","Hai risposto in modo diretto?","Hai dato un esempio o un perché?","Più di una sola parola?"]},
+
+    {id:'w45', lvl:'l4', ico:'🎓', title:'Esame di Stato: tipologie A, B, C',
+     obiettivo:"Conoscere le 3 tracce d'esame e come affrontarle con metodo.",
+     struttura:["TIPOLOGIA A — Analisi del testo: comprendi, analizza la forma, interpreta (lezione 🔎).","TIPOLOGIA B — Testo argomentativo: leggi il documento, trova la tesi, scrivi la tua argomentazione (lezione ⚖️).","TIPOLOGIA C — Tema di attualità: rifletti su un tema con titolo e paragrafi (lezione 🌍).","Strategia comune: ~10 min di scaletta, poi scrivi, poi ~10 min di rilettura."],
+     parole:[{g:"Gestione del tempo", w:["scaletta","brutta copia (se c'è tempo)","rilettura finale"]}],
+     esempio:"All'esame leggi tutte e tre le tracce, scegli quella su cui hai più idee e fai subito la scaletta. Meglio un tema ordinato e corretto che lungo e confuso.",
+     prova:{prompt:"Immagina la Tipologia C: scrivi solo il TITOLO e una scaletta in 3 punti su un tema che ti sta a cuore.", starters:["Titolo:…","1)… 2)… 3)…"]},
+     checklist:["Sai cosa chiede ogni tipologia?","Sai che si parte sempre dalla scaletta?","Hai previsto la rilettura finale?"]}
+  ]
+};
+
+const TOOLKIT = [
+  {ico:'🔗', title:'Connettivi (parole che legano)', groups:[
+    {g:"Aggiungere", w:["inoltre","anche","pure","oltre a ciò","così come","non solo… ma anche"]},
+    {g:"Causa", w:["perché","poiché","dato che","siccome","a causa di","grazie a"]},
+    {g:"Conseguenza", w:["quindi","perciò","dunque","di conseguenza","così","ecco perché"]},
+    {g:"Contrasto", w:["ma","però","tuttavia","invece","al contrario","eppure","nonostante"]},
+    {g:"Tempo / ordine", w:["prima","poi","intanto","mentre","subito dopo","successivamente","infine"]},
+    {g:"Spiegare / precisare", w:["cioè","ovvero","in altre parole","vale a dire","per esempio"]},
+    {g:"Concludere", w:["in conclusione","insomma","in sintesi","per questo motivo","alla fine"]}
+  ]},
+  {ico:'💪', title:'Verbi forti (più precisi di fare/dire/andare)', groups:[
+    {g:"invece di 'dire'", w:["affermare","spiegare","raccontare","sostenere","sussurrare","gridare","esclamare","ribattere","aggiungere"]},
+    {g:"invece di 'fare'", w:["creare","realizzare","compiere","costruire","preparare","provocare","svolgere"]},
+    {g:"invece di 'andare'", w:["dirigersi","recarsi","avviarsi","spostarsi","precipitarsi","incamminarsi"]},
+    {g:"invece di 'guardare'", w:["osservare","fissare","contemplare","scrutare","intravedere","sbirciare"]},
+    {g:"invece di 'pensare'", w:["riflettere","immaginare","credere","ritenere","considerare","domandarsi"]},
+    {g:"per camminare/muoversi", w:["corse","saltò","scivolò","balzò","si arrampicò","sfrecciò"]}
+  ]},
+  {ico:'🎨', title:'Sinonimi per le parole più abusate', groups:[
+    {g:"bello", w:["splendido","magnifico","stupendo","affascinante","meraviglioso","incantevole","grazioso"]},
+    {g:"brutto", w:["sgradevole","orribile","spiacevole","tetro","orrendo","disgustoso"]},
+    {g:"buono (persona)", w:["gentile","generoso","premuroso","affettuoso","disponibile"]},
+    {g:"grande", w:["enorme","immenso","gigantesco","vasto","spazioso"]},
+    {g:"piccolo", w:["minuscolo","piccolino","ridotto","stretto","minuto"]},
+    {g:"cosa", w:["aspetto","elemento","fatto","situazione","oggetto","dettaglio"]},
+    {g:"molto", w:["estremamente","davvero","parecchio","notevolmente","tantissimo"]},
+    {g:"importante", w:["fondamentale","essenziale","decisivo","cruciale","prezioso"]}
+  ]},
+  {ico:'🧑', title:'Aggettivi per descrivere le PERSONE (aspetto)', groups:[
+    {g:"Statura e corporatura", w:["alto","basso","snello","robusto","esile","atletico","minuto"]},
+    {g:"Viso e sguardo", w:["sorridente","dolce","vivace","luminoso","serio","espressivo"]},
+    {g:"Capelli", w:["ricci","lisci","ondulati","castani","biondi","corti","lunghi","spettinati"]},
+    {g:"Occhi", w:["vivaci","profondi","scuri","chiari","grandi","attenti","curiosi"]},
+    {g:"Stile / modo di vestire", w:["elegante","sportivo","ordinato","colorato","semplice","trasandato"]}
+  ]},
+  {ico:'😊', title:'Aggettivi per il CARATTERE', groups:[
+    {g:"Qualità positive", w:["gentile","generoso","allegro","coraggioso","paziente","curioso","leale","simpatico","educato","creativo"]},
+    {g:"Modi di essere", w:["timido","riservato","vivace","testardo","sognatore","preciso","distratto","chiacchierone"]},
+    {g:"Difetti (con delicatezza)", w:["impaziente","disordinato","permaloso","egoista","pigro"]}
+  ]},
+  {ico:'🏞️', title:'Aggettivi per LUOGHI e OGGETTI', groups:[
+    {g:"Spazi", w:["accogliente","spazioso","stretto","luminoso","buio","ordinato","affollato","silenzioso"]},
+    {g:"Tempo / stile", w:["antico","moderno","nuovo","vecchio","abbandonato","curato"]},
+    {g:"Atmosfera", w:["tranquillo","caotico","misterioso","allegro","caldo","gelido","profumato"]},
+    {g:"Materiali e colori", w:["di legno","di pietra","metallico","colorato","scuro","brillante","ruvido","liscio"]}
+  ]},
+  {ico:'👀', title:'Parole dei 5 SENSI (per le descrizioni)', groups:[
+    {g:"👁️ Vista", w:["luminoso","scintillante","cupo","trasparente","sfumato","appariscente"]},
+    {g:"👂 Udito", w:["fragoroso","ovattato","squillante","sommesso","stridente","melodioso"]},
+    {g:"👃 Olfatto", w:["profumato","acre","dolciastro","fresco","pungente","muffito"]},
+    {g:"✋ Tatto", w:["ruvido","liscio","morbido","appiccicoso","gelido","caldo","setoso"]},
+    {g:"👅 Gusto", w:["dolce","amaro","aspro","salato","speziato","delicato"]}
+  ]},
+  {ico:'💗', title:'Emozioni e stati d\'animo', groups:[
+    {g:"Felicità", w:["felice","contento","gioioso","entusiasta","sereno","emozionato","orgoglioso"]},
+    {g:"Tristezza", w:["triste","deluso","malinconico","amareggiato","abbattuto","nostalgico"]},
+    {g:"Paura / tensione", w:["spaventato","nervoso","preoccupato","teso","insicuro","sorpreso"]},
+    {g:"Rabbia / fastidio", w:["arrabbiato","infastidito","irritato","frustrato","indignato"]}
+  ]},
+  {ico:'🚪', title:'Frasi-attacco (per iniziare)', groups:[
+    {g:"Domanda", w:["Vi siete mai chiesti perché…?"]},
+    {g:"Scena", w:["È una mattina d'estate e…"]},
+    {g:"Dato", w:["Ogni anno milioni di persone…"]},
+    {g:"Affermazione", w:["Una cosa è certa:…"]}
+  ]},
+  {ico:'🎬', title:'Frasi-chiusura (per finire)', groups:[
+    {g:"Riepilogo", w:["In conclusione…","Per tutti questi motivi…"]},
+    {g:"Riflessione", w:["Alla fine, ciò che conta è…","Forse dovremmo ricordare che…"]},
+    {g:"Apertura finale", w:["E voi, cosa ne pensate?"]}
+  ]},
+  {ico:'🎤', title:'Come rispondere a una domanda (R.R.M.)', groups:[
+    {g:"1 · Riprendi", w:["La domanda chiede… / Per rispondere a…"]},
+    {g:"2 · Rispondi", w:["…in modo diretto, senza giri di parole"]},
+    {g:"3 · Motiva", w:["questo perché…","un esempio è…","ciò significa che…"]}
+  ]}
+];
+
+/* ============================================================
+   ACTIVITY DEFINITIONS per profile
+   ============================================================ */
+function activities(p){
+  if(p==='blu'){
+    return [
+      {id:'mult', ico:'✖️', name:'Tabelline del giorno', desc:'Almeno 4 moltiplicazioni semplici. Con voce.', kind:'quiz', count:6, gen:genMultiplication, minDone:4, readDefault:true},
+      {id:'math', ico:'🔢', name:'Matematica', desc:'Divisioni, percentuali e numeri.', kind:'quiz', count:4, gen:genBluMixed},
+      {id:'steps',ico:'🧩', name:'Problemi passo-passo', desc:'Ordina i passaggi e risolvi. Più lo fai, più diventa automatico!', kind:'steps'},
+      {id:'hist', ico:'🏛️', name:'Storia', desc:'1ª e 2ª media: Medioevo → età moderna.', kind:'quiz', count:5, bank:'blu_hist_all'},
+      {id:'sci',  ico:'🔬', name:'Scienze', desc:'1ª e 2ª media: viventi, corpo, chimica, forze.', kind:'quiz', count:5, bank:'blu_sci_all'},
+      {id:'write',ico:'✍️', name:'Scrittura', desc:'Lezioni: come scrivere bene.', kind:'write'}
+    ];
+  }
+  return [
+    {id:'math', ico:'🔢', name:'Matematica', desc:'Operazioni, percentuali, geometria.', kind:'quiz', count:6, gen:genLeoMath, minDone:5},
+    {id:'steps',ico:'🧩', name:'Problemi passo-passo', desc:'Ordina i passaggi e risolvi, passo dopo passo.', kind:'steps'},
+    {id:'hist', ico:'🏰', name:'Storia', desc:'Il Medioevo.', kind:'quiz', count:5, bank:'oli_history'},
+    {id:'sci',  ico:'🔬', name:'Scienze', desc:'Viventi, corpo, materia.', kind:'quiz', count:5, bank:'oli_science'},
+    {id:'pe',   ico:'⚽', name:'Allenamento', desc:'Calcio: tecnica, velocità, forza.', kind:'pe'},
+    {id:'write',ico:'✍️', name:'Scrittura', desc:'Lezioni: come scrivere bene.', kind:'write'}
+  ];
+}
+
+/* ============================================================
+   VIEW ROUTING
+   ============================================================ */
+function show(id){ ['view-home','view-dash','view-act'].forEach(v=>document.getElementById(v).classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); window.scrollTo(0,0); }
+function goHome(){ current=null; show('view-home'); }
+function backToDash(){ window.speechSynthesis && window.speechSynthesis.cancel(); openDash(); }
+
+function chooseProfile(p){
+  current=p;
+  document.body.classList.remove('blu','oli'); document.body.classList.add(p);
+  const o=pdata(p);
+  document.body.classList.toggle('dys', !!o.dys);
+  openDash();
+  // Pull from cloud — if the other device wrote newer data, refresh the
+  // dashboard so the kid sees their up-to-date progress.
+  pullFromCloud(p).then(updated => {
+    if (updated && current===p) {
+      // Cloud was newer — re-apply dys flag in case it changed and re-render.
+      const refreshed = pdata(p);
+      document.body.classList.toggle('dys', !!refreshed.dys);
+      openDash();
+    }
+  });
+}
+
+function streakUpdate(p){
+  const o=pdata(p);
+  // count a "completed day" if any activity done; update streak on first activity of the day
+  if(o.lastDay!==todayKey && o.days[todayKey] && Object.keys(o.days[todayKey]).length){
+    const y=new Date(TODAY); y.setDate(y.getDate()-1);
+    const yKey=y.toISOString().slice(0,10);
+    o.streak = (o.lastDay===yKey) ? (o.streak+1) : 1;
+    o.lastDay=todayKey;
+    setPdata(p,o);
+  }
+  return o.streak;
+}
+
+/* ---- 100-level progression: +1 (=1%) per activity, once per day ---- */
+function awardLevel(actId){
+  const a=activities(current).find(x=>x.id===actId); if(!a) return 0;
+  const rec=todayRec(actId);
+  const o=pdata(current); o.levels=o.levels||{}; o.leveledDays=o.leveledDays||{};
+  if(isActivityDone(a,rec) && (o.levels[actId]||0)<100 && o.leveledDays[actId]!==todayKey){
+    o.levels[actId]=(o.levels[actId]||0)+1; o.leveledDays[actId]=todayKey; setPdata(current,o);
+  }
+  return o.levels[actId]||0;
+}
+function levelOf(actId){ const o=pdata(current); return (o.levels&&o.levels[actId])||0; }
+
+function openDash(){
+  const p=current; const o=today(p);
+  setPdata(p,o);
+  show('view-dash');
+  const name = p==='blu'?'Blu':'Oli';
+  document.getElementById('dashTitle').textContent = 'Ciao '+name+'!';
+  document.getElementById('streakNum').textContent = o.streak||0;
+  const actsAll=activities(p);
+  let lvlSum=0; actsAll.forEach(a=>lvlSum+=((o.levels&&o.levels[a.id])||0));
+  const overall=Math.round(lvlSum/actsAll.length);
+  document.getElementById('dateLine').innerHTML =
+    ITDAYS[TODAY.getDay()]+' '+TODAY.getDate()+' '+ITMON[TODAY.getMonth()]
+    +' &nbsp;·&nbsp; 📈 Progresso totale <b>'+overall+'%</b>';
+  const msgs = p==='blu'
+    ? ['Andiamo al tuo ritmo. Ce la fai benissimo! 💜','Ogni giorno un piccolo passo. Sei in gamba!','Pronta? Iniziamo con calma.']
+    : ['Forza campione, in campo! ⚽','Allenamento del cervello e del corpo!','Pronto a segnare oggi?'];
+  document.getElementById('welcomeMsg').textContent = pick(msgs, mulberry32(seedFromString(todayKey+p)));
+  // dys toggle state
+  document.getElementById('dysToggle').classList.toggle('on', !!pdata(p).dys);
+
+  // tiles
+  const tilesEl=document.getElementById('tiles'); tilesEl.innerHTML='';
+  activities(p).forEach(a=>{
+    const dayrec = o.days[todayKey][a.id] || {};
+    const done = isActivityDone(a, dayrec);
+    let sub = a.desc;
+    if(a.id==='mult'){ const c=dayrec.correct||0; sub = `Fatte oggi: ${c} / ${a.minDone}+ ✖️`; }
+    const el=document.createElement('div');
+    el.className='tile'+(done?' done':'');
+    el.onclick=()=>openActivity(a.id);
+    const lvl=(o.levels&&o.levels[a.id])||0;
+    el.innerHTML=`<span class="done-badge">✓ fatto</span>
+      <div class="ico">${a.ico}</div><h3>${a.name}</h3><p>${sub}</p>
+      <div class="lvl-row"><div class="lvl-bar"><i style="width:${lvl}%"></i></div><span class="lvl-num">${lvl}% · Liv. ${lvl}/100</span></div>`;
+    tilesEl.appendChild(el);
+  });
+}
+function isActivityDone(a, rec){
+  if(a.kind==='pe') return !!rec.done;
+  if(a.minDone) return (rec.correct||0) >= a.minDone;
+  return !!rec.done;
+}
+
+/* ============================================================
+   ACTIVITY RUNNER
+   ============================================================ */
+let session=null;
+function openActivity(id){
+  const p=current;
+  const a=activities(p).find(x=>x.id===id);
+  document.getElementById('actTitle').textContent=a.name;
+  if(a.kind==='pe'){ renderPE(p); return; }
+  if(a.kind==='write'){ renderWriteHome(); return; }
+  if(a.kind==='steps'){ startSteps(); return; }
+  // build fresh questions EVERY time (different on each attempt), scaled to the current level
+  const r=mulberry32((Math.random()*1e9)|0);
+  const d=Math.min(100, levelOf(id)+1);
+  const qs=[];
+  if(a.gen){
+    const seen=new Set(); let guard=0;
+    while(qs.length<a.count && guard<a.count*60){
+      guard++;
+      const q=a.gen(r,d);
+      if(seen.has(q.question)) continue;          // no repeats in the same round
+      seen.add(q.question); q.options=shuffle(q.options,r); qs.push(q);
+    }
+    while(qs.length<a.count){ const q=a.gen(r,d); q.options=shuffle(q.options,r); qs.push(q); } // tiny-pool fallback
+  } else {
+    // history / science: pick distinct questions, no repeats within the round
+    const items=shuffle(BANKS[a.bank], r).slice(0, Math.min(a.count, BANKS[a.bank].length));
+    items.forEach(item=>qs.push({type:'mcq', question:item.q, correct:item.a,
+      options:shuffle(item.d.concat([item.a]), r), spoken:item.q, explain:item.e||''}));
+  }
+  session={a, qs, idx:0, correct:0, answered:false, readOn: a.readDefault || pdata(p).dys};
+  show('view-act');
+  renderQ();
+}
+
+function renderQ(){
+  const {a,qs,idx}=session;
+  const q=qs[idx];
+  const body=document.getElementById('actBody');
+  const showSpeak = ('speechSynthesis' in window);
+  let mult = (a.id==='mult');
+  body.innerHTML=`
+    <div class="card readzone">
+      <div class="row" style="margin-bottom:6px">
+        <span class="muted">Domanda ${idx+1} di ${qs.length}</span>
+        <span class="spacer"></span>
+        ${showSpeak?`<button class="speak" id="speakBtn">🔊 Ascolta</button>`:''}
+      </div>
+      <div class="progress"><i style="width:${(idx/qs.length)*100}%"></i></div>
+      ${mult?`<div class="counter-dots" id="dots"></div>`:''}
+      <div class="q-text">${q.question}</div>
+      <div class="opts" id="opts"></div>
+      <div class="feedback" id="fb"></div>
+      <div class="row" style="margin-top:14px">
+        <span class="spacer"></span>
+        <button class="btn hidden" id="nextBtn">Avanti →</button>
+      </div>
+    </div>`;
+  const optsEl=document.getElementById('opts');
+  q.options.forEach(opt=>{
+    const b=document.createElement('button');
+    b.className='opt'; b.textContent=opt;
+    b.onclick=()=>answer(b, opt, q);
+    optsEl.appendChild(b);
+  });
+  if(showSpeak) document.getElementById('speakBtn').onclick=()=>speak(q.spoken||q.question);
+  if(mult) drawDots();
+  session.answered=false;
+  // auto read-aloud for Blu / when readOn
+  if(session.readOn && showSpeak){ setTimeout(()=>speak(q.spoken||q.question), 250); }
+}
+
+function drawDots(){
+  const p=current; const rec=todayRec('mult'); const c=rec.correct||0;
+  const need=session.a.minDone;
+  const el=document.getElementById('dots'); if(!el) return;
+  el.innerHTML='';
+  for(let i=0;i<need;i++){ const s=document.createElement('span'); if(i<c)s.className='on'; el.appendChild(s); }
+}
+
+function todayRec(id){
+  const o=today(current); o.days[todayKey][id]=o.days[todayKey][id]||{}; setPdata(current,o);
+  return o.days[todayKey][id];
+}
+
+const PRAISE_BLU=["Bravissima! 💜","Perfetto, continua così!","Esatto! Sei un genio!","Sì! Che bello!","Giusto! Ottimo lavoro!"];
+const PRAISE_LEO=["Goool! ⚽","Esatto, grande!","Bravo campione!","Perfetto!","Centro! Continua così!"];
+const RETRY_BLU=["Quasi! Riprova con calma, ci sei quasi. 💪","Non fa niente, riprova: ce la fai!","Tranquilla, sbagliando si impara. Riprova!"];
+const RETRY_LEO=["Quasi! Riprova.","Non c'è problema, riprova!","Ci sei quasi, riprova!"];
+
+function answer(btn, opt, q){
+  if(session.answered) return;
+  const correct = (opt===q.correct);
+  const fb=document.getElementById('fb');
+  const r=mulberry32(seedFromString(todayKey+current+session.idx+opt));
+  if(correct){
+    session.answered=true;
+    btn.classList.add('correct');
+    document.querySelectorAll('.opt').forEach(b=>b.disabled=true);
+    fb.className='feedback ok';
+    fb.textContent = pick(current==='blu'?PRAISE_BLU:PRAISE_LEO, r);
+    session.correct++;
+    // record progress
+    const rec=todayRec(session.a.id);
+    rec.correct=(rec.correct||0)+1;
+    setRec(session.a.id, rec);
+    if(session.a.id==='mult') drawDots();
+    awardLevel(session.a.id);
+    document.getElementById('nextBtn').classList.remove('hidden');
+    document.getElementById('nextBtn').onclick=nextQ;
+    if(session.readOn) speak(current==='blu'?'Bravissima!':'Esatto!');
+  } else if(session.a.bank){
+    // History / Science: reveal the correct answer + short explanation
+    session.answered=true;
+    btn.classList.add('wrong');
+    document.querySelectorAll('.opt').forEach(b=>{
+      b.disabled=true;
+      if(b.textContent===q.correct) b.classList.add('correct');
+    });
+    fb.className='feedback no';
+    fb.innerHTML = `Quasi! La risposta giusta è <b>${q.correct}</b>.`
+      + (q.explain?`<div style="margin-top:8px; font-weight:500; color:var(--ink)">💡 ${q.explain}</div>`:'');
+    document.getElementById('nextBtn').classList.remove('hidden');
+    document.getElementById('nextBtn').onclick=nextQ;
+    if(session.readOn) speak('La risposta giusta è ' + q.correct + '. ' + (q.explain||''));
+  } else {
+    // Math: DSA-friendly, no penalty, allow retry
+    btn.classList.add('wrong'); btn.disabled=true;
+    fb.className='feedback no';
+    fb.textContent = pick(current==='blu'?RETRY_BLU:RETRY_LEO, r);
+  }
+}
+function setRec(id, rec){ const o=today(current); o.days[todayKey][id]=rec; setPdata(current,o); }
+
+function nextQ(){
+  window.speechSynthesis && window.speechSynthesis.cancel();
+  session.idx++;
+  if(session.idx>=session.qs.length){ finishQuiz(); return; }
+  renderQ();
+}
+
+function finishQuiz(){
+  const a=session.a;
+  const rec=todayRec(a.id); rec.done=true; setRec(a.id, rec);
+  streakUpdate(current);
+  const lvl=awardLevel(a.id);
+  const body=document.getElementById('actBody');
+  const score=session.correct, total=session.qs.length;
+  let stars = score>=total?'⭐⭐⭐' : score>=Math.ceil(total*0.6)?'⭐⭐':'⭐';
+  const msg = current==='blu'
+    ? "Hai finito! Sono fierissimo di te. 💜"
+    : "Allenamento del cervello completato! 💪";
+  body.innerHTML=`<div class="card center readzone">
+      <div class="celebrate">🎉</div>
+      <div class="star-row">${stars}</div>
+      <h2>${msg}</h2>
+      <p class="muted">Risposte giuste: ${score} su ${total}</p>
+      <p class="streak" style="font-size:1.05rem">📈 ${a.name}: Livello ${lvl}/100 (${lvl}%)</p>
+      <div class="row" style="justify-content:center; margin-top:14px">
+        <button class="btn ghost" onclick="openActivity('${a.id}')">↻ Ancora</button>
+        <button class="btn" onclick="backToDash()">Torna al menu</button>
+      </div>
+    </div>`;
+  if(session.readOn) speak(current==='blu'?'Hai finito! Sono fierissimo di te.':'Completato! Grande campione!');
+}
+
+/* ============================================================
+   STEP-BY-STEP PROBLEMS — ordering + next-step
+   ============================================================ */
+let stepS=null;
+function startSteps(){
+  const r=mulberry32((Math.random()*1e9)|0);   // fresh each time, for variety/reps
+  const d=Math.min(100, levelOf('steps')+1);
+  const N=4, probs=[]; const seen=new Set(); let guard=0;
+  while(probs.length<N && guard<N*60){ guard++; const q=genStepsProblem(current,r,d); if(seen.has(q.prompt))continue; seen.add(q.prompt); probs.push(q); }
+  while(probs.length<N) probs.push(genStepsProblem(current,r,d));
+  stepS={probs, idx:0, r};
+  show('view-act');
+  renderStep();
+}
+function stepHead(){
+  const sp=('speechSynthesis' in window);
+  return `<div class="row" style="margin-bottom:6px">
+      <span class="muted">Problema ${stepS.idx+1} di ${stepS.probs.length}</span>
+      <span class="spacer"></span>
+      ${sp?`<button class="speak" id="spk">🔊 Ascolta</button>`:''}
+    </div>
+    <div class="progress"><i style="width:${(stepS.idx/stepS.probs.length)*100}%"></i></div>`;
+}
+function bindSpeak(prob){
+  const b=document.getElementById('spk'); if(b) b.onclick=()=>speak(prob.prompt);
+}
+function renderStep(){
+  const prob=stepS.probs[stepS.idx];
+  stepS.mode = (stepS.idx % 2 === 0) ? 'order' : 'next';
+  if(stepS.mode==='order'){ stepS.pool=shuffle(prob.steps.map((s,i)=>i), stepS.r); stepS.ans=[]; drawOrder(prob); }
+  else { stepS.k=0; drawNext(prob); }
+  if(current==='blu') setTimeout(()=>speak(prob.prompt), 300); // auto read-aloud for Blu
+}
+
+/* ----- Mode 1: metti in ordine ----- */
+function drawOrder(prob){
+  const ready = stepS.ans.length===prob.steps.length;
+  const ansBtns = stepS.ans.length
+    ? stepS.ans.map((i,pos)=>`<button class="opt step-ans" data-pos="${pos}" style="border-color:var(--accent);background:var(--accent-soft)"><b>${pos+1}.</b> ${prob.steps[i]}</button>`).join('')
+    : `<p class="muted" style="margin:6px 0">Tocca i passaggi nell'ordine giusto…</p>`;
+  const poolBtns = stepS.pool.map(i=>`<button class="opt step-pool" data-i="${i}">${prob.steps[i]}</button>`).join('')
+    || `<p class="muted" style="margin:6px 0">(tutti scelti)</p>`;
+  document.getElementById('actBody').innerHTML=`<div class="card readzone">
+    ${stepHead()}
+    <div class="q-text" style="font-size:1.12rem">🧩 Metti i passaggi in ordine</div>
+    <p style="font-size:1.15rem"><b>${prob.prompt}</b></p>
+    <div class="muted" style="font-size:.82rem;font-weight:700;margin-top:6px">La tua soluzione:</div>
+    <div class="opts" style="margin:6px 0">${ansBtns}</div>
+    <div class="muted" style="font-size:.82rem;font-weight:700;margin-top:8px">Passaggi da sistemare:</div>
+    <div class="opts" style="margin:6px 0">${poolBtns}</div>
+    <div class="feedback" id="fb"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn ghost small" onclick="renderStep()">↺ Ricomincia</button>
+      <span class="spacer"></span>
+      <button class="btn" id="checkBtn" ${ready?'':'disabled style="opacity:.45"'}>Controlla ✓</button>
+    </div></div>`;
+  bindSpeak(prob);
+  document.querySelectorAll('.step-pool').forEach(b=>b.onclick=()=>{ const i=+b.dataset.i; stepS.ans.push(i); stepS.pool=stepS.pool.filter(x=>x!==i); drawOrder(prob); });
+  document.querySelectorAll('.step-ans').forEach(b=>b.onclick=()=>{ const pos=+b.dataset.pos; stepS.pool.push(stepS.ans[pos]); stepS.ans.splice(pos,1); drawOrder(prob); });
+  if(ready) document.getElementById('checkBtn').onclick=()=>checkOrder(prob);
+}
+function checkOrder(prob){
+  const fb=document.getElementById('fb');
+  const correct = stepS.ans.every((i,pos)=>i===pos);
+  if(correct){
+    document.querySelectorAll('.step-ans').forEach(b=>{b.style.borderColor='var(--good)';b.style.background='var(--good-bg)';});
+    fb.className='feedback ok'; fb.textContent=pick(current==='blu'?PRAISE_BLU:PRAISE_LEO, stepS.r);
+    document.getElementById('checkBtn').outerHTML='<button class="btn" onclick="nextStep()">Avanti →</button>';
+    if(current==='blu') speak('Bravissima!');
+  } else {
+    fb.className='feedback no';
+    fb.textContent = current==='blu' ? 'Quasi! Controlla l\'ordine con calma e riprova. 💪' : 'Quasi! Controlla l\'ordine e riprova.';
+  }
+}
+
+/* ----- Mode 2: qual è il prossimo passo ----- */
+function drawNext(prob){
+  const k=stepS.k;
+  const done = prob.steps.slice(0,k).map((s,i)=>`<button class="opt" disabled style="border-color:var(--good);background:var(--good-bg);color:#0f7a39"><b>${i+1}.</b> ${s}</button>`).join('')
+    || `<p class="muted" style="margin:4px 0">(ancora niente — scegli il primo passo!)</p>`;
+  let cands = shuffle(prob.steps.slice(k+1).concat(prob.decoys), stepS.r).slice(0,2);
+  const opts = shuffle([prob.steps[k], ...cands], stepS.r);
+  document.getElementById('actBody').innerHTML=`<div class="card readzone">
+    ${stepHead()}
+    <div class="q-text" style="font-size:1.12rem">🪜 Qual è il prossimo passo?</div>
+    <p style="font-size:1.15rem"><b>${prob.prompt}</b></p>
+    <div class="muted" style="font-size:.82rem;font-weight:700">Passaggi giusti finora:</div>
+    <div class="opts" style="margin:6px 0">${done}</div>
+    <div class="muted" style="font-size:.82rem;font-weight:700;margin-top:8px">Scegli il passo numero ${k+1}:</div>
+    <div class="opts" style="margin:6px 0">${opts.map(o=>`<button class="opt nstep">${o}</button>`).join('')}</div>
+    <div class="feedback" id="fb"></div>
+  </div>`;
+  bindSpeak(prob);
+  document.querySelectorAll('.nstep').forEach(b=>b.onclick=()=>answerNext(b, b.textContent, prob));
+}
+function answerNext(btn, val, prob){
+  const fb=document.getElementById('fb');
+  if(val===prob.steps[stepS.k]){
+    btn.classList.add('correct');
+    document.querySelectorAll('.nstep').forEach(x=>x.disabled=true);
+    fb.className='feedback ok'; fb.textContent=pick(current==='blu'?PRAISE_BLU:PRAISE_LEO, stepS.r);
+    stepS.k++;
+    const last = stepS.k>=prob.steps.length;
+    if(current==='blu') speak(last?'Hai risolto!':'Esatto!');
+    if(last){
+      fb.insertAdjacentHTML('afterend','<div class="row" style="margin-top:12px"><span class="spacer"></span><button class="btn" onclick="nextStep()">Avanti →</button></div>');
+    } else {
+      setTimeout(()=>drawNext(prob), 750);
+    }
+  } else {
+    btn.classList.add('wrong'); btn.disabled=true;
+    fb.className='feedback no'; fb.textContent=pick(current==='blu'?RETRY_BLU:RETRY_LEO, stepS.r);
+  }
+}
+function nextStep(){
+  window.speechSynthesis && window.speechSynthesis.cancel();
+  stepS.idx++;
+  if(stepS.idx>=stepS.probs.length){ finishSteps(); return; }
+  renderStep();
+}
+function finishSteps(){
+  const rec=todayRec('steps'); rec.done=true; setRec('steps',rec);
+  streakUpdate(current);
+  const lvl=awardLevel('steps');
+  document.getElementById('actBody').innerHTML=`<div class="card center readzone">
+    <div class="celebrate">🎉</div><div class="star-row">⭐⭐⭐</div>
+    <h2>${current==='blu'?'Hai risolto tutti i problemi! Bravissima 💜':'Problemi risolti! Grande 💪'}</h2>
+    <p class="streak" style="font-size:1.05rem">📈 Problemi passo-passo: Livello ${lvl}/100 (${lvl}%)</p>
+    <p class="muted">Più ne fai, più diventa automatico. 🧠</p>
+    <div class="row" style="justify-content:center;margin-top:14px">
+      <button class="btn ghost" onclick="startSteps()">↻ Altri problemi</button>
+      <button class="btn" onclick="backToDash()">Torna al menu</button>
+    </div></div>`;
+  if(current==='blu') speak('Hai risolto tutti i problemi! Bravissima.');
+}
+
+/* ---- Physical education view ---- */
+function renderPE(p){
+  const t=TRAINING[p];
+  const rec=todayRec('pe');
+  const body=document.getElementById('actBody');
+  let rows=t.items.map(it=>`
+    <div class="ex">
+      <div class="n">${it.n}</div>
+      <div><h4>${it.h}<span class="tag">${it.t}</span></h4><p>${it.p}</p></div>
+    </div>`).join('');
+  body.innerHTML=`
+    <div class="card readzone">
+      <h2 style="margin-top:0">${t.title}</h2>
+      <p class="muted">${t.intro}</p>
+      ${rows}
+    </div>
+    <div class="card center">
+      <p style="margin:0 0 12px">${rec.done?'✅ Già fatto oggi — bravo/a!':'Hai completato la routine di oggi?'}</p>
+      <button class="btn" onclick="markPE()">${rec.done?'Fatto di nuovo ✓':'Sì, fatto! 🎉'}</button>
+    </div>`;
+  show('view-act');
+}
+function markPE(){
+  const rec=todayRec('pe'); rec.done=true; setRec('pe',rec);
+  streakUpdate(current);
+  const body=document.getElementById('actBody');
+  body.innerHTML=`<div class="card center readzone">
+      <div class="celebrate">🏅</div>
+      <h2>${current==='blu'?'Che brava! Movimento fatto. 🌸':'Grande! Allenamento completato. ⚽'}</h2>
+      <button class="btn" onclick="backToDash()" style="margin-top:10px">Torna al menu</button>
+    </div>`;
+}
+
+/* ============================================================
+   WRITING MODULE RENDERING
+   ============================================================ */
+function wChip(t){ return `<span style="display:inline-block;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:5px 11px;margin:4px 4px 0 0;font-size:.92rem;font-weight:600">${t}</span>`; }
+function getDraft(id){ const o=pdata(current); return (o.writing&&o.writing[id])||''; }
+function saveDraft(id,val){
+  const o=pdata(current); o.writing=o.writing||{}; o.writing[id]=val; setPdata(current,o);
+  if(val && val.trim().length>0){
+    const rec=todayRec('write');
+    if(!rec.done){ rec.done=true; setRec('write',rec); streakUpdate(current); awardLevel('write'); }
+  }
+}
+
+function renderWriteHome(){
+  document.getElementById('actTitle').textContent='✍️ Scrittura';
+  let html=`<div class="card readzone">
+    <h2 style="margin-top:0">Impara a scrivere bene 📚</h2>
+    <p class="muted">Una scala di lezioni, dalle basi fino alle superiori. Ogni lezione ha: la <b>struttura</b>, le <b>parole utili</b>, un <b>esempio</b> e un <b>esercizio</b> da provare.</p>
+    <button class="btn" onclick="renderToolkit()">🧰 Cassetta degli attrezzi</button>
+  </div>`;
+  WRITING.levels.forEach(lv=>{
+    const ls=WRITING.lessons.filter(x=>x.lvl===lv.id);
+    html+=`<div class="card"><h3 style="margin:0 0 2px">${lv.name}</h3>
+      <p class="muted" style="margin:0 0 12px">${lv.note}</p><div class="tiles">`;
+    ls.forEach(le=>{
+      html+=`<div class="tile" onclick="renderWriteLesson('${le.id}')">
+        <div class="ico">${le.ico}</div><h3 style="font-size:1.02rem">${le.title}</h3>
+        <p>${le.obiettivo}</p></div>`;
+    });
+    html+=`</div></div>`;
+  });
+  document.getElementById('actBody').innerHTML=html;
+  show('view-act');
+}
+
+function renderWriteLesson(id){
+  const le=WRITING.lessons.find(x=>x.id===id);
+  document.getElementById('actTitle').textContent=le.title;
+  const sp=('speechSynthesis' in window);
+  const parole = le.parole.map(grp=>
+    `<div style="margin-bottom:12px"><div class="muted" style="font-size:.85rem;font-weight:700;margin-bottom:2px">${grp.g}</div>${grp.w.map(wChip).join('')}</div>`).join('');
+  const struttura = `<ul style="line-height:1.8;margin:6px 0 0;padding-left:20px">${le.struttura.map(s=>`<li>${s}</li>`).join('')}</ul>`;
+  const starters = le.prova.starters.length
+    ? `<div style="margin:6px 0 10px">${le.prova.starters.map(s=>`<button type="button" class="starter speak" style="cursor:pointer">✏️ ${s}</button>`).join(' ')}</div>` : '';
+  const checklist = le.checklist.map(c=>`<div class="chk" style="padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer">☐ ${c}</div>`).join('');
+
+  document.getElementById('actBody').innerHTML=`
+    <div class="card"><div class="row">
+      <button class="btn ghost small" onclick="renderWriteHome()">← Lezioni</button>
+      <span class="spacer"></span>
+      ${sp?`<button class="speak" id="readLesson">🔊 Ascolta</button>`:''}
+    </div></div>
+
+    <div class="card readzone">
+      <h3 style="margin-top:0">🎯 Obiettivo</h3><p>${le.obiettivo}</p>
+      <h3>🏗️ La struttura</h3>${struttura}
+    </div>
+
+    <div class="card readzone">
+      <h3 style="margin-top:0">🧰 Le parole utili</h3>${parole}
+    </div>
+
+    <div class="card readzone">
+      <h3 style="margin-top:0">📌 Esempio</h3>
+      <p style="white-space:pre-wrap;background:var(--accent-soft);padding:14px;border-radius:12px;margin:0">${le.esempio}</p>
+      ${sp?`<button class="speak" id="readEx" style="margin-top:10px">🔊 Ascolta l'esempio</button>`:''}
+    </div>
+
+    <div class="card readzone">
+      <h3 style="margin-top:0">✍️ Tocca a te</h3>
+      <p><b>${le.prova.prompt}</b></p>
+      ${starters}
+      <textarea id="draft" rows="6" style="width:100%;border:2px solid var(--line);border-radius:12px;padding:12px;font-size:1.05rem;font-family:inherit" placeholder="Scrivi qui…"></textarea>
+      <div class="muted" id="savedNote" style="font-size:.82rem;margin-top:6px">Si salva da solo sul dispositivo.</div>
+    </div>
+
+    <div class="card readzone">
+      <h3 style="margin-top:0">✅ Checklist finale</h3>
+      <p class="muted" style="margin-top:0">Tocca ogni punto quando l'hai controllato.</p>
+      ${checklist}
+    </div>
+
+    <div class="card center">
+      <button class="btn" onclick="renderWriteHome()">Torna alle lezioni</button>
+    </div>`;
+
+  if(sp){
+    const rl=document.getElementById('readLesson'); if(rl) rl.onclick=()=>speak('Obiettivo. '+le.obiettivo+' La struttura. '+le.struttura.join('. '));
+    const re=document.getElementById('readEx'); if(re) re.onclick=()=>speak(le.esempio);
+  }
+  const ta=document.getElementById('draft');
+  ta.value=getDraft(le.id);
+  ta.addEventListener('input',()=>{ saveDraft(le.id, ta.value); document.getElementById('savedNote').textContent='Salvato ✓'; });
+  document.querySelectorAll('.starter').forEach(b=>b.addEventListener('click',()=>{
+    const txt=b.textContent.replace('✏️ ','');
+    ta.value=(ta.value?ta.value+'\n':'')+txt+' ';
+    ta.focus(); saveDraft(le.id, ta.value);
+  }));
+  document.querySelectorAll('.chk').forEach(el=>el.addEventListener('click',()=>{
+    const on=el.dataset.on==='1'; el.dataset.on=on?'0':'1';
+    el.textContent=(on?'☐ ':'✅ ')+el.textContent.slice(2);
+    el.style.color=on?'':'var(--good)';
+  }));
+  show('view-act');
+}
+
+function renderToolkit(){
+  document.getElementById('actTitle').textContent='🧰 Cassetta degli attrezzi';
+  let html=`<div class="card"><button class="btn ghost small" onclick="renderWriteHome()">← Lezioni</button></div>`;
+  TOOLKIT.forEach(sec=>{
+    html+=`<div class="card readzone"><h3 style="margin-top:0">${sec.ico} ${sec.title}</h3>`;
+    sec.groups.forEach(g=>{ html+=`<div style="margin-bottom:12px"><div class="muted" style="font-weight:700;font-size:.85rem;margin-bottom:2px">${g.g}</div>${g.w.map(wChip).join('')}</div>`; });
+    html+=`</div>`;
+  });
+  document.getElementById('actBody').innerHTML=html;
+  show('view-act');
+}
+
+/* ---- dyslexia toggle ---- */
+function toggleDys(){
+  const o=pdata(current); o.dys=!o.dys; setPdata(current,o);
+  document.body.classList.toggle('dys', o.dys);
+  document.getElementById('dysToggle').classList.toggle('on', o.dys);
+}
+
+/* ---- oli name (optional personalization) ---- */
+(function(){ const d=store(); if(d.oliName){ /* reserved */ } })();
+</script>
+</body>
+</html>

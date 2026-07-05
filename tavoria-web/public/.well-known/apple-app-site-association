@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["TEAMID.com.k3ysolutions.gigi"],
+        "components": [
+          {
+            "/": "/v/*",
+            "comment": "Open Tavoria native app for venue QR scans"
+          }
+        ]
+      }
+    ]
+  }
+}

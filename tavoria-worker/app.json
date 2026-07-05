@@ -1,0 +1,79 @@
+{
+  "expo": {
+    "name": "Tavoria",
+    "slug": "gigi-worker",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "tavoria",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.k3ysolutions.gigi",
+      "associatedDomains": ["applinks:tavoriapp.com"]
+    },
+    "android": {
+      "package": "com.k3ysolutions.gigi",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "tavoriapp.com",
+              "pathPrefix": "/v/"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Tavoria needs your photos so you can pick a profile picture.",
+          "cameraPermission": "Tavoria needs the camera to take your profile photo and record your introduction video.",
+          "microphonePermission": "Tavoria needs the microphone to record audio for your introduction video."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Tavoria needs the camera to scan QR codes at venues and let you record your introduction video."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#F0531C"
+        }
+      ],
+      "expo-video",
+      "expo-localization"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3cc69740-a614-4041-9b25-51cc35f675b5"
+      }
+    },
+    "owner": "gregsalv",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/3cc69740-a614-4041-9b25-51cc35f675b5"
+    }
+  }
+}
