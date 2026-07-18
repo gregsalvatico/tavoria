@@ -50,6 +50,7 @@ const FAQS: Faq[] = [
 export default function Home() {
   const [audience, setAudience] = useState<Audience>("venue");
   const [openFaq, setOpenFaq] = useState<number>(0);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const isVenue = audience === "venue";
 
@@ -87,6 +88,47 @@ export default function Home() {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-10px); }
         }
+        .landing-nav-links { display: flex; gap: 26px; align-items: center; }
+        .landing-nav-mobile-trigger, .landing-nav-mobile-menu { display: none; }
+        @media (max-width: 720px) {
+          .landing-nav-inner { padding: 12px 20px !important; }
+          .landing-nav-links, .landing-nav-app { display: none !important; }
+          .landing-nav-mobile-trigger {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border: 1px solid rgba(14,26,36,.14);
+            border-radius: 999px;
+            background: rgba(247,244,238,.72);
+            color: #0E1A24;
+            cursor: pointer;
+          }
+          .landing-nav-mobile-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 10px 20px 18px;
+            border-top: 1px solid rgba(14,26,36,.08);
+            background: rgba(247,244,238,.96);
+          }
+          .landing-nav-mobile-menu a {
+            padding: 12px 4px;
+            color: #46505A;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+          }
+          .landing-nav-mobile-menu .mobile-nav-app {
+            margin-top: 6px;
+            padding: 13px 18px;
+            border-radius: 999px;
+            background: #0E1A24;
+            color: #F7F4EE;
+            text-align: center;
+          }
+        }
       `}</style>
 
       {/* NAV */}
@@ -102,6 +144,7 @@ export default function Home() {
         }}
       >
         <div
+          className="landing-nav-inner"
           style={{
             maxWidth: 1180,
             margin: "0 auto",
@@ -125,7 +168,7 @@ export default function Home() {
             Tavoria<span style={{ color: "#F0531C" }}>.</span>
           </a>
           <div style={{ display: "flex", alignItems: "center", gap: 30 }}>
-            <div style={{ display: "flex", gap: 26, alignItems: "center" }}>
+            <div className="landing-nav-links">
               <a href="#venues" style={{ fontSize: 15, color: "#46505A", textDecoration: "none", fontWeight: 500 }}>
                 Per i locali
               </a>
@@ -140,6 +183,7 @@ export default function Home() {
               </a>
             </div>
             <a
+              className="landing-nav-app"
               href="https://app.tavoriapp.com"
               style={{
                 display: "inline-flex",
@@ -156,8 +200,30 @@ export default function Home() {
             >
               Apri l&apos;app <span style={{ fontSize: 13 }}>↗</span>
             </a>
+            <button
+              type="button"
+              className="landing-nav-mobile-trigger"
+              aria-label={mobileNavOpen ? "Chiudi menu" : "Apri menu"}
+              aria-expanded={mobileNavOpen}
+              onClick={() => setMobileNavOpen((open) => !open)}
+            >
+              <span style={{ fontSize: 22, lineHeight: 1 }}>
+                {mobileNavOpen ? "×" : "☰"}
+              </span>
+            </button>
           </div>
         </div>
+        {mobileNavOpen && (
+          <div className="landing-nav-mobile-menu">
+            <a href="#venues" onClick={() => setMobileNavOpen(false)}>Per i locali</a>
+            <a href="#staff" onClick={() => setMobileNavOpen(false)}>Per lo staff</a>
+            <a href="#pricing" onClick={() => setMobileNavOpen(false)}>Prezzi</a>
+            <a href="#faq" onClick={() => setMobileNavOpen(false)}>FAQ</a>
+            <a className="mobile-nav-app" href="https://app.tavoriapp.com">
+              Apri l&apos;app <span style={{ fontSize: 13 }}>â†—</span>
+            </a>
+          </div>
+        )}
       </nav>
 
       {/* HERO */}

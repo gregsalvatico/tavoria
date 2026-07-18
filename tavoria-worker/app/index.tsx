@@ -451,7 +451,7 @@ export default function Welcome() {
           {!signedIn && (
             <>
               {/* Browse tiles — square, same size as worker/venue tiles below */}
-              <View style={styles.splitRow}>
+              <View style={[styles.splitRow, styles.firstSplitRow]}>
                 <Link href="/discover" asChild>
                   <Pressable style={styles.tileWorker}>
                     <Text style={styles.splitEmoji}>📍</Text>
@@ -953,7 +953,8 @@ const styles = StyleSheet.create({
   },
   secondaryBtnText: { color: "#0E1A24", fontSize: 14, fontWeight: "600" },
 
-  splitRow: { flexDirection: "row", gap: 10, marginTop: 14 },
+  splitRow: { flexDirection: "row", gap: 10 },
+  firstSplitRow: { marginTop: 14 },
   splitBtn: {
     flex: 1,
     paddingVertical: 14,

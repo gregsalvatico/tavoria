@@ -5,6 +5,7 @@ import { Link, useRouter } from "expo-router";
 import { patchVenueProfile, getVenueProfile } from "../lib/venueProfile";
 import { insertVenue, recordVenueTermsAcceptance, uploadVenuePhoto } from "../lib/db";
 import { registerPush } from "../lib/pushNotifications";
+import { sendVenueWelcomeEmail } from "../lib/email";
 import { t } from "../lib/i18n";
 import {
   generateUsername,
@@ -43,17 +44,17 @@ export default function VenueInfo() {
   const [busy, setBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Stable username suffix while user keeps typing the same venue name
+  // Stable username suffix while user keeps typing the venue name
   const [usernameSuffix, setUsernameSuffix] = useState<string>("");
   useEffect(() => {
-    if (name.trim().length >= 2 && !usernameSuffix) {
+    if (name.trim().length >= 1 && !usernameSuffix) {
       const u = generateUsername(name);
       setUsernameSuffix(u.split("-").pop() || "");
     }
   }, [name, usernameSuffix]);
 
   const username = useMemo(() => {
-    if (name.trim().length < 2 || !usernameSuffix) return "";
+    if (name.trim().length < 1 || !usernameSuffix) return "";
     const slug = nameToSlug(name) || "venue";
     return `${slug}-${usernameSuffix}`;
   }, [name, usernameSuffix]);
@@ -108,7 +109,7 @@ export default function VenueInfo() {
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const canContinue =
-    name.trim().length >= 2 &&
+    name.trim().length >= 1 &&
     emailValid &&
     pinValid &&
     pinsMatch &&
@@ -160,6 +161,13 @@ export default function VenueInfo() {
       try {
         await AsyncStorage.setItem(LAST_USERNAME_KEY, finalUsername);
       } catch {}
+      // Email is best-effort: account creation must still succeed if the
+      // provider is temporarily unavailable or not configured yet.
+      sendVenueWelcomeEmail({
+        email: trimmedEmail,
+        username: finalUsername,
+        venueName: trimmedName,
+      }).catch((e) => console.warn("[venue-info] welcome email failed:", e));
       // 4. If a photo was picked, upload it now that we have the venue id
       if (photoUri) {
         try {
@@ -375,6 +383,9 @@ export default function VenueInfo() {
           </Pressable>
 
           <View style={{ height: 12 }} />
+          <Text style={styles.requirements}>
+            Enter a venue name, valid email, matching 4-digit PINs, and accept the Terms to continue.
+          </Text>
         </ScrollView>
 
         {errorMsg && (
@@ -548,6 +559,13 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
   },
   ctaDisabled: { backgroundColor: "rgba(11,15,26,0.15)" },
+  requirements: {
+    color: "#6B7280",
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: "center",
+    marginTop: 10,
+  },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
 
   termsRow: {
