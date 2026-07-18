@@ -50,25 +50,25 @@ export default function Signup() {
   const [busy, setBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Username is regenerated each time the name's first letters change.
+  // Username is regenerated once a name has been entered.
   // Keeping the suffix stable while the user keeps typing the same name.
   const [usernameSuffix, setUsernameSuffix] = useState<string>("");
   useEffect(() => {
-    if (firstName.trim().length >= 2 && !usernameSuffix) {
+    if (firstName.trim().length >= 1 && !usernameSuffix) {
       const u = generateUsername(firstName);
       setUsernameSuffix(u.split("-").pop() || "");
     }
   }, [firstName, usernameSuffix]);
 
   const username = useMemo(() => {
-    if (firstName.trim().length < 2 || !usernameSuffix) return "";
+    if (firstName.trim().length < 1 || !usernameSuffix) return "";
     return `${generateUsernameFromCachedSuffix(firstName, usernameSuffix)}`;
   }, [firstName, usernameSuffix]);
 
   const pinValid = /^\d{4}$/.test(pin);
   const pinsMatch = pinValid && pin === pin2;
   const canContinue =
-    firstName.trim().length >= 2 &&
+    firstName.trim().length >= 1 &&
     pinValid &&
     pinsMatch &&
     username.length > 0 &&
@@ -340,6 +340,9 @@ export default function Signup() {
           </Pressable>
 
           <Text style={styles.legal}>{t("auth_pin.sign_up_legal")}</Text>
+          <Text style={styles.requirements}>
+            Enter a name, matching 4-digit PINs, and accept the Terms to continue.
+          </Text>
         </ScrollView>
 
         <View style={styles.bottom}>
@@ -501,6 +504,13 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
   },
   ctaDisabled: { backgroundColor: "rgba(11,15,26,0.15)" },
+  requirements: {
+    color: "#6B7280",
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: "center",
+    marginTop: 10,
+  },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
 
   termsRow: {
