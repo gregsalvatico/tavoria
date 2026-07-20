@@ -61,4 +61,4 @@ jobs:
         working-directory: tavoria-worker
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: npx --yes supabase functions deploy send-welcome-email --project-ref hmiijnurcvbomfcftnmd
+        run: npx --yes supabase functions deploy send-welcome-email --project-ref hmiijnurcvbomfcftnmd --use-api
