@@ -4,7 +4,7 @@
 import { supabase } from "./supabase";
 
 // Make sure we have an auth session (anonymous for venues today,
-// real email-OTP for workers via signup.tsx).
+// real worker email collected during signup.tsx).
 export async function ensureSession() {
   const {
     data: { session },
