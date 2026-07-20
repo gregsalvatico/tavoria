@@ -817,6 +817,7 @@ function Wheel({
   const lastIdxRef = useRef<number>(initialIndex);
   // Guard so programmatic scrollTo doesn't fire another settle handler
   const programmaticRef = useRef<boolean>(false);
+  const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     requestAnimationFrame(() => {
@@ -828,14 +829,19 @@ function Wheel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+  useEffect(() => {
+    return () => {
+      if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+    };
+  }, []);
+
+  const settle = (y: number) => {
     // Ignore the event that our own scrollTo({animated:true}) generates
     if (programmaticRef.current) {
       programmaticRef.current = false;
       return;
     }
 
-    const y = e.nativeEvent.contentOffset.y;
     const idx = Math.round(y / ITEM_HEIGHT);
     const clamped = Math.max(0, Math.min(items.length - 1, idx));
 
@@ -853,6 +859,20 @@ function Wheel({
     }
   };
 
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    // React Native Web does not consistently emit onMomentumScrollEnd. A
+    // short debounce lets the wheel settle on web, while also working during
+    // regular drag scrolling on native platforms.
+    if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+    const y = e.nativeEvent.contentOffset.y;
+    settleTimerRef.current = setTimeout(() => settle(y), 100);
+  };
+
+  const handleEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+    settle(e.nativeEvent.contentOffset.y);
+  };
+
   const padding = ((VISIBLE_ITEMS - 1) / 2) * ITEM_HEIGHT;
 
   return (
@@ -863,6 +883,9 @@ function Wheel({
         snapToInterval={ITEM_HEIGHT}
         decelerationRate="fast"
         contentContainerStyle={{ paddingVertical: padding }}
+        scrollEventThrottle={16}
+        onScroll={handleScroll}
+        onScrollEndDrag={handleEnd}
         onMomentumScrollEnd={handleEnd}
       >
         {items.map((n, i) => (
