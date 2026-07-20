@@ -26,6 +26,7 @@ import {
 import { patchWorkerProfile } from "../lib/workerProfile";
 import { recordWorkerTermsAcceptance, upsertWorker } from "../lib/db";
 import { registerPush } from "../lib/pushNotifications";
+import { sendWelcomeEmail } from "../lib/email";
 
 const LAST_USERNAME_KEY = "gigi.last_username";
 
@@ -44,6 +45,7 @@ export default function Signup() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [pin, setPin] = useState("");
   const [pin2, setPin2] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -67,8 +69,10 @@ export default function Signup() {
 
   const pinValid = /^\d{4}$/.test(pin);
   const pinsMatch = pinValid && pin === pin2;
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const canContinue =
     firstName.trim().length >= 1 &&
+    emailValid &&
     pinValid &&
     pinsMatch &&
     username.length > 0 &&
@@ -99,6 +103,7 @@ export default function Signup() {
           first_name: firstName.trim(),
           last_name: lastName.trim() || undefined,
           phone: phone.trim() || undefined,
+          email: email.trim(),
           phone_visible: true,
         });
         patchWorkerProfile({ workerId });
@@ -111,6 +116,14 @@ export default function Signup() {
       } catch (e) {
         console.warn("[signup] terms acceptance write failed", e);
       }
+      // Workers sign in with a generated username, so send that username to
+      // the real email address collected during signup.
+      sendWelcomeEmail({
+        kind: "worker",
+        email: email.trim(),
+        username: finalUsername,
+        displayName: firstName.trim(),
+      }).catch((e) => console.warn("[signup] welcome email failed:", e));
       // Register for push notifications — soft prompt, no-op in Expo Go.
       // Fire-and-forget so we don't block the user.
       registerPush({ role: "worker" }).catch(() => {});
@@ -249,6 +262,24 @@ export default function Signup() {
               />
             </View>
 
+            <Text style={[styles.label, { marginTop: 18 }]}>
+              {t("signup.email")}
+            </Text>
+            <View style={styles.inputWrap}>
+              <Feather name="mail" size={16} color="#6B7280" />
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                placeholder="you@example.com"
+                placeholderTextColor="#9CA3AF"
+                style={styles.input}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="next"
+              />
+            </View>
+
             {/* Phone — used so venues can reach the worker on WhatsApp post-hire.
                 Optional today; SMS verification coming later. */}
             <Text style={[styles.label, { marginTop: 18 }]}>
@@ -341,7 +372,7 @@ export default function Signup() {
 
           <Text style={styles.legal}>{t("auth_pin.sign_up_legal")}</Text>
           <Text style={styles.requirements}>
-            Enter a name, matching 4-digit PINs, and accept the Terms to continue.
+            Enter your name and email, matching 4-digit PINs, and accept the Terms to continue.
           </Text>
         </ScrollView>
 

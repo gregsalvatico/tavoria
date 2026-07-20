@@ -1,5 +1,5 @@
 // Supabase Edge Function: send-welcome-email
-// Sends the generated username to a newly registered venue.
+// Sends the generated username to a newly registered worker or venue.
 // Required secrets:
 //   RESEND_API_KEY
 //   RESEND_FROM_EMAIL (for example: Tavoria <hello@tavoriapp.com>)
@@ -38,17 +38,21 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const email = String(body.email ?? "").trim();
     const username = String(body.username ?? "").trim();
-    const displayName = String(body.displayName ?? "Tavoria venue").trim();
+    const kind = body.kind === "worker" ? "worker" : "venue";
+    const displayName = String(
+      body.displayName ?? (kind === "worker" ? "there" : "Tavoria venue")
+    ).trim();
 
     if (!email || !username) return json({ error: "email and username are required" }, 400);
 
     const safeName = escapeHtml(displayName);
     const safeUsername = escapeHtml(username);
     const signInUrl = "https://app.tavoriapp.com/signin";
+    const accountLabel = kind === "worker" ? "Worker account" : "Venue account";
     const text = [
       `Welcome to Tavoria, ${displayName}.`,
       "",
-      "Your venue account is ready.",
+      `Your ${kind} account is ready.`,
       `Username: ${username}`,
       "",
       "Use this username together with the 4-digit PIN you chose during registration to sign in:",
@@ -63,9 +67,9 @@ Deno.serve(async (req) => {
         <table role="presentation" style="width:100%;max-width:560px;margin:0 auto;border-collapse:collapse">
           <tr><td style="padding:8px 0 24px;font-size:28px;font-weight:700;letter-spacing:-.5px">Tavoria<span style="color:#f0531c">.</span></td></tr>
           <tr><td style="background:#ffffff;border:1px solid #e6e1d8;border-radius:16px;padding:36px 32px">
-            <p style="margin:0 0 8px;color:#f0531c;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase">Venue account</p>
+            <p style="margin:0 0 8px;color:#f0531c;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase">${accountLabel}</p>
             <h1 style="margin:0 0 16px;font-size:30px;line-height:1.15;font-weight:700">Welcome to Tavoria</h1>
-            <p style="margin:0 0 24px;color:#46505a;font-size:16px;line-height:1.6">Hi ${safeName}, your venue account is ready. Here is the username you will use to sign in.</p>
+            <p style="margin:0 0 24px;color:#46505a;font-size:16px;line-height:1.6">Hi ${safeName}, your ${kind} account is ready. Here is the username you will use to sign in.</p>
             <div style="margin:0 0 24px;background:#f7f4ee;border:1px solid #e6e1d8;border-radius:12px;padding:20px;text-align:center">
               <p style="margin:0 0 8px;color:#6b7280;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase">Your username</p>
               <p style="margin:0;color:#0e1a24;font-family:Consolas,Monaco,monospace;font-size:24px;font-weight:700;letter-spacing:.5px">${safeUsername}</p>
@@ -86,7 +90,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         from,
         to: [email],
-        subject: "Your Tavoria venue account is ready",
+        subject: `Your Tavoria ${kind} account is ready`,
         text: `Welcome to Tavoria, ${displayName}. Your username is: ${username}\n\nKeep it safe — you will use it with your 4-digit PIN to sign in.`,
         html: `<p>Welcome to Tavoria, ${safeName}.</p><p>Your username is:</p><p><strong>${safeUsername}</strong></p><p>Keep it safe — you will use it with your 4-digit PIN to sign in.</p>`,
         ...{ text, html },
