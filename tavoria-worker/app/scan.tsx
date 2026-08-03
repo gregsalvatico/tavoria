@@ -15,9 +15,11 @@ import {
 import { useRouter } from "expo-router";
 import { useCallback, useRef, useState } from "react";
 import {
+  Platform,
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -36,24 +38,33 @@ function extractVenueId(raw: string): string | null {
   return m ? m[0].toLowerCase() : null;
 }
 
+function isNoCameraError(message?: string): boolean {
+  return /no (camera|device)|camera.*not found|device.*not found|not.?found/i.test(
+    message ?? ""
+  );
+}
+
 export default function Scan() {
   const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [invalid, setInvalid] = useState(false);
+  const [cameraError, setCameraError] = useState<"no-device" | "unavailable" | null>(null);
+  const [permissionIssue, setPermissionIssue] = useState<"no-device" | "unsupported" | null>(null);
+  const [cameraKey, setCameraKey] = useState(0);
+  const [manualEntry, setManualEntry] = useState(false);
+  const [manualValue, setManualValue] = useState("");
   // Prevent re-firing onBarcodeScanned dozens of times per second
   const handlingRef = useRef(false);
 
-  const onScan = useCallback(
-    (result: BarcodeScanningResult) => {
-      if (handlingRef.current || scanned) return;
-      const venueId = extractVenueId(result.data ?? "");
+  const handlePayload = useCallback(
+    (raw: string) => {
+      const venueId = extractVenueId(raw);
+      handlingRef.current = true;
       if (!venueId) {
-        handlingRef.current = true;
         setInvalid(true);
         return;
       }
-      handlingRef.current = true;
       setScanned(true);
       // Replace the scan screen so back button doesn't return here
       router.replace({
@@ -61,12 +72,54 @@ export default function Scan() {
         params: { venueId },
       });
     },
-    [router, scanned]
+    [router]
+  );
+
+  const onScan = useCallback(
+    (result: BarcodeScanningResult) => {
+      if (handlingRef.current || scanned) return;
+      handlePayload(result.data ?? "");
+    },
+    [handlePayload, scanned]
   );
 
   const retryInvalid = () => {
     setInvalid(false);
     handlingRef.current = false;
+  };
+
+  const retryCamera = () => {
+    setCameraError(null);
+    setCameraKey((key) => key + 1);
+  };
+
+  const submitManualValue = () => {
+    setManualEntry(false);
+    handlePayload(manualValue);
+  };
+
+  const requestCameraAccess = async () => {
+    setPermissionIssue(null);
+
+    try {
+      const available = await CameraView.isAvailableAsync();
+      if (!available) {
+        setPermissionIssue("unsupported");
+        return;
+      }
+
+      if (Platform.OS === "web" && typeof navigator !== "undefined") {
+        const devices = await navigator.mediaDevices?.enumerateDevices?.();
+        if (devices && !devices.some((device) => device.kind === "videoinput")) {
+          setPermissionIssue("no-device");
+          return;
+        }
+      }
+    } catch {
+      // Continue with the platform permission request. The camera view will surface a mount error if needed.
+    }
+
+    await requestPermission();
   };
 
   // 1. Permission still loading
@@ -82,6 +135,8 @@ export default function Scan() {
 
   // 2. Permission denied — show ask screen
   if (!permission.granted) {
+    const hasNoCamera = permissionIssue === "no-device";
+    const isUnsupported = permissionIssue === "unsupported";
     return (
       <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
         <View style={styles.header}>
@@ -98,12 +153,18 @@ export default function Scan() {
         </View>
         <View style={styles.center}>
           <View style={styles.permIcon}>
-            <Feather name="camera-off" size={48} color="#F0531C" />
+            <Feather name={hasNoCamera || isUnsupported ? "video-off" : "camera-off"} size={48} color="#F0531C" />
           </View>
-          <Text style={styles.permTitle}>{t("scan.perm_title")}</Text>
-          <Text style={styles.permSub}>{t("scan.perm_msg")}</Text>
-          <Pressable style={styles.grantBtn} onPress={requestPermission}>
-            <Text style={styles.grantBtnTxt}>{t("scan.grant_btn")}</Text>
+          <Text style={styles.permTitle}>
+            {hasNoCamera || isUnsupported ? t("scan.no_camera_title") : t("scan.perm_title")}
+          </Text>
+          <Text style={styles.permSub}>
+            {hasNoCamera || isUnsupported ? t("scan.no_camera_msg") : t("scan.perm_msg")}
+          </Text>
+          <Pressable style={styles.grantBtn} onPress={requestCameraAccess}>
+            <Text style={styles.grantBtnTxt}>
+              {hasNoCamera || isUnsupported ? t("scan.camera_retry") : t("scan.grant_btn")}
+            </Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -114,10 +175,15 @@ export default function Scan() {
   return (
     <View style={styles.safe}>
       <CameraView
+        key={cameraKey}
         style={StyleSheet.absoluteFillObject}
         facing="back"
         barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
         onBarcodeScanned={scanned || invalid ? undefined : onScan}
+        onCameraReady={() => setCameraError(null)}
+        onMountError={(error) =>
+          setCameraError(isNoCameraError(error.message) ? "no-device" : "unavailable")
+        }
       />
 
       {/* Dim overlay with viewfinder cutout */}
@@ -148,8 +214,33 @@ export default function Scan() {
 
         <View style={styles.footer}>
           <Text style={styles.helpTxt}>{t("scan.sub")}</Text>
+          <Pressable style={styles.manualLink} onPress={() => setManualEntry(true)}>
+            <Text style={styles.manualLinkTxt}>{t("scan.enter_manually")}</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
+
+      {cameraError && (
+        <View style={styles.invalidBackdrop}>
+          <View style={styles.invalidCard}>
+            <View style={styles.invalidIcon}>
+              <Feather name="camera-off" size={36} color="#993556" />
+            </View>
+            <Text style={styles.invalidTitle}>
+              {t(cameraError === "no-device" ? "scan.no_camera_title" : "scan.camera_error_title")}
+            </Text>
+            <Text style={styles.invalidSub}>
+              {t(cameraError === "no-device" ? "scan.no_camera_msg" : "scan.camera_error_msg")}
+            </Text>
+            <Pressable style={styles.retryBtn} onPress={retryCamera}>
+              <Text style={styles.retryBtnTxt}>{t("scan.camera_retry")}</Text>
+            </Pressable>
+            <Pressable style={styles.manualLink} onPress={() => setManualEntry(true)}>
+              <Text style={styles.manualLinkDark}>{t("scan.enter_manually")}</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
 
       {/* Invalid-QR modal */}
       {invalid && (
@@ -162,6 +253,29 @@ export default function Scan() {
             <Text style={styles.invalidSub}>{t("scan.invalid_msg")}</Text>
             <Pressable style={styles.retryBtn} onPress={retryInvalid}>
               <Text style={styles.retryBtnTxt}>{t("scan.invalid_again")}</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {manualEntry && (
+        <View style={styles.invalidBackdrop}>
+          <View style={styles.invalidCard}>
+            <Text style={styles.invalidTitle}>{t("scan.enter_manually")}</Text>
+            <TextInput
+              autoCapitalize="none"
+              autoCorrect={false}
+              onChangeText={setManualValue}
+              placeholder="https://tavoriapp.com/v/..."
+              placeholderTextColor="#78808A"
+              style={styles.manualInput}
+              value={manualValue}
+            />
+            <Pressable style={styles.retryBtn} onPress={submitManualValue}>
+              <Text style={styles.retryBtnTxt}>{t("scan.open_venue")}</Text>
+            </Pressable>
+            <Pressable style={styles.manualLink} onPress={() => setManualEntry(false)}>
+              <Text style={styles.manualLinkDark}>{t("scan.invalid_again")}</Text>
             </Pressable>
           </View>
         </View>
@@ -263,6 +377,24 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
+  manualLink: {
+    alignSelf: "center",
+    marginTop: 14,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
+  manualLinkTxt: {
+    color: "#F7F4EE",
+    fontSize: 14,
+    fontWeight: "600",
+    textDecorationLine: "underline",
+  },
+  manualLinkDark: {
+    color: "#0E1A24",
+    fontSize: 14,
+    fontWeight: "600",
+    textDecorationLine: "underline",
+  },
 
   // Permission prompt screen
   permIcon: {
@@ -339,4 +471,15 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   retryBtnTxt: { color: "white", fontSize: 15, fontWeight: "700" },
+  manualInput: {
+    alignSelf: "stretch",
+    borderColor: "#C9CDD1",
+    borderRadius: 12,
+    borderWidth: 1,
+    color: "#0E1A24",
+    fontSize: 14,
+    marginBottom: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
 });

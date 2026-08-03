@@ -90,6 +90,7 @@ export default function Home() {
         }
         .landing-nav-links { display: flex; gap: 26px; align-items: center; }
         .landing-nav-mobile-trigger, .landing-nav-mobile-menu { display: none; }
+        .landing-status-chip-mobile { display: none; }
         @media (max-width: 720px) {
           .landing-nav-inner { padding: 12px 20px !important; }
           .landing-nav-links, .landing-nav-app { display: none !important; }
@@ -121,12 +122,31 @@ export default function Home() {
             font-weight: 600;
           }
           .landing-nav-mobile-menu .mobile-nav-app {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
             margin-top: 6px;
             padding: 13px 18px;
             border-radius: 999px;
             background: #0E1A24;
             color: #F7F4EE;
             text-align: center;
+            white-space: nowrap;
+          }
+          .landing-status-chip {
+            gap: 8px !important;
+            padding: 6px 11px !important;
+            font-size: 10px !important;
+            letter-spacing: .13em !important;
+            white-space: nowrap;
+          }
+          .landing-status-chip-full { display: none; }
+          .landing-status-chip-mobile { display: inline; }
+          a[href*="app.tavoriapp.com/signup"] {
+            width: 100%;
+            box-sizing: border-box;
+            justify-content: center;
           }
         }
       `}</style>
@@ -198,7 +218,20 @@ export default function Home() {
                 textDecoration: "none",
               }}
             >
-              Apri l&apos;app <span style={{ fontSize: 13 }}>↗</span>
+              Apri l&apos;app
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 16 16"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 11 11 5M6 5h5v5" />
+              </svg>
             </a>
             <button
               type="button"
@@ -207,9 +240,29 @@ export default function Home() {
               aria-expanded={mobileNavOpen}
               onClick={() => setMobileNavOpen((open) => !open)}
             >
-              <span style={{ fontSize: 22, lineHeight: 1 }}>
-                {mobileNavOpen ? "×" : "☰"}
-              </span>
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              >
+                {mobileNavOpen ? (
+                  <>
+                    <path d="M6 6l12 12" />
+                    <path d="M18 6 6 18" />
+                  </>
+                ) : (
+                  <>
+                    <path d="M4 7h16" />
+                    <path d="M4 12h16" />
+                    <path d="M4 17h16" />
+                  </>
+                )}
+              </svg>
             </button>
           </div>
         </div>
@@ -220,7 +273,20 @@ export default function Home() {
             <a href="#pricing" onClick={() => setMobileNavOpen(false)}>Prezzi</a>
             <a href="#faq" onClick={() => setMobileNavOpen(false)}>FAQ</a>
             <a className="mobile-nav-app" href="https://app.tavoriapp.com">
-              Apri l&apos;app <span style={{ fontSize: 13 }}>â†—</span>
+              Apri l&apos;app
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 16 16"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 11 11 5M6 5h5v5" />
+              </svg>
             </a>
           </div>
         )}
@@ -245,6 +311,7 @@ export default function Home() {
         >
           <div style={{ flex: "1 1 440px", minWidth: 300 }}>
             <div
+              className="landing-status-chip"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -279,7 +346,10 @@ export default function Home() {
                   }}
                 />
               </span>
-              Assunzioni hospitality · Attivo a Milano
+              <span className="landing-status-chip-full">
+                Assunzioni hospitality · Attivo a Milano
+              </span>
+              <span className="landing-status-chip-mobile">Staff · Milano</span>
             </div>
             <h1
               style={{
