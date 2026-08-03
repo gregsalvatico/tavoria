@@ -105,7 +105,6 @@ export default function Scan() {
 
     const startedAt = Date.now();
     setIsCheckingCamera(true);
-    setPermissionIssue(null);
 
     try {
       try {
@@ -126,6 +125,9 @@ export default function Scan() {
         // Continue with the platform permission request. The camera view will surface a mount error if needed.
       }
 
+      // Only clear the prior result once a supported camera has been found.
+      // This avoids flashing the generic permission screen while retrying.
+      setPermissionIssue(null);
       await requestPermission();
     } finally {
       // Keep the feedback visible long enough to avoid a distracting flicker.
