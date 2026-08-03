@@ -724,6 +724,7 @@ export default {
     perm_msg: "Activa la cámara para escanear el QR de los locales.",
     grant_btn: "Permitir cámara",
     requesting: "Accediendo a la cámara…",
+    checking_camera: "Comprobando la cámara…",
     camera_error_title: "Cámara no disponible",
     camera_error_msg: "Cierra otras aplicaciones que estén usando la cámara y vuelve a intentarlo. Si abriste Tavoria dentro de otra aplicación, ábrela en Safari o Chrome.",
     camera_retry: "Reintentar cámara",

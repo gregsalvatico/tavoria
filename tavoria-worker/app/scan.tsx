@@ -15,6 +15,7 @@ import {
 import { useRouter } from "expo-router";
 import { useCallback, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Platform,
   Pressable,
   StyleSheet,
@@ -51,6 +52,7 @@ export default function Scan() {
   const [invalid, setInvalid] = useState(false);
   const [cameraError, setCameraError] = useState<"no-device" | "unavailable" | null>(null);
   const [permissionIssue, setPermissionIssue] = useState<"no-device" | "unsupported" | null>(null);
+  const [isCheckingCamera, setIsCheckingCamera] = useState(false);
   const [cameraKey, setCameraKey] = useState(0);
   const [manualEntry, setManualEntry] = useState(false);
   const [manualValue, setManualValue] = useState("");
@@ -99,27 +101,40 @@ export default function Scan() {
   };
 
   const requestCameraAccess = async () => {
+    if (isCheckingCamera) return;
+
+    const startedAt = Date.now();
+    setIsCheckingCamera(true);
     setPermissionIssue(null);
 
     try {
-      const available = await CameraView.isAvailableAsync();
-      if (!available) {
-        setPermissionIssue("unsupported");
-        return;
-      }
-
-      if (Platform.OS === "web" && typeof navigator !== "undefined") {
-        const devices = await navigator.mediaDevices?.enumerateDevices?.();
-        if (devices && !devices.some((device) => device.kind === "videoinput")) {
-          setPermissionIssue("no-device");
+      try {
+        const available = await CameraView.isAvailableAsync();
+        if (!available) {
+          setPermissionIssue("unsupported");
           return;
         }
-      }
-    } catch {
-      // Continue with the platform permission request. The camera view will surface a mount error if needed.
-    }
 
-    await requestPermission();
+        if (Platform.OS === "web" && typeof navigator !== "undefined") {
+          const devices = await navigator.mediaDevices?.enumerateDevices?.();
+          if (devices && !devices.some((device) => device.kind === "videoinput")) {
+            setPermissionIssue("no-device");
+            return;
+          }
+        }
+      } catch {
+        // Continue with the platform permission request. The camera view will surface a mount error if needed.
+      }
+
+      await requestPermission();
+    } finally {
+      // Keep the feedback visible long enough to avoid a distracting flicker.
+      const remainingMs = 350 - (Date.now() - startedAt);
+      if (remainingMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, remainingMs));
+      }
+      setIsCheckingCamera(false);
+    }
   };
 
   // 1. Permission still loading
@@ -161,9 +176,18 @@ export default function Scan() {
           <Text style={styles.permSub}>
             {hasNoCamera || isUnsupported ? t("scan.no_camera_msg") : t("scan.perm_msg")}
           </Text>
-          <Pressable style={styles.grantBtn} onPress={requestCameraAccess}>
+          <Pressable
+            disabled={isCheckingCamera}
+            style={[styles.grantBtn, isCheckingCamera && styles.grantBtnDisabled]}
+            onPress={requestCameraAccess}
+          >
+            {isCheckingCamera && <ActivityIndicator color="#F7F4EE" size="small" />}
             <Text style={styles.grantBtnTxt}>
-              {hasNoCamera || isUnsupported ? t("scan.camera_retry") : t("scan.grant_btn")}
+              {isCheckingCamera
+                ? t("scan.checking_camera")
+                : hasNoCamera || isUnsupported
+                  ? t("scan.camera_retry")
+                  : t("scan.grant_btn")}
             </Text>
           </Pressable>
         </View>
@@ -421,11 +445,16 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   grantBtn: {
+    alignItems: "center",
     backgroundColor: "#F0531C",
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
     paddingVertical: 14,
     paddingHorizontal: 28,
     borderRadius: 999,
   },
+  grantBtnDisabled: { opacity: 0.82 },
   grantBtnTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
 
   // Invalid QR modal

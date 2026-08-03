@@ -723,6 +723,7 @@ export default {
     perm_msg: "Abilita la fotocamera per scansionare il QR dei locali.",
     grant_btn: "Abilita fotocamera",
     requesting: "Accesso fotocamera…",
+    checking_camera: "Verifica fotocamera…",
     camera_error_title: "Fotocamera non disponibile",
     camera_error_msg: "Chiudi le altre app che usano la fotocamera e riprova. Se hai aperto Tavoria dentro un'altra app, aprila in Safari o Chrome.",
     camera_retry: "Riprova la fotocamera",

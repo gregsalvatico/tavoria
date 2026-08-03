@@ -721,6 +721,7 @@ export default {
     perm_msg: "Enable camera access to scan the QR sticker at venues.",
     grant_btn: "Allow camera",
     requesting: "Requesting camera access…",
+    checking_camera: "Checking camera…",
     camera_error_title: "Camera unavailable",
     camera_error_msg: "Close any other app using the camera, then try again. If you opened Tavoria inside another app, open it in Safari or Chrome.",
     camera_retry: "Try camera again",

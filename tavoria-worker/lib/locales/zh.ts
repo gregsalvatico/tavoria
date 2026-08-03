@@ -720,6 +720,7 @@ export default {
     perm_msg: "请开启相机权限以扫描门店的二维码贴纸。",
     grant_btn: "开启相机",
     requesting: "正在请求相机权限…",
+    checking_camera: "正在检查相机…",
     camera_error_title: "相机不可用",
     camera_error_msg: "请关闭正在使用相机的其他应用后重试。如果你是在其他应用内打开 Tavoria，请在 Safari 或 Chrome 中打开。",
     camera_retry: "重试相机",
