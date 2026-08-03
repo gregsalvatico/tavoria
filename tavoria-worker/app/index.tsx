@@ -186,55 +186,28 @@ export default function Welcome() {
             </View>
           </View>
 
-          {/* Action block at bottom — staff pair, scan pill, venue pair.
-              Each row is now single-side so it's obvious at a glance which
-              tile belongs to which audience (staff vs locali). */}
+          {/* Match the landing page: two clear entry paths, plus QR scanning as a secondary action. */}
           <View style={styles.signedOutBottom}>
-            <View style={styles.splitRow}>
-              <Link href="/discover" asChild>
-                <Pressable style={styles.tileWorker}>
-                  <Feather name="user" size={18} color="#185FA5" />
-                  <Text style={styles.splitTitle} numberOfLines={1}>
-                    {t("home.browse")}
-                  </Text>
-                  <Text style={styles.splitSub}>{t("home.browse_sub")}</Text>
-                </Pressable>
-              </Link>
-              <Link href="/signup?next=worker-profile" asChild>
-                <Pressable style={styles.tileWorker}>
-                  <Feather name="user-plus" size={18} color="#185FA5" />
-                  <Text style={styles.splitTitle}>{t("home.worker_cta")}</Text>
-                  <Text style={styles.splitSub}>{t("home.worker_sub")}</Text>
-                </Pressable>
-              </Link>
-            </View>
-
-            <Link href="/scan" asChild>
-              <Pressable style={styles.primaryBtn}>
-                <Text style={styles.primaryBtnText}>{t("home.scan_qr")}</Text>
+            <Link href="/venue-type" asChild>
+              <Pressable style={styles.landingVenueBtn}>
+                <Text style={styles.landingVenueBtnText}>{t("home.venue_cta")}</Text>
+                <Feather name="arrow-right" size={19} color="#F7F4EE" />
               </Pressable>
             </Link>
 
-            <View style={styles.splitRow}>
-              <Link href="/venue-browse-workers" asChild>
-                <Pressable style={styles.tileVenue}>
-                  <Feather name="users" size={18} color="#F0531C" />
-                  <Text style={styles.splitTitle} numberOfLines={1}>
-                    {t("home.see_candidates")}
-                  </Text>
-                  <Text style={styles.splitSub}>
-                    {t("home.see_candidates_sub")}
-                  </Text>
-                </Pressable>
-              </Link>
-              <Link href="/venue-type" asChild>
-                <Pressable style={styles.tileVenue}>
-                  <Feather name="home" size={18} color="#F0531C" />
-                  <Text style={styles.splitTitle}>{t("home.venue_cta")}</Text>
-                  <Text style={styles.splitSub}>{t("home.venue_sub")}</Text>
-                </Pressable>
-              </Link>
-            </View>
+            <Link href="/signup?next=worker-profile" asChild>
+              <Pressable style={styles.landingWorkerBtn}>
+                <Text style={styles.landingWorkerBtnText}>{t("home.worker_cta")}</Text>
+                <Feather name="arrow-right" size={19} color="#0E1A24" />
+              </Pressable>
+            </Link>
+
+            <Link href="/scan" asChild>
+              <Pressable style={styles.scanQrLink}>
+                <Feather name="maximize" size={15} color="#5C6670" />
+                <Text style={styles.scanQrLinkText}>{t("home.scan_qr")}</Text>
+              </Pressable>
+            </Link>
 
             <LegalFooter />
           </View>
@@ -818,14 +791,14 @@ function LegalFooter() {
         <Pressable onPress={() => router.push("/terms")} hitSlop={8}>
           <Text style={styles.legalLink}>{t("home.footer_terms")}</Text>
         </Pressable>
+        <Text style={styles.legalDot}>  ·  </Text>
+        <Pressable
+          onPress={() => Linking.openURL("mailto:hello@tavoriapp.com").catch(() => {})}
+          hitSlop={8}
+        >
+          <Text style={styles.legalLink}>hello@tavoriapp.com</Text>
+        </Pressable>
       </View>
-      <Pressable
-        onPress={() => Linking.openURL("mailto:hello@tavoriapp.com").catch(() => {})}
-        hitSlop={8}
-        style={styles.legalEmailRow}
-      >
-        <Text style={styles.legalLink}>hello@tavoriapp.com</Text>
-      </Pressable>
     </View>
   );
 }
@@ -860,7 +833,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   signedOutTop: { alignItems: "center", paddingTop: 12 },
-  signedOutBottom: { gap: 10 },
+  signedOutBottom: { gap: 12 },
 
   container: {
     flexGrow: 1,
@@ -954,6 +927,43 @@ const styles = StyleSheet.create({
     borderColor: "rgba(11,15,26,0.15)",
   },
   secondaryBtnText: { color: "#0E1A24", fontSize: 14, fontWeight: "600" },
+
+  // Signed-out entry points mirror the landing page hierarchy.
+  landingVenueBtn: {
+    alignItems: "center",
+    backgroundColor: "#F0531C",
+    borderRadius: 999,
+    flexDirection: "row",
+    gap: 9,
+    justifyContent: "center",
+    paddingVertical: 17,
+    shadowColor: "#F0531C",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.24,
+    shadowRadius: 16,
+  },
+  landingVenueBtnText: { color: "#F7F4EE", fontSize: 17, fontWeight: "700" },
+  landingWorkerBtn: {
+    alignItems: "center",
+    backgroundColor: "transparent",
+    borderColor: "rgba(14,26,36,0.2)",
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 9,
+    justifyContent: "center",
+    paddingVertical: 17,
+  },
+  landingWorkerBtnText: { color: "#0E1A24", fontSize: 17, fontWeight: "700" },
+  scanQrLink: {
+    alignItems: "center",
+    alignSelf: "center",
+    flexDirection: "row",
+    gap: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  scanQrLinkText: { color: "#5C6670", fontSize: 14, fontWeight: "600" },
 
   splitRow: { flexDirection: "row", gap: 10 },
   firstSplitRow: { marginTop: 14 },
@@ -1503,24 +1513,23 @@ const styles = StyleSheet.create({
   // Uses marginTop spacing instead of `gap` because RN-Web + flexWrap + gap
   // can crash on Chrome with a CSSStyleDeclaration error.
   legalFooter: {
-    marginTop: 18,
+    marginTop: 12,
     alignItems: "center",
   },
   legalRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 4,
+    marginTop: 2,
   },
-  legalEmailRow: { marginTop: 4 },
   legalLine: {
-    fontSize: 11,
+    fontSize: 10,
     color: "#6B7280",
     textAlign: "center",
   },
-  legalDot: { fontSize: 11, color: "#9CA3AF" },
+  legalDot: { fontSize: 10, color: "#9CA3AF" },
   legalLink: {
-    fontSize: 11,
+    fontSize: 10,
     color: "#6B7280",
     textDecorationLine: "underline",
   },
