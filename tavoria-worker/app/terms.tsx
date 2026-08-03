@@ -69,7 +69,8 @@ const styles = StyleSheet.create({
     borderBottomColor: "rgba(0,0,0,0.08)",
   },
   backBtn: { padding: 4 },
-  headerTitle: { fontSize: 17, fontWeight: "700", color: "#0E1A24" },
+  headerTitle: {
+    fontFamily: "InstrumentSerif_400Regular", fontSize: 17, fontWeight: "400", color: "#0E1A24" },
 
   scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 },
 

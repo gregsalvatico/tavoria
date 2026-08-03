@@ -278,7 +278,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   iconBtn: { padding: 4, width: 32 },
-  title: { fontSize: 16, fontWeight: "700", color: "#0E1A24" },
+  title: {
+    fontFamily: "InstrumentSerif_400Regular", fontSize: 16, fontWeight: "400", color: "#0E1A24" },
 
   scroll: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12 },
   intro: { fontSize: 14, color: "#6B7280", textAlign: "center", marginBottom: 8 },
@@ -286,7 +287,7 @@ const styles = StyleSheet.create({
   section: { marginTop: 18 },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "400",
     color: "#0E1A24",
     textAlign: "center",
   },

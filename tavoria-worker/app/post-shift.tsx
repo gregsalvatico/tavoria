@@ -1047,7 +1047,8 @@ const calStyles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  title: { fontSize: 17, fontWeight: "700", color: "#0E1A24" },
+  title: {
+    fontFamily: "InstrumentSerif_400Regular", fontSize: 17, fontWeight: "400", color: "#0E1A24" },
   dayLabels: {
     flexDirection: "row",
     paddingVertical: 8,
@@ -1155,7 +1156,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   iconBtn: { padding: 4, width: 32 },
-  title: { fontSize: 16, fontWeight: "700", color: "#0E1A24" },
+  title: {
+    fontFamily: "InstrumentSerif_400Regular", fontSize: 16, fontWeight: "400", color: "#0E1A24" },
 
   scroll: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 120 },
 
@@ -1175,8 +1177,9 @@ const styles = StyleSheet.create({
 
   section: { marginTop: 22 },
   sectionTitle: {
+    fontFamily: "InstrumentSerif_400Regular",
     fontSize: 24,
-    fontWeight: "800",
+    fontWeight: "400",
     color: "#0E1A24",
     letterSpacing: -0.3,
     textAlign: "center",
@@ -1624,8 +1627,9 @@ const styles = StyleSheet.create({
     borderBottomColor: "rgba(0,0,0,0.08)",
   },
   modalCancel: { color: "#6B7280", fontSize: 15 },
-  modalTitle: { fontSize: 15, fontWeight: "600", color: "#0E1A24" },
-  modalDone: { color: "#F0531C", fontSize: 15, fontWeight: "700" },
+  modalTitle: {
+    fontFamily: "InstrumentSerif_400Regular", fontSize: 15, fontWeight: "400", color: "#0E1A24" },
+  modalDone: { color: "#F0531C", fontSize: 15, fontWeight: "400" },
 
   // Keyboard "Done" toolbar above numeric keypad
   kbBar: {

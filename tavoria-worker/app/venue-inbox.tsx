@@ -341,8 +341,9 @@ const styles = StyleSheet.create({
   },
   iconBtn: { padding: 4, width: 32 },
   h1: {
+    fontFamily: "InstrumentSerif_400Regular",
     fontSize: 22,
-    fontWeight: "800",
+    fontWeight: "400",
     color: "#0E1A24",
     letterSpacing: -0.4,
   },
@@ -379,7 +380,8 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 24,
   },
-  emptyTitle: { fontSize: 16, fontWeight: "700", color: "#0E1A24", marginTop: 8 },
+  emptyTitle: {
+    fontFamily: "InstrumentSerif_400Regular", fontSize: 16, fontWeight: "400", color: "#0E1A24", marginTop: 8 },
   emptyTxt: { color: "#6B7280", fontSize: 13, textAlign: "center" },
 
   row: {
@@ -405,7 +407,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  name: { fontSize: 15, fontWeight: "800", color: "#0E1A24", flexShrink: 1 },
+  name: {
+    fontFamily: "InstrumentSerif_400Regular", fontSize: 15, fontWeight: "400", color: "#0E1A24", flexShrink: 1 },
   meta: { fontSize: 12, color: "#6B7280", marginTop: 2 },
   time: { fontSize: 11, color: "#9CA3AF", marginTop: 2 },
 

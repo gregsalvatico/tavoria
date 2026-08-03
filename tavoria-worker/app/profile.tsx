@@ -662,7 +662,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   backBtn: { width: 36, paddingVertical: 2 },
-  headerTitle: { fontSize: 15, fontWeight: "600", color: "#0E1A24" },
+  headerTitle: {
+    fontFamily: "InstrumentSerif_400Regular", fontSize: 15, fontWeight: "400", color: "#0E1A24" },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 16 },
 
@@ -738,8 +739,9 @@ const styles = StyleSheet.create({
 
   section: { paddingHorizontal: 14, paddingTop: 18 },
   sectionTitle: {
+    fontFamily: "InstrumentSerif_400Regular",
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: "400",
     color: "#6B7280",
     letterSpacing: 1.2,
     marginBottom: 10,

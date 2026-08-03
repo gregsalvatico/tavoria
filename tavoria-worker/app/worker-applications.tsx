@@ -415,8 +415,9 @@ const styles = StyleSheet.create({
   },
   iconBtn: { padding: 4, width: 32 },
   h1: {
+    fontFamily: "InstrumentSerif_400Regular",
     fontSize: 22,
-    fontWeight: "800",
+    fontWeight: "400",
     color: "#0E1A24",
     letterSpacing: -0.4,
   },
@@ -450,8 +451,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   emptyTitle: {
+    fontFamily: "InstrumentSerif_400Regular",
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "400",
     color: "#0E1A24",
     marginTop: 8,
   },
@@ -546,7 +548,8 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   pay: { fontSize: 14, fontWeight: "900", color: "#F0531C" },
-  role: { fontSize: 13, fontWeight: "600", color: "#6B7280", marginTop: 3 },
+  role: {
+    fontFamily: "InstrumentSerif_400Regular", fontSize: 13, fontWeight: "400", color: "#6B7280", marginTop: 3 },
   line3: {
     flexDirection: "row",
     alignItems: "center",

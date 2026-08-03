@@ -95,9 +95,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   h1: {
+    fontFamily: "InstrumentSerif_400Regular",
     color: "#F7F4EE",
     fontSize: 44,
-    fontWeight: "900",
+    fontWeight: "400",
     lineHeight: 50,
     letterSpacing: -1.2,
   },

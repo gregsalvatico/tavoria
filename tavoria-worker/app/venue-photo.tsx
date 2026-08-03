@@ -602,8 +602,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
   scroll: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 },
   h1: {
+    fontFamily: "InstrumentSerif_400Regular",
     fontSize: 30,
-    fontWeight: "800",
+    fontWeight: "400",
     color: "#0E1A24",
     letterSpacing: -0.6,
   },

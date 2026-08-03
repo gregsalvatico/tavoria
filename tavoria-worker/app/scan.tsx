@@ -332,7 +332,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   iconBtn: { padding: 4 },
-  headerTitle: { color: "#F7F4EE", fontSize: 16, fontWeight: "600" },
+  headerTitle: {
+    fontFamily: "InstrumentSerif_400Regular", color: "#F7F4EE", fontSize: 16, fontWeight: "400" },
 
   viewfinderWrap: {
     flex: 1,
@@ -433,9 +434,10 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   permTitle: {
+    fontFamily: "InstrumentSerif_400Regular",
     color: "#F7F4EE",
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "400",
     textAlign: "center",
     marginBottom: 8,
   },
@@ -484,8 +486,9 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   invalidTitle: {
+    fontFamily: "InstrumentSerif_400Regular",
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: "400",
     color: "#0E1A24",
     marginBottom: 6,
   },

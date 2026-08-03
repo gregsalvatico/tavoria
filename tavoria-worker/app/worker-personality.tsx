@@ -534,8 +534,9 @@ const styles = StyleSheet.create({
   },
 
   h1: {
+    fontFamily: "InstrumentSerif_400Regular",
     fontSize: 24,
-    fontWeight: "800",
+    fontWeight: "400",
     color: "#0E1A24",
     letterSpacing: -0.5,
     textAlign: "center",

@@ -145,9 +145,10 @@ const styles = StyleSheet.create({
     letterSpacing: 1.3,
   },
   heroTitle: {
+    fontFamily: "InstrumentSerif_400Regular",
     color: "white",
     fontSize: 30,
-    fontWeight: "900",
+    fontWeight: "400",
     letterSpacing: -0.6,
     lineHeight: 36,
   },

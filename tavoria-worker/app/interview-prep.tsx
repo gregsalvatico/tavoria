@@ -185,7 +185,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   iconBtn: { padding: 4, width: 32 },
-  title: { fontSize: 16, fontWeight: "700", color: "#0E1A24" },
+  title: {
+    fontFamily: "InstrumentSerif_400Regular", fontSize: 16, fontWeight: "400", color: "#0E1A24" },
 
   scroll: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 20 },
 
@@ -208,7 +209,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  heroTitle: { fontSize: 15, fontWeight: "800", color: "#0E1A24" },
+  heroTitle: {
+    fontFamily: "InstrumentSerif_400Regular", fontSize: 15, fontWeight: "400", color: "#0E1A24" },
   heroSub: { fontSize: 12, color: "#6B7280", lineHeight: 16, marginTop: 2 },
 
   qCard: {

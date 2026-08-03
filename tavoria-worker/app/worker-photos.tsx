@@ -559,8 +559,9 @@ const styles = StyleSheet.create({
 
   scroll: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 16 },
   h1: {
+    fontFamily: "InstrumentSerif_400Regular",
     fontSize: 28,
-    fontWeight: "800",
+    fontWeight: "400",
     color: "#0E1A24",
     letterSpacing: -0.6,
     textAlign: "center",
@@ -603,8 +604,9 @@ const styles = StyleSheet.create({
   scoreFill: { height: "100%", backgroundColor: "#F0531C", borderRadius: 999 },
 
   sectionTitle: {
+    fontFamily: "InstrumentSerif_400Regular",
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "400",
     color: "#0E1A24",
     textAlign: "center",
     marginTop: 22,

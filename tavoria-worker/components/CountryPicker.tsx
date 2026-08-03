@@ -120,7 +120,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: "rgba(0,0,0,0.08)",
   },
-  title: { fontSize: 17, fontWeight: "800", color: "#0B0F1A" },
+  title: {
+    fontFamily: "InstrumentSerif_400Regular", fontSize: 17, fontWeight: "400", color: "#0B0F1A" },
   closeBtn: { padding: 4 },
 
   searchWrap: {

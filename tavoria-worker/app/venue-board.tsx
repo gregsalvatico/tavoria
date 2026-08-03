@@ -312,8 +312,9 @@ const styles = StyleSheet.create({
   heroMetaDot: { color: "rgba(255,255,255,0.7)", fontSize: 13 },
 
   sectionTitle: {
+    fontFamily: "InstrumentSerif_400Regular",
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "400",
     color: "#6B7280",
     letterSpacing: 1.2,
     marginBottom: 10,
@@ -341,7 +342,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  role: { fontSize: 15, fontWeight: "800", color: "#0E1A24" },
+  role: {
+    fontFamily: "InstrumentSerif_400Regular", fontSize: 15, fontWeight: "400", color: "#0E1A24" },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",

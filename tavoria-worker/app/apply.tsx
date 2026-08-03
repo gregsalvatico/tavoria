@@ -247,7 +247,8 @@ const styles = StyleSheet.create({
   venueBadgeTxt: { color: "#854F0B", fontSize: 11, fontWeight: "600" },
 
   sectionHeader: { marginTop: 28, marginBottom: 12 },
-  sectionTitle: { color: "#F7F4EE", fontSize: 18, fontWeight: "700" },
+  sectionTitle: {
+    fontFamily: "InstrumentSerif_400Regular", color: "#F7F4EE", fontSize: 18, fontWeight: "400" },
   sectionSub: {
     color: "rgba(255,255,255,0.55)",
     fontSize: 12,

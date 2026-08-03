@@ -806,8 +806,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   name: {
+    fontFamily: "InstrumentSerif_400Regular",
     fontSize: 22,
-    fontWeight: "700",
+    fontWeight: "400",
     color: "#0E1A24",
     letterSpacing: 0.5,
     textAlign: "center",
