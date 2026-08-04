@@ -1,4 +1,4 @@
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -292,8 +292,8 @@ export default function WorkerPhotos() {
                     <Text style={styles.docTitle}>{title}</Text>
                     {badge && (
                       <View style={styles.badgePill}>
-                        <Ionicons
-                          name={d.id === "id" ? "shield-checkmark" : "star"}
+                        <Feather
+                          name={d.id === "id" ? "shield" : "star"}
                           size={10}
                           color="#854F0B"
                         />
@@ -725,7 +725,9 @@ const styles = StyleSheet.create({
   tipTxt: { flex: 1, color: "#854F0B", fontSize: 12, lineHeight: 16 },
 
   bottom: {
-    padding: 16,
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     gap: 10,
     backgroundColor: "white",
     borderTopWidth: 0.5,

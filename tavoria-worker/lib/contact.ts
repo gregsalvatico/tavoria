@@ -30,15 +30,19 @@ export function telUrl(phoneRaw: string): string {
   return clean ? `tel:${clean}` : "";
 }
 
-export function fillTemplate(
-  tpl: string,
-  vars: Record<string, string>
-): string {
-  let out = tpl;
-  for (const [k, v] of Object.entries(vars)) {
-    out = out
-      .replace(new RegExp(`\\{\\{\\s*${k}\\s*\\}\\}`, "g"), v)
-      .replace(/\[missing "[^"]*" value\]/g, v);
-  }
-  return out;
+export function mailtoUrl(email: string, subject?: string, body?: string): string {
+  const clean = (email ?? "").trim();
+  if (!clean) return "";
+  const params = new URLSearchParams();
+  if (subject) params.set("subject", subject);
+  if (body) params.set("body", body);
+  const query = params.toString();
+  return `mailto:${clean}${query ? `?${query}` : ""}`;
+}
+
+export function mapsUrl(address: string): string {
+  const clean = (address ?? "").trim();
+  return clean
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(clean)}`
+    : "";
 }

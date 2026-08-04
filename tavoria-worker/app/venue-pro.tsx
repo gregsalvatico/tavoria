@@ -3,26 +3,12 @@
 
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
 
 export default function VenuePro() {
   const router = useRouter();
-
-  const onSubscribe = () => {
-    Alert.alert(
-      "Coming soon",
-      "Pro subscriptions launch with the public release. Drop us a message at hello@tavoriapp.com for early access."
-    );
-  };
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -53,13 +39,9 @@ export default function VenuePro() {
         <Text style={styles.heroTitle}>{t("venue_pro.title")}</Text>
         <Text style={styles.heroSub}>{t("venue_pro.sub")}</Text>
 
-        <View style={styles.bulletsCol}>
-          <ProBullet text={t("venue_pro.bullet1")} />
-          <ProBullet text={t("venue_pro.bullet2")} />
-          <ProBullet text={t("venue_pro.bullet3")} />
+        <View style={styles.comparisonLabel}>
+          <Text style={styles.comparisonLabelText}>YOUR VENUE TODAY</Text>
         </View>
-
-        {/* Included card — what stays free */}
         <View style={styles.freeCard}>
           <View style={styles.freeKickerRow}>
             <Feather name="check-circle" size={14} color="#3B6D11" />
@@ -68,19 +50,28 @@ export default function VenuePro() {
             </Text>
           </View>
           <Text style={styles.freeTitle}>{t("venue_pro.free_title")}</Text>
-          <View style={{ marginTop: 8, gap: 4 }}>
+          <View style={styles.freeBullets}>
             <FreeBullet text={t("venue_pro.free_b1")} />
             <FreeBullet text={t("venue_pro.free_b2")} />
-            <FreeBullet text={t("venue_pro.free_b3")} />
           </View>
+        </View>
+
+        <View style={styles.comparisonLabel}>
+          <Text style={styles.comparisonLabelText}>WITH TAVORIA PRO</Text>
+        </View>
+        <View style={styles.proCard}>
+          <ProBullet text="Invite candidates before they apply" />
+          <ProBullet text="See more of each candidate's portfolio" />
+          <ProBullet text="Use advanced candidate filters" />
         </View>
       </ScrollView>
 
       <View style={styles.bottom}>
         <Text style={styles.price}>{t("venue_pro.price")}</Text>
-        <Pressable style={styles.cta} onPress={onSubscribe}>
+        <Text style={styles.comingSoon}>Subscriptions are not available yet.</Text>
+        <Pressable style={[styles.cta, styles.ctaDisabled]} disabled>
           <Text style={styles.ctaTxt}>{t("venue_pro.cta")}</Text>
-          <Feather name="arrow-right" size={20} color="#0E1A24" />
+          <Feather name="lock" size={18} color="#6B7280" />
         </Pressable>
       </View>
     </SafeAreaView>
@@ -101,7 +92,9 @@ function ProBullet({ text }: { text: string }) {
 function FreeBullet({ text }: { text: string }) {
   return (
     <View style={styles.freeBulletRow}>
-      <Feather name="check" size={12} color="#3B6D11" />
+      <View style={styles.freeBulletDot}>
+        <Feather name="check" size={14} color="#3B6D11" />
+      </View>
       <Text style={styles.freeBulletTxt}>{text}</Text>
     </View>
   );
@@ -160,7 +153,8 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
 
-  bulletsCol: { gap: 14, marginBottom: 26 },
+  comparisonLabel: { marginBottom: 8, marginTop: 16 },
+  comparisonLabelText: { color: "rgba(255,255,255,0.55)", fontSize: 11, fontWeight: "900", letterSpacing: 1.2 },
   proBulletRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   proBulletDot: {
     width: 28,
@@ -181,7 +175,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#EAF3DE",
     borderRadius: 16,
     padding: 16,
-    marginBottom: 12,
+    marginBottom: 0,
   },
   freeKickerRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   freeKicker: {
@@ -197,23 +191,28 @@ const styles = StyleSheet.create({
     marginTop: 6,
     letterSpacing: -0.2,
   },
-  freeBulletRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  freeBulletTxt: { color: "#3B6D11", fontSize: 13, fontWeight: "600" },
+  freeBullets: { gap: 14, marginTop: 16 },
+  freeBulletRow: { alignItems: "center", flexDirection: "row", gap: 12 },
+  freeBulletDot: { alignItems: "center", backgroundColor: "rgba(59,109,17,0.13)", borderRadius: 999, height: 28, justifyContent: "center", width: 28 },
+  freeBulletTxt: { color: "#3B6D11", flex: 1, fontSize: 15, fontWeight: "600" },
+  proCard: { borderColor: "rgba(240,83,28,0.72)", borderRadius: 16, borderWidth: 1, gap: 14, padding: 16 },
 
   bottom: {
     paddingHorizontal: 22,
     paddingTop: 12,
-    paddingBottom: 16,
+    paddingBottom: 24,
     backgroundColor: "#0E1A24",
     borderTopWidth: 0.5,
     borderTopColor: "rgba(255,255,255,0.10)",
     gap: 10,
   },
   price: {
-    color: "rgba(255,255,255,0.55)",
-    fontSize: 12,
+    color: "white",
+    fontSize: 15,
+    fontWeight: "800",
     textAlign: "center",
   },
+  comingSoon: { color: "rgba(255,255,255,0.55)", fontSize: 12, marginTop: -5, textAlign: "center" },
   cta: {
     flexDirection: "row",
     alignItems: "center",
@@ -223,5 +222,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingVertical: 18,
   },
+  ctaDisabled: { backgroundColor: "#D9D7D1" },
   ctaTxt: { color: "#0E1A24", fontSize: 16, fontWeight: "800" },
 });

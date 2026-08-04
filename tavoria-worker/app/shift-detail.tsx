@@ -2,6 +2,7 @@
 // Shows full shift info + venue + Apply button.
 
 import { Feather } from "@expo/vector-icons";
+import * as Linking from "expo-linking";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -19,11 +20,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../lib/supabase";
 import {
   createApplication,
+  getCurrentWorkerApplicationForShift,
   getCurrentWorkerFull,
   updateShiftStatus,
 } from "../lib/db";
 import { t } from "../lib/i18n";
 import { localizeRole, localizeRoles } from "../lib/positions";
+import ContactPersonModal from "../components/ContactPersonModal";
 
 const VENUE_CAFE = require("../assets/venue-cafe.png");
 const VENUE_TYPE_PHOTOS: Record<string, number> = {
@@ -47,6 +50,21 @@ function payUnitLabel(unit: string): string {
   return v && !v.includes(".") ? v : unit;
 }
 
+function payScheduleLabel(schedule: string): string {
+  const normalized = schedule.trim().toLowerCase();
+  const key =
+    normalized === "sameday" || normalized === "same day" || normalized === "daily"
+      ? "daily"
+      : normalized === "weekly"
+      ? "weekly"
+      : normalized === "monthly"
+      ? "monthly"
+      : null;
+  if (!key) return schedule;
+  const value = t(`pay_schedule.${key}`);
+  return value && !value.includes("[missing") ? value : schedule;
+}
+
 export default function ShiftDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -56,6 +74,8 @@ export default function ShiftDetail() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isOwner, setIsOwner] = useState(false);
   const [shiftStatus, setShiftStatus] = useState<"live" | "paused">("live");
+  const [application, setApplication] = useState<any | null>(null);
+  const [contactOpen, setContactOpen] = useState(false);
 
   // Determine if the current signed-in user owns the venue that posted this shift
   useEffect(() => {
@@ -95,7 +115,7 @@ export default function ShiftDetail() {
     const role = localizeRole((shift.roles ?? [])[0]) || "a position";
     try {
       await Share.share({
-        message: `${t("shift_owner.share_msg")} ${venueName} — ${role}. Apply on Tavoria.`,
+        message: `${t("shift_owner.share_msg")} ${venueName} — ${role}.\n${Linking.createURL(`shift-detail?id=${encodeURIComponent(id)}`)}`,
       });
     } catch {}
   };
@@ -107,21 +127,26 @@ export default function ShiftDetail() {
     }
     (async () => {
       try {
-        const { data, error } = await supabase
-          .from("shifts")
-          .select(
+        const [shiftResult, existingApplication] = await Promise.all([
+          supabase
+            .from("shifts")
+            .select(
+              `
+              *,
+              venue:venues(
+                id, name, type, city, address, email, phone, venue_style, photo_url,
+                pay_schedule, roles, user_id,
+                contact_email_enabled, contact_phone_enabled, contact_in_person_enabled
+              )
             `
-            *,
-            venue:venues(
-              id, name, type, city, address, venue_style, photo_url,
-              pay_schedule, roles, user_id
             )
-          `
-          )
-          .eq("id", id)
-          .maybeSingle();
-        if (error) throw error;
-        setShift(data);
+            .eq("id", id)
+            .maybeSingle(),
+          getCurrentWorkerApplicationForShift(id).catch(() => null),
+        ]);
+        if (shiftResult.error) throw shiftResult.error;
+        setShift(shiftResult.data);
+        setApplication(existingApplication);
       } catch (e: any) {
         setErrorMsg(e?.message ?? "Could not load shift.");
       } finally {
@@ -137,6 +162,12 @@ export default function ShiftDetail() {
       // Already a worker? Apply directly (no need to redo photo/video)
       const existing = await getCurrentWorkerFull();
       if (existing?.id) {
+        const prior = await getCurrentWorkerApplicationForShift(shift.id);
+        if (prior) {
+          setApplication(prior);
+          setApplying(false);
+          return;
+        }
         await createApplication({
           worker_id: existing.id,
           venue_id: shift.venue_id,
@@ -191,7 +222,7 @@ export default function ShiftDetail() {
           <Pressable
             onPress={() => {
               if (router.canGoBack()) { router.back(); return; }
-              router.replace("/discover");
+              router.replace("/");
             }}
             style={styles.backPrimaryBtn}
           >
@@ -222,6 +253,15 @@ export default function ShiftDetail() {
     (shift.days ?? [])
       .map((d: string) => dayShortLabel(d))
       .join(" · ") || t("shift_detail.any_day");
+  const canContactVenue =
+    application?.status === "interview_requested" || application?.status === "hired";
+  const venueEmail = canContactVenue && v?.contact_email_enabled !== false ? v?.email : undefined;
+  const venuePhone = canContactVenue && v?.contact_phone_enabled !== false ? v?.phone : undefined;
+  const visitAddress = canContactVenue && v?.contact_in_person_enabled === true ? v?.address : undefined;
+  const hasContactMethod = !!(venueEmail || venuePhone || visitAddress);
+  const applicationLabel = application?.status === "declined"
+    ? "This application is closed"
+    : "Application sent — awaiting reply";
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -229,7 +269,7 @@ export default function ShiftDetail() {
         <Pressable
           onPress={() => {
             if (router.canGoBack()) { router.back(); return; }
-            router.replace("/discover");
+            router.replace("/");
           }}
           hitSlop={12}
           style={styles.iconBtn}
@@ -237,8 +277,12 @@ export default function ShiftDetail() {
           <Feather name="chevron-left" size={26} color="#0E1A24" />
         </Pressable>
         {isOwner ? (
-          <Pressable onPress={toggleStatus} style={styles.statusPillWrap}>
-            <View
+          <View style={styles.statusPillWrap}>
+            <Text style={styles.statusHint}>
+              {t(shiftStatus === "live" ? "shift_owner.tap_to_pause" : "shift_owner.tap_to_resume")}
+            </Text>
+            <Pressable
+              onPress={toggleStatus}
               style={[
                 styles.statusPill,
                 shiftStatus === "live" ? styles.statusLive : styles.statusPaused,
@@ -266,21 +310,18 @@ export default function ShiftDetail() {
                     : "shift_owner.paused"
                 )}
               </Text>
-            </View>
-            <Text style={styles.statusHint}>
-              {t(
-                shiftStatus === "live"
-                  ? "shift_owner.tap_to_pause"
-                  : "shift_owner.tap_to_resume"
-              )}
-            </Text>
-          </Pressable>
+            </Pressable>
+          </View>
         ) : (
           <View style={{ width: 32 }} />
         )}
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+      >
         {/* Hero */}
         <View style={styles.hero}>
           <Image source={photo} style={styles.heroImg} />
@@ -327,10 +368,9 @@ export default function ShiftDetail() {
             <Text style={styles.paySectionVal}>{payStr}</Text>
             {v?.pay_schedule && (
               <Text style={styles.paySectionMeta}>
-                {t("shift_detail.paid_prefix").replace(
-                  "{{schedule}}",
-                  v.pay_schedule.toLowerCase()
-                )}
+                {t("shift_detail.paid_prefix", {
+                  schedule: payScheduleLabel(v.pay_schedule),
+                })}
               </Text>
             )}
           </View>
@@ -349,11 +389,12 @@ export default function ShiftDetail() {
               {shift.contract_type}
             </KV>
           )}
-          {v?.address && (
-            <KV icon="map-pin" label={t("shift_detail.address")}>
-              {v.address}
-            </KV>
-          )}
+          <VenueContactDetails
+            unlocked={canContactVenue}
+            email={venueEmail}
+            phone={venuePhone}
+            visitAddress={visitAddress}
+          />
         </View>
       </ScrollView>
 
@@ -361,56 +402,114 @@ export default function ShiftDetail() {
         {isOwner ? (
           <View style={styles.ownerBar}>
             <OwnerAction
-              icon="users"
-              label={t("shift_owner.view_candidates")}
-              color="#185FA5"
-              bg="#D9E7F5"
-              onPress={() =>
-                router.push({
-                  pathname: "/venue-inbox",
-                  params: { shiftId: id },
-                })
-              }
-            />
-            <OwnerAction
               icon="edit-2"
               label={t("shift_owner.edit")}
-              color="#F0531C"
-              bg="#FFD8BE"
-              onPress={() =>
-                Alert.alert(
-                  t("shift_detail.edit_title"),
-                  t("shift_detail.edit_msg")
-                )
-              }
+              color="white"
+              bg="#F0531C"
+              onPress={() => router.push({ pathname: "/shift-edit", params: { id } })}
             />
             <OwnerAction
               icon="share-2"
               label={t("shift_owner.share")}
-              color="#534AB7"
-              bg="#EEEDFE"
+              color="#0E1A24"
+              bg="#F1EFE8"
               onPress={onShare}
             />
           </View>
         ) : (
-          <Pressable
-            onPress={onApply}
-            disabled={applying}
-            style={[styles.applyBtn, applying && { opacity: 0.6 }]}
-          >
-            {applying ? (
-              <ActivityIndicator color="#F7F4EE" />
-            ) : (
-              <>
-                <Text style={styles.applyTxt}>{t("shift_detail.apply_now")}</Text>
-                <Feather name="arrow-right" size={20} color="#F7F4EE" />
-              </>
-            )}
-          </Pressable>
+          application ? (
+            <Pressable
+              onPress={() => canContactVenue && setContactOpen(true)}
+              disabled={!canContactVenue || !hasContactMethod}
+              style={[styles.applyBtn, canContactVenue ? styles.contactBtn : styles.applicationStatusBtn]}
+            >
+              <Text style={styles.applyTxt}>{canContactVenue ? (hasContactMethod ? "Contact venue" : "Contact details unavailable") : applicationLabel}</Text>
+              <Feather name={canContactVenue && hasContactMethod ? "message-circle" : "clock"} size={19} color="#F7F4EE" />
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={onApply}
+              disabled={applying}
+              style={[styles.applyBtn, applying && { opacity: 0.6}]}
+            >
+              {applying ? (
+                <ActivityIndicator color="#F7F4EE" />
+              ) : (
+                <>
+                  <Text style={styles.applyTxt}>{t("shift_detail.apply_now")}</Text>
+                  <Feather name="arrow-right" size={20} color="#F7F4EE" />
+                </>
+              )}
+            </Pressable>
+          )
         )}
       </View>
 
+      <ContactPersonModal
+        visible={contactOpen}
+        onClose={() => setContactOpen(false)}
+        name={v?.name ?? "venue"}
+        email={venueEmail}
+        phone={venuePhone}
+        visitAddress={visitAddress}
+        initialMessage={`Hi ${v?.name ?? ""}, I’m following up about the ${roleStr} shift.`.trim()}
+      />
+
     </SafeAreaView>
+  );
+}
+
+function VenueContactDetails({
+  unlocked,
+  email,
+  phone,
+  visitAddress,
+}: {
+  unlocked: boolean;
+  email?: string | null;
+  phone?: string | null;
+  visitAddress?: string | null;
+}) {
+  return (
+    <View style={[styles.contactDetails, unlocked ? styles.contactDetailsOpen : styles.contactDetailsLocked]}>
+      <View style={styles.contactDetailsHead}>
+        <View style={[styles.contactDetailsIcon, unlocked ? styles.contactDetailsIconOpen : styles.contactDetailsIconLocked]}>
+          <Feather name={unlocked ? "unlock" : "lock"} size={15} color={unlocked ? "#F0531C" : "#854F0B"} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.contactDetailsTitle}>{unlocked ? "Venue contact details" : "Venue contact details locked"}</Text>
+          <Text style={styles.contactDetailsSub}>{unlocked ? "Use any method the venue has enabled below." : "The venue will share these after it requests an interview or hires you."}</Text>
+        </View>
+      </View>
+      {unlocked ? (
+        email || phone || visitAddress ? (
+          <View style={styles.contactMethodList}>
+            {email ? <ContactMethod icon="mail" label="Email" value={email} /> : null}
+            {phone ? <ContactMethod icon="phone" label="Phone & WhatsApp" value={phone} /> : null}
+            {visitAddress ? <ContactMethod icon="map-pin" label="Visit in person" value={visitAddress} /> : null}
+          </View>
+        ) : (
+          <Text style={styles.contactNone}>This venue has not enabled a contact method yet.</Text>
+        )
+      ) : (
+        <View style={styles.contactLockedPlaceholders}>
+          <Text style={styles.contactPlaceholder}>••••••@••••••••</Text>
+          <Text style={styles.contactPlaceholder}>••• ••• •••••</Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+function ContactMethod({ icon, label, value }: { icon: keyof typeof Feather.glyphMap; label: string; value: string }) {
+  return (
+    <View style={styles.contactMethod}>
+      <Feather name={icon} size={15} color="#0E1A24" />
+      <View style={{ flex: 1 }}>
+        <Text style={styles.contactMethodLabel}>{label}</Text>
+        <Text style={styles.contactMethodValue}>{value}</Text>
+      </View>
+    </View>
   );
 }
 
@@ -432,8 +531,8 @@ function OwnerAction({
       style={[styles.ownerTile, { backgroundColor: bg, borderColor: color }]}
       onPress={onPress}
     >
-      <Feather name={icon} size={22} color={color} />
-      <Text style={[styles.ownerTileLbl, { color }]} numberOfLines={2}>
+      <Feather name={icon} size={19} color={color} />
+      <Text style={[styles.ownerTileLbl, { color }]} numberOfLines={1}>
         {label}
       </Text>
     </Pressable>
@@ -605,8 +704,27 @@ const styles = StyleSheet.create({
   },
   kvValue: { fontSize: 14, color: "#0E1A24", marginTop: 1, fontWeight: "500" },
 
+  contactDetails: { borderRadius: 14, marginTop: 2, padding: 13 },
+  contactDetailsOpen: { backgroundColor: "#FFF4EE", borderColor: "#F7C7AB", borderWidth: 1 },
+  contactDetailsLocked: { backgroundColor: "#F1EFE8", borderColor: "#E2DED3", borderWidth: 1 },
+  contactDetailsHead: { alignItems: "flex-start", flexDirection: "row", gap: 9 },
+  contactDetailsIcon: { alignItems: "center", borderRadius: 9, height: 31, justifyContent: "center", width: 31 },
+  contactDetailsIconOpen: { backgroundColor: "#FFE1CE" },
+  contactDetailsIconLocked: { backgroundColor: "#E7E2D7" },
+  contactDetailsTitle: { color: "#0E1A24", fontSize: 13, fontWeight: "800" },
+  contactDetailsSub: { color: "#5D6670", fontSize: 11, lineHeight: 15, marginTop: 2 },
+  contactMethodList: { gap: 9, marginTop: 12 },
+  contactMethod: { alignItems: "flex-start", backgroundColor: "white", borderRadius: 10, flexDirection: "row", gap: 8, padding: 9 },
+  contactMethodLabel: { color: "#6B7280", fontSize: 10, fontWeight: "800", letterSpacing: 0.5, textTransform: "uppercase" },
+  contactMethodValue: { color: "#0E1A24", fontSize: 12, lineHeight: 17, marginTop: 1 },
+  contactNone: { color: "#6B7280", fontSize: 12, marginTop: 10 },
+  contactLockedPlaceholders: { flexDirection: "row", gap: 12, marginTop: 12 },
+  contactPlaceholder: { color: "#9CA3AF", fontSize: 12, letterSpacing: 1, textDecorationLine: "line-through" },
+
   bottom: {
-    padding: 16,
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     backgroundColor: "white",
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",
@@ -620,16 +738,18 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingVertical: 18,
   },
+  applicationStatusBtn: { backgroundColor: "#6B7280" },
+  contactBtn: { backgroundColor: "#0E1A24" },
   applyTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "800" },
 
   // Live / Paused status pill in the header
-  statusPillWrap: { alignItems: "flex-end" },
+  statusPillWrap: { alignItems: "center", flexDirection: "row", gap: 8 },
   statusPill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: 999,
     borderWidth: 1,
   },
@@ -654,31 +774,30 @@ const styles = StyleSheet.create({
   statusHint: {
     fontSize: 10,
     color: "#9CA3AF",
-    marginTop: 4,
-    marginRight: 2,
+    letterSpacing: 0.1,
   },
 
   // Owner bottom action bar — 4 colored squared tiles
   ownerBar: {
-    flexDirection: "row",
+    flexDirection: "column",
     gap: 8,
-    justifyContent: "space-between",
   },
   ownerTile: {
-    flex: 1,
-    aspectRatio: 1,
-    borderRadius: 16,
-    borderWidth: 1.5,
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 4,
+    gap: 8,
+    minHeight: 56,
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    width: "100%",
   },
   ownerTileLbl: {
-    fontSize: 11,
+    fontSize: 16,
     fontWeight: "800",
     textAlign: "center",
-    letterSpacing: -0.2,
   },
 
   // QR modal sheet

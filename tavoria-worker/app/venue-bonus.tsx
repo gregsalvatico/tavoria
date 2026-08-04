@@ -286,7 +286,9 @@ const styles = StyleSheet.create({
   itemSubDone: { color: "#3B6D11", fontWeight: "600" },
 
   bottom: {
-    padding: 16,
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     backgroundColor: "white",
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",

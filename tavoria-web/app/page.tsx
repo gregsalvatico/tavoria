@@ -15,7 +15,7 @@ import { useState, CSSProperties } from "react";
 const FONT_SANS = "var(--font-sans), 'Hanken Grotesk', -apple-system, system-ui, sans-serif";
 const FONT_SERIF = "var(--font-serif), 'Instrument Serif', serif";
 const FONT_MONO = "var(--font-mono), 'DM Mono', ui-monospace, monospace";
-
+const APP_ROUTE = "/app";
 type Audience = "venue" | "staff";
 
 type Faq = { q: string; a: string };
@@ -51,6 +51,7 @@ export default function Home() {
   const [audience, setAudience] = useState<Audience>("venue");
   const [openFaq, setOpenFaq] = useState<number>(0);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const appRoute = (path = "") => `${APP_ROUTE}${path}`;
 
   const isVenue = audience === "venue";
 
@@ -143,7 +144,7 @@ export default function Home() {
           }
           .landing-status-chip-full { display: none; }
           .landing-status-chip-mobile { display: inline; }
-          a[href*="app.tavoriapp.com/signup"] {
+          a[href*="/signup?role="] {
             width: 100%;
             box-sizing: border-box;
             justify-content: center;
@@ -204,7 +205,7 @@ export default function Home() {
             </div>
             <a
               className="landing-nav-app"
-              href="https://app.tavoriapp.com"
+              href={appRoute()}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -272,7 +273,7 @@ export default function Home() {
             <a href="#staff" onClick={() => setMobileNavOpen(false)}>Per lo staff</a>
             <a href="#pricing" onClick={() => setMobileNavOpen(false)}>Prezzi</a>
             <a href="#faq" onClick={() => setMobileNavOpen(false)}>FAQ</a>
-            <a className="mobile-nav-app" href="https://app.tavoriapp.com">
+            <a className="mobile-nav-app" href={appRoute()}>
               Apri l&apos;app
               <svg
                 aria-hidden="true"
@@ -382,7 +383,7 @@ export default function Home() {
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginBottom: 26 }}>
               <a
-                href="https://app.tavoriapp.com/signup?role=venue"
+                href={appRoute("/signup?role=venue")}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -401,7 +402,7 @@ export default function Home() {
                 Sono un locale <span>→</span>
               </a>
               <a
-                href="https://app.tavoriapp.com/signup?role=worker"
+                href={appRoute("/signup?role=worker")}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -1244,7 +1245,7 @@ export default function Home() {
               }}
             >
               <a
-                href="https://app.tavoriapp.com/signup?role=venue"
+                href={appRoute("/signup?role=venue")}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -1582,7 +1583,7 @@ export default function Home() {
               }}
             >
               <a
-                href="https://app.tavoriapp.com/signup?role=worker"
+                href={appRoute("/signup?role=worker")}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -1985,7 +1986,7 @@ export default function Home() {
                 </div>
               </div>
               <a
-                href="https://app.tavoriapp.com/signup?role=worker"
+                href={appRoute("/signup?role=worker")}
                 style={{
                   display: "block",
                   textAlign: "center",
@@ -2091,7 +2092,7 @@ export default function Home() {
                 </div>
               </div>
               <a
-                href="https://app.tavoriapp.com/signup?role=venue"
+                href={appRoute("/signup?role=venue")}
                 style={{
                   display: "block",
                   textAlign: "center",
@@ -2496,7 +2497,7 @@ export default function Home() {
             }}
           >
             <a
-              href="https://app.tavoriapp.com/signup?role=venue"
+              href={appRoute("/signup?role=venue")}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -2514,7 +2515,7 @@ export default function Home() {
               Sono un locale <span>→</span>
             </a>
             <a
-              href="https://app.tavoriapp.com/signup?role=worker"
+              href={appRoute("/signup?role=worker")}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -2648,7 +2649,7 @@ export default function Home() {
                     WhatsApp
                   </a>
                   <a
-                    href="https://app.tavoriapp.com"
+                    href={appRoute()}
                     style={{ color: "rgba(247,244,238,0.72)", textDecoration: "none" }}
                   >
                     Apri l&apos;app ↗

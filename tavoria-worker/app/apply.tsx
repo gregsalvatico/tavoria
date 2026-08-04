@@ -1,4 +1,4 @@
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -52,7 +52,7 @@ export default function Apply() {
         <Pressable
           onPress={() => {
             if (router.canGoBack()) { router.back(); return; }
-            router.replace("/discover");
+            router.replace("/");
           }}
           style={styles.closeBtn}
           hitSlop={12}
@@ -85,7 +85,7 @@ export default function Apply() {
               <Text style={styles.venueBadgeTxt}>Same-day pay</Text>
             </View>
             <View style={styles.venueBadge}>
-              <Ionicons name="star" size={11} color="#854F0B" />
+              <Feather name="star" size={11} color="#854F0B" />
               <Text style={styles.venueBadgeTxt}>4.7 · 32 hires</Text>
             </View>
           </View>
@@ -154,7 +154,7 @@ export default function Apply() {
 
         <Pressable onPress={() => {
           if (router.canGoBack()) { router.back(); return; }
-          router.replace("/discover");
+          router.replace("/");
         }} style={styles.notNowBtn}>
           <Text style={styles.notNowTxt}>Not now</Text>
         </Pressable>

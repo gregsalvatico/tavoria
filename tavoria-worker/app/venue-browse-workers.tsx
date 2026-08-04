@@ -25,6 +25,7 @@ import {
 } from "../lib/countries";
 import { getVenueProfile } from "../lib/venueProfile";
 import { localizeRoles } from "../lib/positions";
+import AppBottomNav from "../components/AppBottomNav";
 
 type WorkerRow = {
   id: string;
@@ -295,6 +296,7 @@ export default function VenueBrowseWorkers() {
           })
         )}
       </ScrollView>
+      <AppBottomNav role="venue" active="home" />
     </SafeAreaView>
   );
 }

@@ -78,13 +78,10 @@ export default function Applied() {
         <View style={styles.bottom}>
           <Pressable
             style={styles.primaryBtn}
-            onPress={() => router.replace("/discover")}
+            onPress={() => router.replace("/")}
           >
-            <Text style={styles.primaryBtnTxt}>{t("home.browse")}</Text>
-            <Feather name="arrow-right" size={20} color="#F7F4EE" />
-          </Pressable>
-          <Pressable onPress={() => router.replace("/")}>
-            <Text style={styles.secondaryTxt}>{t("common.done")}</Text>
+            <Feather name="check" size={20} color="#F7F4EE" />
+            <Text style={styles.primaryBtnTxt}>{t("common.done")}</Text>
           </Pressable>
         </View>
       </View>
@@ -200,7 +197,7 @@ const styles = StyleSheet.create({
   },
   tipTxt: { color: "#854F0B", fontSize: 12, flex: 1 },
 
-  bottom: { gap: 14, paddingTop: 8, paddingBottom: 8, alignItems: "center" },
+  bottom: { gap: 14, paddingTop: 8, paddingBottom: 24, alignItems: "center" },
   primaryBtn: {
     width: "100%",
     flexDirection: "row",
@@ -212,5 +209,4 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   primaryBtnTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
-  secondaryTxt: { color: "#6B7280", fontSize: 14, paddingVertical: 4 },
 });

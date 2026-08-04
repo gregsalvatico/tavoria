@@ -62,7 +62,7 @@ export default function WorkerDone() {
             <View style={styles.divider} />
             <View style={styles.nextRow}>
               <View style={[styles.nextDot, { backgroundColor: "#0E1A24" }]}>
-                <Feather name="camera" size={14} color="white" />
+                <Feather name="maximize" size={14} color="white" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.nextH}>Scan a venue's QR</Text>
@@ -97,12 +97,9 @@ export default function WorkerDone() {
           </Pressable>
           <Pressable
             style={styles.secondaryBtn}
-            onPress={() => router.replace("/discover")}
+            onPress={() => router.replace("/")}
           >
             <Text style={styles.secondaryBtnTxt}>{t("worker_done.discover")}</Text>
-          </Pressable>
-          <Pressable onPress={() => router.replace("/")}>
-            <Text style={styles.secondaryTxt}>I'll explore later</Text>
           </Pressable>
         </View>
       </View>
@@ -176,7 +173,7 @@ const styles = StyleSheet.create({
   nextSub: { fontSize: 12, color: "#6B7280", marginTop: 1 },
   divider: { height: 0.5, backgroundColor: "rgba(0,0,0,0.08)", marginVertical: 2 },
 
-  bottom: { gap: 12, alignItems: "center", paddingTop: 8 },
+  bottom: { gap: 12, alignItems: "center", paddingBottom: 24, paddingTop: 8 },
   cta: {
     width: "100%",
     flexDirection: "row",
@@ -197,6 +194,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   secondaryBtnTxt: { color: "#0E1A24", fontSize: 15, fontWeight: "600" },
-  secondaryTxt: { color: "#6B7280", fontSize: 14, paddingVertical: 4 },
 });
 

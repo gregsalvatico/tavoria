@@ -2,7 +2,6 @@
 // User types name → username auto-generated in gray. User picks a 4-digit PIN.
 // Routes onward to /record (apply flow) or /record?next=worker-profile.
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Feather } from "@expo/vector-icons";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -27,8 +26,8 @@ import { patchWorkerProfile } from "../lib/workerProfile";
 import { recordWorkerTermsAcceptance, upsertWorker } from "../lib/db";
 import { registerPush } from "../lib/pushNotifications";
 import { sendWelcomeEmail } from "../lib/email";
+import { rememberAccount } from "../lib/savedAccounts";
 
-const LAST_USERNAME_KEY = "gigi.last_username";
 
 export default function Signup() {
   const router = useRouter();
@@ -127,10 +126,8 @@ export default function Signup() {
       // Register for push notifications — soft prompt, no-op in Expo Go.
       // Fire-and-forget so we don't block the user.
       registerPush({ role: "worker" }).catch(() => {});
-      // Remember the username for pre-filling Sign In next time
-      try {
-        await AsyncStorage.setItem(LAST_USERNAME_KEY, finalUsername);
-      } catch {}
+      // Store this account chooser entry locally (never the PIN or a session).
+      await rememberAccount({ username: finalUsername, roles: ["worker"] });
 
       // Continue to the rest of signup (or directly to apply / venue-board flow)
       if (isApplyFlow && shiftId && venueId) {
@@ -521,7 +518,7 @@ const styles = StyleSheet.create({
   bottom: {
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 16,
+    paddingBottom: 24,
     backgroundColor: "white",
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",

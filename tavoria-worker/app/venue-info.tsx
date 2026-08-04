@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { Link, useRouter } from "expo-router";
@@ -13,9 +12,9 @@ import {
   signUpWithUsernamePin,
 } from "../lib/usernameAuth";
 import { pickImageWeb } from "../lib/webMedia";
+import { rememberAccount } from "../lib/savedAccounts";
 import { useEffect, useMemo, useState } from "react";
 
-const LAST_USERNAME_KEY = "gigi.last_username";
 import {
   ActivityIndicator,
   Alert,
@@ -157,10 +156,8 @@ export default function VenueInfo() {
       }
       // Register for push notifications (soft prompt; no-op in Expo Go)
       registerPush({ role: "venue", venueId: row.id }).catch(() => {});
-      // 3. Save the username for sign-in autofill next time
-      try {
-        await AsyncStorage.setItem(LAST_USERNAME_KEY, finalUsername);
-      } catch {}
+      // 3. Store this account chooser entry locally (never the PIN or a session).
+      await rememberAccount({ username: finalUsername, roles: ["venue"] });
       // Email is best-effort: account creation must still succeed if the
       // provider is temporarily unavailable or not configured yet.
       sendVenueWelcomeEmail({
@@ -549,7 +546,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
 
-  bottom: { padding: 20 },
+  bottom: { paddingBottom: 24, paddingHorizontal: 20, paddingTop: 20 },
   cta: {
     flexDirection: "row",
     alignItems: "center",

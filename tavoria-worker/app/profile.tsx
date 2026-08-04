@@ -1,4 +1,4 @@
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useEffect, useMemo, useState } from "react";
@@ -16,15 +16,22 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
 import {
+  type ApplicationStatus,
   getCurrentWorkerFull,
   getWorkerById,
   getApplicationById,
+  updateApplicationStatus,
 } from "../lib/db";
 import { getWorkerProfile, type InterviewAnswer } from "../lib/workerProfile";
 import { localizeRoles } from "../lib/positions";
 import { isProEligible } from "../lib/proEligibility";
-
-type Action = "decline" | "interview" | "hire" | null;
+import ApplicationActionModal, {
+  type ApplicationAction,
+  type InterviewSchedule,
+} from "../components/ApplicationActionModal";
+import InterviewOutcomeModal, { type InterviewOutcome } from "../components/InterviewOutcomeModal";
+import ProInvitationModal from "../components/ProInvitationModal";
+import AppBottomNav from "../components/AppBottomNav";
 
 // Years-of-experience numeric → label
 const YEARS_LABEL: Record<number, string> = {
@@ -36,7 +43,7 @@ const YEARS_LABEL: Record<number, string> = {
 };
 
 // Unified shape the screen renders from
-type View = {
+type WorkerView = {
   firstName: string;
   ageRange?: string;
   city?: string;
@@ -52,7 +59,7 @@ type View = {
   interviewCompletedAt?: string;
 };
 
-function emptyView(): View {
+function emptyView(): WorkerView {
   return {
     firstName: "—",
     positions: [],
@@ -64,7 +71,7 @@ function emptyView(): View {
 }
 
 // Map a Supabase workers row → View
-function fromRow(row: any): View {
+function fromRow(row: any): WorkerView {
   return {
     firstName: row?.first_name ?? "—",
     ageRange: row?.age_range ?? undefined,
@@ -88,7 +95,7 @@ function fromRow(row: any): View {
 }
 
 // Map the in-memory workerProfile → View
-function fromLocal(p: any): View {
+function fromLocal(p: any): WorkerView {
   return {
     firstName: p?.firstName ?? "—",
     ageRange: p?.ageRange ?? undefined,
@@ -118,7 +125,16 @@ export default function Profile() {
     workerId?: string;
     applicationId?: string;
   }>();
-  const [lastAction, setLastAction] = useState<Action>(null);
+  const [lastAction, setLastAction] = useState<ApplicationAction | null>(null);
+  const [pendingAction, setPendingAction] = useState<ApplicationAction | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [appStatus, setAppStatus] = useState<string | null>(null);
+  const [venueAddress, setVenueAddress] = useState("");
+  const [interviewLocationOptions, setInterviewLocationOptions] = useState<("venue" | "phone" | "video" | "other")[]>(["venue", "phone", "video"]);
+  const [interviewScheduledAt, setInterviewScheduledAt] = useState<string | null>(null);
+  const [interviewLocation, setInterviewLocation] = useState("");
+  const [outcomeOpen, setOutcomeOpen] = useState(false);
+  const [proInviteOpen, setProInviteOpen] = useState(false);
 
   const explicitVenue = params.mode === "venue";
   const explicitWorker = params.mode === "worker";
@@ -131,7 +147,7 @@ export default function Profile() {
       !!localWorker?.firstName);
 
   // Data loading
-  const [view, setView] = useState<View>(() => {
+  const [view, setView] = useState<WorkerView>(() => {
     if (isOwnerMode && localWorker) return fromLocal(localWorker);
     return emptyView();
   });
@@ -144,7 +160,15 @@ export default function Profile() {
         // 1. Venue viewing a candidate by applicationId
         if (params.applicationId) {
           const app = await getApplicationById(params.applicationId);
-          if (!cancelled && app?.worker) setView(fromRow(app.worker));
+          if (!cancelled && app?.worker) {
+            setView(fromRow(app.worker));
+            setAppStatus(app.status ?? null);
+            setVenueAddress((app as any).venue?.address ?? "");
+            const options = (app as any).venue?.interview_location_options;
+            if (Array.isArray(options) && options.length) setInterviewLocationOptions(options);
+            setInterviewScheduledAt((app as any).interview_scheduled_at ?? null);
+            setInterviewLocation((app as any).interview_location ?? "");
+          }
           return;
         }
         // 2. Venue viewing a worker by workerId
@@ -199,6 +223,39 @@ export default function Profile() {
           "Check out my hospitality profile on Tavoria — get hired in minutes, not weeks.",
       });
     } catch {}
+  };
+
+  const confirmAction = async (action: ApplicationAction, interview?: InterviewSchedule) => {
+    if (!params.applicationId) {
+      setPendingAction(null);
+      Alert.alert(
+        t("candidate_actions.no_application_title"),
+        t("candidate_actions.no_application_body")
+      );
+      return;
+    }
+    const statusMap: Record<ApplicationAction, ApplicationStatus> = {
+      decline: "declined",
+      star: "starred",
+      interview: "interview_requested",
+      hire: "hired",
+    };
+    setUpdatingStatus(true);
+    try {
+      await updateApplicationStatus(params.applicationId, statusMap[action], interview);
+      setLastAction(action);
+      setAppStatus(statusMap[action]);
+      if (interview) {
+        setInterviewScheduledAt(interview.scheduledAt);
+        setInterviewLocation(interview.location);
+      }
+      setPendingAction(null);
+      setOutcomeOpen(false);
+    } catch (e: any) {
+      Alert.alert(t("candidate_actions.save_error_title"), e?.message ?? t("candidate_actions.save_error_body"));
+    } finally {
+      setUpdatingStatus(false);
+    }
   };
 
   // Video modal
@@ -304,7 +361,7 @@ export default function Profile() {
           )}
           {hasPersonality && (
             <View style={[styles.badge, styles.badgeVouched]}>
-              <Ionicons name="sparkles" size={12} color="#854F0B" />
+              <Feather name="star" size={12} color="#854F0B" />
               <Text style={[styles.badgeTxt, { color: "#854F0B" }]}>
                 {t("profile.personality_test")}
               </Text>
@@ -352,9 +409,10 @@ export default function Profile() {
                 <View style={styles.qaTopRow}>
                   <Text style={styles.qaRole}>{qa.role}</Text>
                   <Text style={styles.qaIndex}>
-                    {t("profile.q_of")
-                      .replace("{{n}}", String(i + 1))
-                      .replace("{{total}}", String(view.interviewAnswers.length))}
+                    {t("profile.q_of", {
+                      n: i + 1,
+                      total: view.interviewAnswers.length,
+                    })}
                   </Text>
                 </View>
                 <Text style={styles.qaQuestion}>{qa.q_text}</Text>
@@ -403,32 +461,27 @@ export default function Profile() {
         <Section title={t("profile.videos")}>
           <View style={styles.videosCol}>
             <Pressable
-              style={styles.videoFull}
+              style={[styles.videoFull, !view.videoUrl && !isOwnerMode && styles.videoDisabled]}
               onPress={() => {
                 if (view.videoUrl) setVideoOpen(true);
                 else if (isOwnerMode) router.push("/worker-videos");
-                else
-                  Alert.alert(
-                    "No video yet",
-                    "This worker hasn't recorded their intro yet."
-                  );
               }}
+              disabled={!view.videoUrl && !isOwnerMode}
             >
-              <View style={[styles.videoFullImg, styles.videoDark]}>
+              {view.videoUrl ? <VideoView player={player} style={styles.videoFullImg} contentFit="cover" nativeControls={false} /> : <View style={[styles.videoFullImg, styles.videoDark]}>
                 <Feather
                   name={view.videoUrl ? "video" : "video-off"}
                   size={32}
                   color="rgba(255,255,255,0.55)"
                 />
-              </View>
-              <View style={styles.videoOverlay} />
-              <View style={styles.videoPlay}>
+              </View>}
+              {view.videoUrl ? <><View style={styles.videoOverlay} /><View style={styles.videoPlay}>
                 <Feather
-                  name={view.videoUrl ? "play" : "plus"}
+                  name="play"
                   size={22}
                   color="white"
                 />
-              </View>
+              </View></> : null}
               <Text style={styles.videoLabel}>
                 {view.videoUrl
                   ? "Coached intro"
@@ -453,7 +506,7 @@ export default function Profile() {
               </Pressable>
             ) : isProEligible() ? (
               <View style={styles.videoFullLocked}>
-                <Ionicons name="lock-closed" size={22} color="#F7F4EE" />
+                <Feather name="lock" size={22} color="#F7F4EE" />
                 <Text style={styles.videoLockedTxt}>Free-form pitch</Text>
                 <View style={styles.proPill}>
                   <Text style={styles.proPillTxt}>PRO</Text>
@@ -476,7 +529,7 @@ export default function Profile() {
               </Pressable>
             ) : isProEligible() ? (
               <View style={styles.videoFullLocked}>
-                <Ionicons name="lock-closed" size={22} color="#F7F4EE" />
+                <Feather name="lock" size={22} color="#F7F4EE" />
                 <Text style={styles.videoLockedTxt}>{t("profile.language_demo")}</Text>
                 <View style={styles.proPill}>
                   <Text style={styles.proPillTxt}>PRO</Text>
@@ -531,7 +584,7 @@ export default function Profile() {
               if (!isProEligible()) return null;
               return (
                 <View key={i} style={[styles.photoTile, styles.photoLocked]}>
-                  <Ionicons name="lock-closed" size={20} color="#F7F4EE" />
+                  <Feather name="lock" size={20} color="#F7F4EE" />
                   <View style={styles.proPill}>
                     <Text style={styles.proPillTxt}>PRO</Text>
                   </View>
@@ -572,67 +625,100 @@ export default function Profile() {
 
       {/* Sticky action bar */}
       {isOwnerMode ? (
-        <View style={styles.actionBar}>
+        <View style={styles.ownerActionBar}>
           <Pressable
-            style={[styles.actionBtn, styles.ownerEdit]}
+            style={[styles.ownerButton, styles.ownerEdit]}
             onPress={() => router.push("/worker-bonus?mode=edit")}
           >
-            <Feather name="edit-2" size={22} color="#F7F4EE" />
-            <Text style={[styles.actionLbl, { color: "#F7F4EE" }]}>{t("profile.edit")}</Text>
+            <Feather name="edit-2" size={18} color="white" />
+            <Text style={styles.ownerButtonText}>{t("profile.edit")}</Text>
           </Pressable>
           <Pressable
-            style={[styles.actionBtn, styles.ownerBrowse]}
-            onPress={() => router.push("/discover")}
-          >
-            <Feather name="search" size={22} color="#0E1A24" />
-            <Text style={[styles.actionLbl, { color: "#0E1A24" }]}>{t("profile.venues")}</Text>
-          </Pressable>
-          <Pressable
-            style={[styles.actionBtn, styles.ownerShare]}
+            style={[styles.ownerButton, styles.ownerShare]}
             onPress={onShare}
           >
-            <Feather name="share-2" size={22} color="#185FA5" />
-            <Text style={[styles.actionLbl, { color: "#185FA5" }]}>Share</Text>
+            <Feather name="share-2" size={18} color="white" />
+            <Text style={styles.ownerButtonText}>{t("profile.share")}</Text>
           </Pressable>
         </View>
       ) : (
-        <View style={styles.actionBar}>
-          <Pressable
-            style={[styles.actionBtn, styles.actionDecline]}
-            onPress={() => setLastAction("decline")}
-          >
-            <Feather name="x" size={24} color="#993556" />
-            <Text style={[styles.actionLbl, { color: "#993556" }]}>
-              Decline
-            </Text>
-          </Pressable>
-          {isProEligible() && (
-            <Pressable style={[styles.actionBtn, styles.actionStarLocked]}>
-              <Ionicons name="star" size={24} color="#D4A24C" />
-              <Text style={[styles.actionLbl, { color: "#854F0B" }]}>Star</Text>
-              <View style={styles.proMicro}>
-                <Text style={styles.proMicroTxt}>PRO</Text>
+        <View>
+          {lastAction ? (
+            <View style={styles.actionResult}>
+              <Feather name="check-circle" size={15} color="#3B6D11" />
+              <Text style={styles.actionResultText}>
+                {t(`candidate_actions.toast_${lastAction === "decline" ? "declined" : lastAction}`)}
+              </Text>
+            </View>
+          ) : null}
+          <View style={styles.interviewActionBar}>
+            {appStatus === "interview_requested" ? (
+              <>
+                <View style={styles.interviewSummary}>
+                  <Feather name="calendar" size={15} color="#185FA5" />
+                  <Text style={styles.interviewSummaryText}>
+                    {interviewScheduledAt ? new Date(interviewScheduledAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : t("candidate_actions.status_interview_requested")}
+                    {interviewLocation ? ` · ${interviewLocation}` : ""}
+                  </Text>
+                </View>
+                <Pressable style={styles.outcomeButton} onPress={() => setOutcomeOpen(true)} disabled={updatingStatus}>
+                  <Feather name="clipboard" size={19} color="white" />
+                  <Text style={styles.interviewButtonText}>{t("candidate_actions.update_outcome")}</Text>
+                </Pressable>
+              </>
+            ) : appStatus === "hired" || appStatus === "declined" ? (
+              <View style={[styles.finalStatus, appStatus === "hired" ? styles.finalStatusHired : styles.finalStatusDeclined]}>
+                <Feather name={appStatus === "hired" ? "check-circle" : "x-circle"} size={19} color={appStatus === "hired" ? "#3B6D11" : "#993556"} />
+                <Text style={[styles.finalStatusText, { color: appStatus === "hired" ? "#3B6D11" : "#993556" }]}>{t(`candidate_actions.status_${appStatus}`)}</Text>
               </View>
-            </Pressable>
-          )}
-          <Pressable
-            style={[styles.actionBtn, styles.actionInterview]}
-            onPress={() => setLastAction("interview")}
-          >
-            <Feather name="video" size={24} color="#185FA5" />
-            <Text style={[styles.actionLbl, { color: "#185FA5" }]}>
-              Interview
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.actionBtn, styles.actionHire]}
-            onPress={() => setLastAction("hire")}
-          >
-            <Feather name="check" size={26} color="#3B6D11" />
-            <Text style={[styles.actionLbl, { color: "#3B6D11" }]}>Hire</Text>
-          </Pressable>
+            ) : (
+              params.applicationId ? <Pressable style={[styles.requestInterviewButton, updatingStatus && styles.actionDisabled]} onPress={() => setPendingAction("interview")} disabled={updatingStatus}>
+                <Feather name="calendar" size={19} color="white" />
+                <Text style={styles.interviewButtonText}>{t("candidate_actions.confirm_interview_cta")}</Text>
+              </Pressable> : <Pressable style={styles.proInviteButton} onPress={() => setProInviteOpen(true)}>
+                <Feather name="star" size={18} color="#F0531C" />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.proInviteTitle}>Request interview with Pro</Text>
+                  <Text style={styles.proInviteText}>Invite candidates before they apply.</Text>
+                </View>
+                <Feather name="chevron-right" size={18} color="#46505A" />
+              </Pressable>
+            )}
+          </View>
         </View>
       )}
+
+      <ApplicationActionModal
+        action={pendingAction}
+        visible={pendingAction !== null}
+        loading={updatingStatus}
+        venueAddress={venueAddress}
+        availableLocationTypes={interviewLocationOptions}
+        onCancel={() => setPendingAction(null)}
+        onConfirm={(interview) => {
+          if (pendingAction) confirmAction(pendingAction, interview);
+        }}
+      />
+      <InterviewOutcomeModal
+        visible={outcomeOpen}
+        loading={updatingStatus}
+        onClose={() => setOutcomeOpen(false)}
+        onSelect={(outcome: InterviewOutcome) => confirmAction(outcome)}
+      />
+      <ProInvitationModal
+        visible={proInviteOpen}
+        onClose={() => setProInviteOpen(false)}
+        onExplore={() => {
+          setProInviteOpen(false);
+          router.push("/venue-pro");
+        }}
+      />
+      {!isOwnerMode ? (
+        <AppBottomNav
+          role="venue"
+          active={params.applicationId ? "inbox" : "home"}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -938,12 +1024,42 @@ const styles = StyleSheet.create({
 
   actionBar: {
     flexDirection: "row",
-    padding: 12,
+    paddingBottom: 24,
+    paddingHorizontal: 12,
+    paddingTop: 12,
     gap: 8,
     backgroundColor: "white",
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",
   },
+  videoDisabled: { opacity: 0.58 },
+  interviewActionBar: { backgroundColor: "white", borderTopColor: "rgba(0,0,0,0.08)", borderTopWidth: 0.5, gap: 9, paddingBottom: 24, paddingHorizontal: 12, paddingTop: 12 },
+  proInviteButton: { alignItems: "center", backgroundColor: "#FFF4ED", borderColor: "#F9B28D", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 9, minHeight: 58, paddingHorizontal: 13 },
+  proInviteTitle: { color: "#0E1A24", fontSize: 13, fontWeight: "800" },
+  proInviteText: { color: "#6B7280", fontSize: 11, lineHeight: 15, marginTop: 2 },
+  actionDisabled: { opacity: 0.6 },
+  requestInterviewButton: { alignItems: "center", backgroundColor: "#F0531C", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 54, paddingHorizontal: 18 },
+  outcomeButton: { alignItems: "center", backgroundColor: "#0E1A24", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 54, paddingHorizontal: 18 },
+  interviewButtonText: { color: "white", fontSize: 15, fontWeight: "700" },
+  interviewSummary: { alignItems: "flex-start", backgroundColor: "#E6F1FB", borderRadius: 13, flexDirection: "row", gap: 8, padding: 12 },
+  interviewSummaryText: { color: "#185FA5", flex: 1, fontSize: 12, fontWeight: "700", lineHeight: 17 },
+  finalStatus: { alignItems: "center", borderRadius: 14, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 54, paddingHorizontal: 14 },
+  finalStatusHired: { backgroundColor: "#EAF3DE" },
+  finalStatusDeclined: { backgroundColor: "#FCEBEB" },
+  finalStatusText: { fontSize: 15, fontWeight: "800" },
+  actionResult: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    paddingHorizontal: 12,
+    paddingTop: 9,
+    backgroundColor: "white",
+  },
+  actionResultText: { color: "#3B6D11", fontSize: 12, fontWeight: "600" },
+  ownerActionBar: { backgroundColor: "white", borderTopColor: "rgba(0,0,0,0.08)", borderTopWidth: 0.5, gap: 10, paddingBottom: 24, paddingHorizontal: 12, paddingTop: 12 },
+  ownerButton: { alignItems: "center", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 54, paddingHorizontal: 18, paddingVertical: 15, width: "100%" },
+  ownerButtonText: { color: "white", fontSize: 15, fontWeight: "700" },
   actionBtn: {
     flex: 1,
     paddingVertical: 16,
@@ -975,16 +1091,9 @@ const styles = StyleSheet.create({
   },
   ownerEdit: {
     backgroundColor: "#F0531C",
-    borderColor: "#F0531C",
-    flex: 1.2,
-  },
-  ownerBrowse: {
-    backgroundColor: "#F1EFE8",
-    borderColor: "rgba(11,15,26,0.10)",
   },
   ownerShare: {
-    backgroundColor: "#E6F1FB",
-    borderColor: "rgba(24,95,165,0.25)",
+    backgroundColor: "#0E1A24",
   },
   actionLbl: { fontSize: 12, fontWeight: "700", color: "#6B7280" },
   proMicro: {

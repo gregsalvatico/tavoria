@@ -220,7 +220,7 @@ export default function PostShift() {
       >
         {/* Contract */}
         <Section title={t("post_shift.contract")}>
-          <View style={styles.tileGrid}>
+          <View style={styles.contractGrid}>
             {CONTRACTS.filter((c) => c.id !== "custom").map((c) => {
               const on = contract === c.id;
               return (
@@ -228,15 +228,15 @@ export default function PostShift() {
                   key={c.id}
                   onPress={() => onPickContract(c.id)}
                   style={[
-                    styles.tileSm,
+                    styles.contractTile,
                     { backgroundColor: c.hue },
                     on && styles.tileOn,
                   ]}
                 >
-                  <View style={styles.tileIconWrapSm}>
+                  <View style={styles.contractIconWrap}>
                     <Feather name={c.icon} size={18} color="white" />
                   </View>
-                  <Text style={styles.tileLblSm}>{t(`post_shift.${CONTRACT_KEYS[c.id] ?? c.id}`)}</Text>
+                  <Text style={styles.contractLabel}>{t(`post_shift.${CONTRACT_KEYS[c.id] ?? c.id}`)}</Text>
                   {on && (
                     <View style={styles.tileCheck}>
                       <Feather name="check" size={10} color="white" />
@@ -253,15 +253,15 @@ export default function PostShift() {
                 setCustomContractOpen(true);
               }}
               style={[
-                styles.tileSm,
+                styles.contractTile,
                 { backgroundColor: "#6B7280" },
                 contract === "custom" && styles.tileOn,
               ]}
             >
-              <View style={styles.tileIconWrapSm}>
+              <View style={styles.contractIconWrap}>
                 <Feather name="more-horizontal" size={18} color="white" />
               </View>
-              <Text style={styles.tileLblSm}>
+              <Text style={styles.contractLabel}>
                 {contract === "custom" && customContract.length > 0
                   ? customContract
                   : t("post_shift.other")}
@@ -495,12 +495,12 @@ export default function PostShift() {
                 </View>
                 <View style={styles.payCardUnitWrap}>
                   <Text style={styles.payCardUnit}>
-                    {t(`post_shift.per_${payUnit === "later" ? "hour" : payUnit}`)}
+                    {t(`post_shift.per_${payUnit}`)}
                   </Text>
                 </View>
               </View>
               <Text style={styles.payHint}>
-                {t(`post_shift.pay_hint_${payUnit === "later" ? "hour" : payUnit}`)}
+                {t(`post_shift.pay_hint_${payUnit}`)}
               </Text>
               <Pressable
                 onPress={() => onPickPayUnit("later")}
@@ -1329,6 +1329,29 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 4,
   },
+  contractGrid: { gap: 10, marginTop: 4 },
+  contractTile: {
+    alignItems: "center",
+    borderColor: "transparent",
+    borderRadius: 14,
+    borderWidth: 2,
+    flexDirection: "row",
+    gap: 12,
+    minHeight: 68,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    position: "relative",
+    width: "100%",
+  },
+  contractIconWrap: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.25)",
+    borderRadius: 999,
+    height: 38,
+    justifyContent: "center",
+    width: 38,
+  },
+  contractLabel: { color: "white", flex: 1, fontSize: 15, fontWeight: "800" },
   tile: {
     width: "47.5%",
     aspectRatio: 1.15,
@@ -1658,7 +1681,9 @@ const styles = StyleSheet.create({
   },
 
   bottom: {
-    padding: 16,
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     backgroundColor: "white",
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",

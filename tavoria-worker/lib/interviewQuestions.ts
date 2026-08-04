@@ -703,6 +703,14 @@ export function pickQuestionsForRoles(
 
 export const UNIVERSAL_QUESTIONS = UNIVERSAL;
 
+export function getQuestionsByIds(ids: string[]): InterviewQuestion[] {
+  const all = [...UNIVERSAL, ...Object.values(BANKS).flat()];
+  const byId = new Map(all.map((question) => [question.id, question]));
+  return ids
+    .map((id) => byId.get(id))
+    .filter((question): question is InterviewQuestion => !!question);
+}
+
 // ---- Localization ----
 //
 // `interviewQuestions.ts` is the canonical English source of truth, but at

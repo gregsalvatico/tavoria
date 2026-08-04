@@ -26,23 +26,31 @@ import {
 import { downloadVenueQRPoster } from "../lib/qrPoster";
 import { initProEligibility, isProEligible } from "../lib/proEligibility";
 import { getVenueProfile } from "../lib/venueProfile";
+import SignedInHome from "../components/SignedInHome";
+import {
+  getCachedHomeContext,
+  setCachedHomeContext,
+  subscribeToHomeContext,
+  type HomeContext,
+} from "../lib/homeContextCache";
 
 const WORKER_LAST_SEEN_KEY = "gigi.worker.apps_last_seen";
 import { initI18n, LANGUAGES, Language, setLanguage, t } from "../lib/i18n";
+import { colors } from "../lib/theme";
+
+const EMPTY_HOME_CONTEXT: HomeContext = { hasVenue: false, hasWorker: false };
 
 export default function Welcome() {
   const router = useRouter();
   // Bump on language change to force re-render
   const [lang, setLang] = useState<Language>("en");
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [ctx, setCtx] = useState<{
-    hasVenue: boolean;
-    venueName?: string;
-    venueId?: string;
-    hasWorker: boolean;
-    workerName?: string;
-    workerId?: string;
-  }>({ hasVenue: false, hasWorker: false });
+  const [ctx, setCtx] = useState<HomeContext>(
+    () => getCachedHomeContext() ?? EMPTY_HOME_CONTEXT
+  );
+  const [contextReady, setContextReady] = useState(
+    () => getCachedHomeContext() !== null
+  );
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [workerCounts, setWorkerCounts] = useState<WorkerStatusCounts>({
     hired: 0,
@@ -66,6 +74,37 @@ export default function Welcome() {
     initProEligibility();
   }, []);
 
+  // Keep an already-mounted home screen in sync with sign-in screens and
+  // onboarding routes. This is what prevents the old signed-out tree from
+  // appearing for one frame when Expo Router returns to `/`.
+  useEffect(() => {
+    return subscribeToHomeContext((next) => {
+      if (next === null) {
+        setContextReady(false);
+        return;
+      }
+      setCtx(next);
+      setContextReady(true);
+    });
+  }, []);
+
+  // Supabase emits SIGNED_IN before navigation. Hide any previously rendered
+  // landing page immediately; signin.tsx then seeds the resolved account
+  // context, or the focus refresh below resolves it after onboarding.
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") {
+        const cached = getCachedHomeContext();
+        if (!cached?.hasVenue && !cached?.hasWorker) {
+          setCachedHomeContext(null);
+        }
+      } else if (event === "SIGNED_OUT") {
+        setCachedHomeContext(EMPTY_HOME_CONTEXT);
+      }
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
+
   // Sign out: wipe in-memory caches + Supabase session. ctx then refreshes
   // empty on next focus, which makes signedIn false automatically.
   const signOut = async () => {
@@ -76,7 +115,7 @@ export default function Welcome() {
     } catch (e) {
       console.warn("[home] signOut failed:", e);
     }
-    setCtx({ hasVenue: false, hasWorker: false });
+    setCachedHomeContext(EMPTY_HOME_CONTEXT);
     setPendingCount(0);
     setWorkerCounts({
       hired: 0,
@@ -107,7 +146,9 @@ export default function Welcome() {
       (async () => {
         try {
           const c = await getCurrentUserContext();
-          if (!cancelled) setCtx(c);
+          if (!cancelled) {
+            setCachedHomeContext(c);
+          }
           // Fetch pending-application count for the venue Messaggi badge
           if (c.hasVenue) {
             try {
@@ -138,7 +179,9 @@ export default function Welcome() {
               newTotal: 0,
             });
           }
-        } catch {}
+        } catch {
+          // Keep a previously resolved context during transient refresh errors.
+        }
       })();
       return () => {
         cancelled = true;
@@ -147,6 +190,13 @@ export default function Welcome() {
   );
 
   const current = LANGUAGES.find((l) => l.code === lang) ?? LANGUAGES[0];
+
+  // Never let the signed-out landing page flash while auth/profile state is
+  // still being resolved. Returning from a top-level tab uses the cache above,
+  // so this gate is normally only visible on a cold start.
+  if (!contextReady) {
+    return <View style={styles.authGate} />;
+  }
 
   // Signed-out home is a clean flex layout (no ScrollView) so iOS doesn't
   // auto-adjust content insets and shove the top off-screen.
@@ -162,8 +212,9 @@ export default function Welcome() {
                 hitSlop={8}
                 style={styles.langBtn}
               >
-                <Text style={styles.langFlag}>{current.flag}</Text>
+                <Feather name="globe" size={15} color="#46505A" />
                 <Text style={styles.langCode}>{current.code.toUpperCase()}</Text>
+                <Feather name="chevron-down" size={14} color="#46505A" />
               </Pressable>
               <Link href="/signin" asChild>
                 <Pressable hitSlop={8} style={styles.topLink}>
@@ -177,16 +228,15 @@ export default function Welcome() {
                 <Text style={styles.accentLetter}>T</Text>avoria
                 <Text style={styles.accentLetter}>.</Text>
               </Text>
-              <Text style={styles.kicker}>HOSPITALITY · MILAN · JULY 2026</Text>
               <Text style={styles.headline}>
-                {t("home.headline1")}{"\n"}{t("home.headline2")}{"\n"}
+                {t("home.headline_top")}{"\n"}
                 <Text style={styles.accent}>{t("home.headline3")}</Text>
               </Text>
               <Text style={styles.sub}>{t("home.tagline")}</Text>
             </View>
           </View>
 
-          {/* Match the landing page: two clear entry paths, plus QR scanning as a secondary action. */}
+          {/* Clear action hierarchy: venue signup, worker signup, then job browsing. */}
           <View style={styles.signedOutBottom}>
             <Link href="/venue-type" asChild>
               <Pressable style={styles.landingVenueBtn}>
@@ -199,6 +249,15 @@ export default function Welcome() {
               <Pressable style={styles.landingWorkerBtn}>
                 <Text style={styles.landingWorkerBtnText}>{t("home.worker_cta")}</Text>
                 <Feather name="arrow-right" size={19} color="#0E1A24" />
+              </Pressable>
+            </Link>
+
+            <Link href="/discover" asChild>
+              <Pressable style={styles.landingBrowseBtn}>
+                <Feather name="search" size={18} color={colors.secondary} />
+                <Text style={styles.landingBrowseBtnText}>
+                  {t("home_in.browse_shifts")}
+                </Text>
               </Pressable>
             </Link>
 
@@ -225,6 +284,7 @@ export default function Welcome() {
             onPress={() => setPickerOpen(false)}
           />
           <View style={styles.langSheet}>
+            <View style={styles.langSheetHandle} />
             <Text style={styles.langSheetTitle}>{t("language.pick")}</Text>
             {LANGUAGES.map((l) => (
               <Pressable
@@ -238,9 +298,11 @@ export default function Welcome() {
               >
                 <Text style={styles.langRowFlag}>{l.flag}</Text>
                 <Text style={styles.langRowLbl}>{l.label}</Text>
-                {l.code === lang && (
-                  <Text style={styles.langRowCheck}>✓</Text>
-                )}
+                <View style={styles.langRowCheck}>
+                  {l.code === lang && (
+                    <Feather name="check-circle" size={20} color="#F0531C" />
+                  )}
+                </View>
               </Pressable>
             ))}
           </View>
@@ -249,6 +311,41 @@ export default function Welcome() {
     );
   }
 
+  return (
+    <SignedInHome
+      ctx={ctx}
+      lang={lang}
+      pendingCount={pendingCount}
+      workerCounts={workerCounts}
+      proEligible={isProEligible()}
+      onChangeLanguage={async (language) => {
+        await setLanguage(language);
+        setLang(language);
+      }}
+      onPrintQr={async () => {
+        if (!ctx.venueId) return;
+        try {
+          const vp = getVenueProfile();
+          await downloadVenueQRPoster({
+            venueId: ctx.venueId,
+            venueName: ctx.venueName ?? vp?.name ?? "",
+            venueCity: ctx.venueCity ?? vp?.city,
+          });
+        } catch (error) {
+          console.warn("[home] downloadVenueQRPoster failed:", error);
+          Alert.alert(
+            t("home_in.print_qr"),
+            String((error as Error)?.message ?? error)
+          );
+        }
+      }}
+      onShare={onShare}
+      onSignOut={signOut}
+    />
+  );
+
+  /* Legacy signed-in layout retained temporarily while the new feed-first
+     home is evaluated. It is unreachable and can be removed after approval. */
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView
@@ -259,12 +356,13 @@ export default function Welcome() {
         {/* Top header — Language (left) · Sign in (right) */}
         <View style={styles.topBar}>
           <Pressable
-            onPress={() => setPickerOpen(true)}
-            hitSlop={8}
-            style={styles.langBtn}
-          >
-            <Text style={styles.langFlag}>{current.flag}</Text>
+          onPress={() => setPickerOpen(true)}
+          hitSlop={8}
+          style={styles.langBtn}
+        >
+            <Feather name="globe" size={15} color="#46505A" />
             <Text style={styles.langCode}>{current.code.toUpperCase()}</Text>
+            <Feather name="chevron-down" size={14} color="#46505A" />
           </Pressable>
           {signedIn ? (
             <Pressable hitSlop={8} style={styles.topLink} onPress={signOut}>
@@ -724,6 +822,7 @@ export default function Welcome() {
           onPress={() => setPickerOpen(false)}
         />
         <View style={styles.langSheet}>
+          <View style={styles.langSheetHandle} />
           <Text style={styles.langSheetTitle}>{t("language.pick")}</Text>
           {LANGUAGES.map((l) => (
             <Pressable
@@ -740,9 +839,11 @@ export default function Welcome() {
             >
               <Text style={styles.langRowFlag}>{l.flag}</Text>
               <Text style={styles.langRowLbl}>{l.label}</Text>
-              {l.code === lang && (
-                <Text style={styles.langRowCheck}>✓</Text>
-              )}
+              <View style={styles.langRowCheck}>
+                {l.code === lang && (
+                  <Feather name="check-circle" size={20} color="#F0531C" />
+                )}
+              </View>
             </Pressable>
           ))}
         </View>
@@ -822,7 +923,9 @@ function WhatsAppFAB() {
 }
 
 const styles = StyleSheet.create({
+  authGate: { backgroundColor: "#F7F4EE", flex: 1 },
   safe: { flex: 1, backgroundColor: "#F7F4EE" },
+  kicker: { color: "#6B7280", fontSize: 11, fontWeight: "700", letterSpacing: 1.2 },
 
   // Signed-out: dedicated flex layout, NOT a ScrollView
   signedOutRoot: {
@@ -854,17 +957,18 @@ const styles = StyleSheet.create({
   langBtn: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
     borderRadius: 999,
-    backgroundColor: "white",
-    borderWidth: 0.5,
-    borderColor: "rgba(0,0,0,0.10)",
+    backgroundColor: "rgba(255,255,255,0.72)",
+    borderWidth: 1,
+    borderColor: "rgba(14,26,36,0.12)",
   },
   langFlag: { fontSize: 16 },
-  langCode: { fontSize: 12, fontWeight: "800", color: "#0E1A24", letterSpacing: 0.5 },
-  topLink: { paddingVertical: 6, paddingHorizontal: 4 },
+  langCode: { fontSize: 11, fontWeight: "800", color: "#0E1A24", letterSpacing: 0.8 },
+  // Keep both header actions flush with the shared 20px content gutter.
+  topLink: { paddingVertical: 6 },
   topLinkTxt: { color: "#6B7280", fontSize: 14, fontWeight: "600" },
 
   wordmarkWrap: { marginTop: 8, alignItems: "center", paddingVertical: 4, height: 60, justifyContent: "center" },
@@ -880,31 +984,22 @@ const styles = StyleSheet.create({
   },
   accentLetter: { color: "#F0531C" },
 
-  // Hero — natural height, sits right under wordmark (no centering, no flex)
-  hero: { alignItems: "center", paddingTop: 8 },
-  kicker: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: "#F0531C",
-    letterSpacing: 2,
-    textAlign: "center",
-    marginTop: 48,
-    marginBottom: 6,
-  },
+  // Compact serif hero below the wordmark.
+  hero: { alignItems: "center", paddingTop: 28 },
   headline: {
     fontFamily: "InstrumentSerif_400Regular",
-    fontSize: 30,
+    fontSize: 34,
     fontWeight: "400",
     color: "#0E1A24",
-    lineHeight: 34,
+    lineHeight: 36,
     letterSpacing: -1,
     textAlign: "center",
   },
   accent: { color: "#F0531C" },
   sub: {
-    marginTop: 8,
-    fontSize: 12,
-    lineHeight: 16,
+    marginTop: 14,
+    fontSize: 14,
+    lineHeight: 20,
     color: "#6B7280",
     maxWidth: 320,
     textAlign: "center",
@@ -955,6 +1050,16 @@ const styles = StyleSheet.create({
     paddingVertical: 17,
   },
   landingWorkerBtnText: { color: "#0E1A24", fontSize: 17, fontWeight: "700" },
+  landingBrowseBtn: {
+    alignItems: "center",
+    backgroundColor: colors.tertiary,
+    borderRadius: 999,
+    flexDirection: "row",
+    gap: 9,
+    justifyContent: "center",
+    paddingVertical: 17,
+  },
+  landingBrowseBtnText: { color: colors.secondary, fontSize: 17, fontWeight: "700" },
   scanQrLink: {
     alignItems: "center",
     alignSelf: "center",
@@ -1458,34 +1563,42 @@ const styles = StyleSheet.create({
   modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)" },
   langSheet: {
     backgroundColor: "white",
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     paddingHorizontal: 20,
-    paddingTop: 18,
+    paddingTop: 12,
     paddingBottom: 28,
+  },
+  langSheetHandle: {
+    alignSelf: "center",
+    backgroundColor: "#D7D9DC",
+    borderRadius: 999,
+    height: 4,
+    marginBottom: 16,
+    width: 36,
   },
   langSheetTitle: {
     fontFamily: "InstrumentSerif_400Regular",
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: "400",
     color: "#0E1A24",
-    textAlign: "center",
-    marginBottom: 16,
+    textAlign: "left",
+    marginBottom: 14,
   },
   langRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    backgroundColor: "#F1EFE8",
-    marginBottom: 6,
+    gap: 12,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    backgroundColor: "#F7F4EE",
+    marginBottom: 8,
   },
-  langRowOn: { backgroundColor: "#FFF4EE", borderWidth: 1, borderColor: "#F0531C" },
-  langRowFlag: { fontSize: 24 },
-  langRowLbl: { flex: 1, fontSize: 15, fontWeight: "700", color: "#0E1A24" },
-  langRowCheck: { fontSize: 18, color: "#F0531C", fontWeight: "900" },
+  langRowOn: { backgroundColor: "#FFF1E8", borderWidth: 1, borderColor: "#F0531C" },
+  langRowFlag: { fontSize: 22, textAlign: "center", width: 26 },
+  langRowLbl: { flex: 1, fontSize: 16, fontWeight: "700", color: "#0E1A24" },
+  langRowCheck: { alignItems: "center", justifyContent: "center", width: 20 },
 
   // Section labels above each pair of signed-out home tiles
   sideLabel: {

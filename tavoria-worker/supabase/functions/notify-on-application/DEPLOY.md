@@ -36,6 +36,8 @@ Grab the keys from Supabase dashboard → Settings → API:
 ```bash
 supabase secrets set SUPABASE_URL=https://abcdefgh.supabase.co
 supabase secrets set SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
+supabase secrets set RESEND_API_KEY=re_...
+supabase secrets set RESEND_FROM_EMAIL="Tavoria <hello@tavoriapp.com>"
 ```
 
 > ⚠️ The service-role key bypasses RLS. Never commit it to git, never put
@@ -87,7 +89,9 @@ in Expo Go on SDK 53+):
    > **Nuova candidatura**
    > Maria si è candidata a uno dei tuoi turni.
 6. As Venue, open the candidate and tap **Colloquio** or **Assumi** — the
-   worker device gets a push back.
+   worker device gets a push back and the worker receives a transactional
+   email. **Preferito** also sends push + email; **Rifiuta** sends email and an
+   in-app status update without a disruptive push.
 
 ## Logs / debugging
 

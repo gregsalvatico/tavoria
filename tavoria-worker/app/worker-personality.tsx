@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { updateCurrentWorker } from "../lib/db";
 import { t } from "../lib/i18n";
-import { patchWorkerProfile } from "../lib/workerProfile";
+import { getWorkerProfile, patchWorkerProfile } from "../lib/workerProfile";
 
 type Option = {
   label: string;
@@ -193,9 +193,14 @@ function buildQuestions(): Q[] {
 
 export default function WorkerPersonality() {
   const router = useRouter();
+  const existingProfile = getWorkerProfile();
+  const existingTraits = [
+    ...(existingProfile?.personality ?? []),
+    ...(existingProfile?.strengths ?? []),
+  ];
   const [step, setStep] = useState(0);
   const [picks, setPicks] = useState<number[]>([]);
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState(existingTraits.length > 0);
   // Built once per render — t() reads the current locale.
   const QUESTIONS = useMemo(() => buildQuestions(), []);
   const total = QUESTIONS.length;
@@ -226,6 +231,7 @@ export default function WorkerPersonality() {
   }, [step, done, fade, slide]);
 
   const traits = useMemo(() => {
+    if (picks.length === 0 && existingTraits.length > 0) return existingTraits;
     const counts: Record<string, number> = {};
     picks.forEach((opt, qi) => {
       QUESTIONS[qi].options[opt].traits.forEach((tr) => {
@@ -235,7 +241,7 @@ export default function WorkerPersonality() {
     return Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
       .map(([trait]) => trait);
-  }, [picks, QUESTIONS]);
+  }, [existingTraits, picks, QUESTIONS]);
 
   const onPick = (idx: number) => {
     const next = [...picks, idx];
@@ -673,7 +679,9 @@ const styles = StyleSheet.create({
   retakeTxt: { color: "#185FA5", fontSize: 13, fontWeight: "600" },
 
   bottom: {
-    padding: 16,
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     backgroundColor: "white",
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",

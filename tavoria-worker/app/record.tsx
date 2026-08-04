@@ -266,10 +266,7 @@ export default function Record() {
 
           <View style={styles.stepBadge}>
             <Text style={styles.stepBadgeTxt}>
-              {t("record_screen.step_of").replace(
-                "{{n}}",
-                String(isVideoPhase ? 2 : 1)
-              )}
+              {t("record_screen.step_of", { n: isVideoPhase ? 2 : 1 })}
             </Text>
           </View>
 
@@ -376,10 +373,9 @@ export default function Record() {
               </Text>
               <Text style={styles.previewSub}>
                 {videoDuration > 0
-                  ? t("record_screen.video_ready_sub_recorded").replace(
-                      "{{n}}",
-                      String(videoDuration)
-                    )
+                  ? t("record_screen.video_ready_sub_recorded", {
+                      n: videoDuration,
+                    })
                   : t("record_screen.video_ready_sub_default")}
               </Text>
               {errorMsg ? (
@@ -687,7 +683,7 @@ const styles = StyleSheet.create({
 
   bottom: {
     paddingTop: 20,
-    paddingBottom: 16,
+    paddingBottom: 24,
     paddingHorizontal: 20,
     alignItems: "center",
     gap: 10,

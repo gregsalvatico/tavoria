@@ -22,7 +22,7 @@ import {
   WorkEligibilityIT,
 } from "../lib/countries";
 import { getWorkerProfile, patchWorkerProfile } from "../lib/workerProfile";
-import { upsertWorker } from "../lib/db";
+import { updateCurrentWorker, upsertWorker } from "../lib/db";
 import { t } from "../lib/i18n";
 
 const EXPERIENCE = [
@@ -48,16 +48,24 @@ export default function WorkerExperience() {
   const router = useRouter();
   // Apply-flow params come from /worker-positions (which got them from
   // /record). We use them to land back on /applied with the venue name.
-  const { next, venueName } = useLocalSearchParams<{
+  const { next, venueName, mode } = useLocalSearchParams<{
     next?: string;
     venueName?: string;
+    mode?: string;
   }>();
   const isApplyFlow = next === "apply";
+  const isEditMode = mode === "edit";
+  const existing = getWorkerProfile();
+  const knownLanguageCodes = new Set(LANGUAGES.map((language) => language.code));
 
-  const [years, setYears] = useState<number | null>(null);
-  const [languages, setLanguages] = useState<string[]>([]);
-  const [city, setCity] = useState("Milan");
-  const [otherLangs, setOtherLangs] = useState<string[]>([]);
+  const [years, setYears] = useState<number | null>(() => existing?.yearsExperience ?? null);
+  const [languages, setLanguages] = useState<string[]>(() =>
+    (existing?.languages ?? []).filter((language) => knownLanguageCodes.has(language))
+  );
+  const [city, setCity] = useState(() => existing?.city ?? "Milan");
+  const [otherLangs, setOtherLangs] = useState<string[]>(() =>
+    (existing?.languages ?? []).filter((language) => !knownLanguageCodes.has(language))
+  );
   const [otherOpen, setOtherOpen] = useState(false);
   const [otherDraft, setOtherDraft] = useState("");
   const [detecting, setDetecting] = useState(false);
@@ -65,8 +73,10 @@ export default function WorkerExperience() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // New fields — nationality defaults to Italy, eligibility defaults to EU citizen
-  const [nationality, setNationality] = useState<string>("IT");
-  const [eligibility, setEligibility] = useState<WorkEligibilityIT>("eu_citizen");
+  const [nationality, setNationality] = useState<string>(() => existing?.nationality ?? "IT");
+  const [eligibility, setEligibility] = useState<WorkEligibilityIT>(
+    () => existing?.workEligibilityIT ?? "eu_citizen"
+  );
   const [countryPickerOpen, setCountryPickerOpen] = useState(false);
 
   const onContinue = async () => {
@@ -87,7 +97,7 @@ export default function WorkerExperience() {
     });
     const profile = getWorkerProfile();
     try {
-      const { id: workerId } = await upsertWorker({
+      const workerPatch = {
         first_name: profile?.firstName,
         last_name: profile?.lastName,
         email: profile?.email,
@@ -101,8 +111,22 @@ export default function WorkerExperience() {
         years_exp: yearsLabel,
         positions: profile?.positions ?? [],
         languages: allLanguages,
-      });
-      patchWorkerProfile({ workerId });
+      };
+      if (isEditMode) {
+        await updateCurrentWorker({
+          age_range: profile?.ageRange,
+          city: city.trim(),
+          country: profile?.country ?? "Italy",
+          nationality,
+          work_eligibility_it: eligibility,
+          years_exp: yearsLabel,
+          positions: profile?.positions ?? [],
+          languages: allLanguages,
+        });
+      } else {
+        const { id: workerId } = await upsertWorker(workerPatch);
+        patchWorkerProfile({ workerId });
+      }
       // If we're mid-apply (came via /record → /worker-positions → here),
       // land on /applied with the venueName so the worker sees a proper
       // success screen instead of the post-signup bonus hub.
@@ -111,6 +135,8 @@ export default function WorkerExperience() {
           pathname: "/applied",
           params: { venueName: venueName ?? "" },
         });
+      } else if (isEditMode) {
+        router.replace("/candidate");
       } else {
         router.push("/worker-bonus");
       }
@@ -674,7 +700,9 @@ const styles = StyleSheet.create({
   },
 
   bottom: {
-    padding: 16,
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     backgroundColor: "white",
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",

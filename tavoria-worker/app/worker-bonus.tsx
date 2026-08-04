@@ -1,7 +1,8 @@
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Animated,
   Pressable,
   ScrollView,
@@ -11,7 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getCurrentWorkerFull } from "../lib/db";
-import { t } from "../lib/i18n";
+import { i18n, LANGUAGES, t } from "../lib/i18n";
 import { getWorkerProfile, patchWorkerProfile } from "../lib/workerProfile";
 
 type ItemKey = "interview" | "personality" | "videos" | "photos" | "documents";
@@ -81,6 +82,7 @@ export default function WorkerBonus() {
     photos: false,
     documents: false,
   });
+  const [hydrating, setHydrating] = useState(true);
 
   const refresh = useCallback(async () => {
     // First take whatever's in the in-memory cache (fast paint)
@@ -88,8 +90,8 @@ export default function WorkerBonus() {
     setDone({
       interview: !!(p?.interviewAnswers && p.interviewAnswers.length > 0),
       personality: !!(p?.personality && p.personality.length > 0),
-      videos: false,
-      photos: false,
+      videos: !!p?.videoUrl,
+      photos: !!p?.photoUrl,
       documents: false,
     });
     // Then hydrate from Supabase so saved progress shows even after an app
@@ -98,6 +100,20 @@ export default function WorkerBonus() {
       const w = await getCurrentWorkerFull();
       if (!w) return;
       patchWorkerProfile({
+        workerId: w.id ?? undefined,
+        firstName: w.first_name ?? undefined,
+        lastName: w.last_name ?? undefined,
+        email: w.email ?? undefined,
+        phone: w.phone ?? undefined,
+        phoneVisible: w.phone_visible ?? true,
+        ageRange: w.age_range ?? undefined,
+        city: w.city ?? undefined,
+        country: w.country ?? undefined,
+        nationality: w.nationality ?? undefined,
+        workEligibilityIT: w.work_eligibility_it ?? undefined,
+        yearsExperience: parseYearsExperience(w.years_exp),
+        positions: Array.isArray(w.positions) ? w.positions : [],
+        languages: Array.isArray(w.languages) ? w.languages : [],
         interviewAnswers: w.interview_answers ?? undefined,
         interviewCompletedAt: w.interview_completed_at ?? undefined,
         personality: w.personality ?? undefined,
@@ -108,12 +124,14 @@ export default function WorkerBonus() {
       setDone({
         interview: Array.isArray(w.interview_answers) && w.interview_answers.length > 0,
         personality: Array.isArray(w.personality) && w.personality.length > 0,
-        videos: false,
-        photos: false,
+        videos: !!w.video_url,
+        photos: !!w.photo_url,
         documents: false,
       });
     } catch (e) {
       console.warn("[worker-bonus] hydrate failed:", e);
+    } finally {
+      setHydrating(false);
     }
   }, []);
 
@@ -185,10 +203,15 @@ export default function WorkerBonus() {
         {isEditMode ? (
           <Pressable
             style={styles.editBanner}
-            onPress={() => router.push("/worker-positions")}
+            disabled={hydrating}
+            onPress={() => router.push("/worker-positions?mode=edit")}
           >
             <View style={styles.editBannerIcon}>
-              <Feather name="refresh-cw" size={18} color="white" />
+              {hydrating ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Feather name="edit-2" size={18} color="white" />
+              )}
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.editBannerTitle}>
@@ -246,7 +269,7 @@ export default function WorkerBonus() {
                 {isDone ? (
                   <Feather name="check-circle" size={18} color="#3B6D11" />
                 ) : (
-                  <Ionicons name="sparkles" size={16} color="#D4A24C" />
+                  <Feather name="star" size={16} color="#D4A24C" />
                 )}
               </Pressable>
             );
@@ -281,6 +304,27 @@ export default function WorkerBonus() {
       </View>
     </SafeAreaView>
   );
+}
+
+const EXPERIENCE_KEYS: { id: number; key: string }[] = [
+  { id: 0, key: "worker_experience.exp_new" },
+  { id: 1, key: "worker_experience.exp_under_1" },
+  { id: 2, key: "worker_experience.exp_1_2" },
+  { id: 4, key: "worker_experience.exp_3_5" },
+  { id: 6, key: "worker_experience.exp_5_plus" },
+];
+
+function parseYearsExperience(value: unknown): number | undefined {
+  if (typeof value === "number") return value;
+  if (typeof value !== "string" || !value.trim()) return undefined;
+  const numeric = Number(value);
+  if (Number.isFinite(numeric)) return numeric;
+  for (const language of LANGUAGES) {
+    for (const option of EXPERIENCE_KEYS) {
+      if (i18n.t(option.key, { locale: language.code }) === value) return option.id;
+    }
+  }
+  return undefined;
 }
 
 const styles = StyleSheet.create({
@@ -431,7 +475,9 @@ const styles = StyleSheet.create({
   itemSubDone: { color: "#3B6D11", fontWeight: "600" },
 
   bottom: {
-    padding: 16,
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     gap: 10,
     backgroundColor: "white",
     borderTopWidth: 0.5,

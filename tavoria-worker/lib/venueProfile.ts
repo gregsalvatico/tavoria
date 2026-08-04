@@ -10,6 +10,10 @@ export type VenueProfile = {
   type?: string; // "Café" | "Bar" | "Restaurant" | …
   email?: string;
   phone?: string;
+  contactEmailEnabled?: boolean;
+  contactPhoneEnabled?: boolean;
+  contactInPersonEnabled?: boolean;
+  interviewLocationOptions?: string[];
   photoId?: string;
   photoUrl?: string; // Supabase Storage public URL (real uploaded photo)
   roles?: string[]; // positions this venue typically hires for

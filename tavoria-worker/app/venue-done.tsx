@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
   nextSub: { fontSize: 12, color: "#6B7280", marginTop: 1 },
   divider: { height: 0.5, backgroundColor: "rgba(0,0,0,0.08)", marginVertical: 4 },
 
-  bottom: { gap: 12, alignItems: "center", paddingTop: 8 },
+  bottom: { gap: 12, alignItems: "center", paddingBottom: 24, paddingTop: 8 },
   cta: {
     width: "100%",
     flexDirection: "row",

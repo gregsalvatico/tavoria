@@ -2,8 +2,8 @@
 // they'd posted. Tap a row to view the shift detail (same view workers see).
 
 import { Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -19,6 +19,7 @@ import { getCurrentVenueRow, getCurrentVenueShifts } from "../lib/db";
 import { t } from "../lib/i18n";
 import { getVenueProfile, patchVenueProfile } from "../lib/venueProfile";
 import { localizeRoles } from "../lib/positions";
+import AppBottomNav from "../components/AppBottomNav";
 
 const VENUE_TYPE_PHOTOS: Record<string, any> = {
   cafe: require("../assets/venue-cafe.png"),
@@ -59,29 +60,61 @@ type ShiftRow = {
   };
 };
 
+type VenueRow = {
+  id?: string;
+  name?: string;
+  type?: string;
+  city?: string;
+  address?: string;
+  photo_url?: string;
+};
+
 export default function VenueShifts() {
   const router = useRouter();
   const [shifts, setShifts] = useState<ShiftRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [venue, setVenue] = useState<VenueRow | null>(() => {
+    const cached = getVenueProfile();
+    return cached
+      ? {
+          id: cached.id,
+          name: cached.name,
+          type: cached.type,
+          city: cached.city,
+          address: cached.address,
+          photo_url: cached.photoUrl,
+        }
+      : null;
+  });
 
   const load = useCallback(async () => {
     setErrorMsg(null);
     try {
-      // Use local venueProfile.id if present; otherwise hydrate from Supabase.
-      let localVenueId = getVenueProfile()?.id;
-      if (!localVenueId) {
-        try {
-          const v = await getCurrentVenueRow();
-          if (v?.id) {
-            localVenueId = v.id as string;
-            patchVenueProfile({ id: v.id, name: v.name, type: v.type });
-          }
-        } catch {}
+      const remoteVenue = await getCurrentVenueRow();
+      let localVenueId = getVenueProfile()?.id ?? remoteVenue?.id;
+      if (remoteVenue?.id) {
+        const nextVenue: VenueRow = {
+          id: remoteVenue.id as string,
+          name: remoteVenue.name as string | undefined,
+          type: remoteVenue.type as string | undefined,
+          city: remoteVenue.city as string | undefined,
+          address: remoteVenue.address as string | undefined,
+          photo_url: remoteVenue.photo_url as string | undefined,
+        };
+        setVenue(nextVenue);
+        patchVenueProfile({
+          id: nextVenue.id,
+          name: nextVenue.name ?? "",
+          type: nextVenue.type,
+          city: nextVenue.city ?? "",
+          address: nextVenue.address ?? "",
+          photoUrl: nextVenue.photo_url,
+        });
       }
       const rows = await getCurrentVenueShifts(localVenueId);
-      setShifts(rows as ShiftRow[]);
+      setShifts(rows as unknown as ShiftRow[]);
     } catch (e: any) {
       setErrorMsg(e?.message ?? "Could not load shifts.");
     } finally {
@@ -90,38 +123,14 @@ export default function VenueShifts() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load])
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => {
-            if (router.canGoBack()) { router.back(); return; }
-            router.replace("/");
-          }}
-          hitSlop={12}
-          style={styles.iconBtn}
-        >
-          <Feather name="chevron-left" size={26} color="#0E1A24" />
-        </Pressable>
-        <Text style={styles.h1}>
-          <Text style={{ color: "#F0531C" }}>
-            {t("venue_shifts.title").charAt(0)}
-          </Text>
-          {t("venue_shifts.title").slice(1)}
-        </Text>
-        <Pressable
-          onPress={() => router.push("/venue-photo")}
-          hitSlop={12}
-          style={styles.iconBtn}
-        >
-          <Feather name="plus" size={22} color="#F0531C" />
-        </Pressable>
-      </View>
-
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={styles.scroll}
@@ -144,30 +153,69 @@ export default function VenueShifts() {
             <Feather name="alert-circle" size={32} color="#993556" />
             <Text style={styles.emptyTxt}>{errorMsg}</Text>
           </View>
-        ) : shifts.length === 0 ? (
-          <View style={styles.emptyWrap}>
-            <Feather name="briefcase" size={40} color="#9CA3AF" />
-            <Text style={styles.emptyTitle}>
-              {t("venue_shifts.empty_title")}
-            </Text>
-            <Text style={styles.emptyTxt}>
-              {t("venue_shifts.empty_sub")}
-            </Text>
+        ) : (
+          <>
+            {venue ? <VenueSummary venue={venue} onEdit={() => router.push("/venue-edit")} /> : null}
             <Pressable
               onPress={() => router.push("/venue-photo")}
-              style={styles.emptyCta}
+              style={styles.postShiftCard}
+              accessibilityRole="button"
             >
-              <Feather name="plus" size={16} color="white" />
-              <Text style={styles.emptyCtaTxt}>
-                {t("venue_shifts.post_more")}
-              </Text>
+              <View style={styles.postShiftIcon}>
+                <Feather name="plus" size={19} color="#F0531C" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.postShiftTitle}>{t("home_in.post_shift")}</Text>
+                <Text style={styles.postShiftText}>Add a new opening for your venue</Text>
+              </View>
+              <Feather name="arrow-up-right" size={19} color="#F0531C" />
             </Pressable>
-          </View>
-        ) : (
-          shifts.map((s) => <ShiftRowItem key={s.id} row={s} router={router} />)
+
+            {shifts.length === 0 ? (
+              <View style={styles.emptyInline}>
+                <Feather name="briefcase" size={22} color="#9CA3AF" />
+                <Text style={styles.emptyInlineTitle}>{t("venue_shifts.empty_title")}</Text>
+              </View>
+            ) : (
+              shifts.map((s) => <ShiftRowItem key={s.id} row={s} router={router} />)
+            )}
+          </>
         )}
       </ScrollView>
+      <AppBottomNav role="venue" active="shifts" />
     </SafeAreaView>
+  );
+}
+
+function VenueSummary({ venue, onEdit }: { venue: VenueRow; onEdit: () => void }) {
+  const image = venue.photo_url
+    ? { uri: venue.photo_url }
+    : VENUE_TYPE_PHOTOS[(venue.type || "cafe").toLowerCase()] ?? VENUE_TYPE_PHOTOS.cafe;
+
+  return (
+    <>
+    <View style={styles.hero}>
+      <Image source={image} style={styles.heroImg} resizeMode="cover" />
+      <View style={styles.heroOverlay} />
+      <View style={styles.heroTextWrap}>
+        <Text style={styles.heroName} numberOfLines={1}>{venue.name || "Your venue"}</Text>
+        <View style={styles.heroMetaRow}>
+          {venue.type ? <Text style={styles.heroMeta}>{venue.type}</Text> : null}
+          {venue.type && venue.city ? <Text style={styles.heroMetaDot}>·</Text> : null}
+          {venue.city ? (
+            <>
+              <Feather name="map-pin" size={12} color="rgba(255,255,255,0.85)" />
+              <Text style={styles.heroMeta}>{venue.city}</Text>
+            </>
+          ) : null}
+        </View>
+      </View>
+    </View>
+      <Pressable style={styles.editVenueButton} onPress={onEdit}>
+        <Feather name="edit-2" size={15} color="#0E1A24" />
+        <Text style={styles.editVenueText}>Edit profile</Text>
+      </Pressable>
+    </>
   );
 }
 
@@ -239,50 +287,27 @@ function ShiftRowItem({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F1EFE8" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  iconBtn: { padding: 4, width: 32, alignItems: "center" },
-  h1: {
-    fontFamily: "InstrumentSerif_400Regular",
-    fontSize: 22,
-    fontWeight: "400",
-    color: "#0E1A24",
-    letterSpacing: -0.4,
-  },
-
-  scroll: { paddingHorizontal: 14, paddingBottom: 20 },
+  scroll: { paddingBottom: 20, paddingHorizontal: 14, paddingTop: 10 },
 
   loadingWrap: { paddingVertical: 60, alignItems: "center" },
-  emptyWrap: {
-    paddingVertical: 60,
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 24,
-  },
-  emptyTitle: {
-    fontFamily: "InstrumentSerif_400Regular",
-    fontSize: 16,
-    fontWeight: "400",
-    color: "#0E1A24",
-    marginTop: 8,
-  },
+  emptyWrap: { alignItems: "center", gap: 8, paddingHorizontal: 24, paddingVertical: 60 },
   emptyTxt: { color: "#6B7280", fontSize: 13, textAlign: "center" },
-  emptyCta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 14,
-    backgroundColor: "#F0531C",
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 999,
-  },
-  emptyCtaTxt: { color: "white", fontSize: 14, fontWeight: "700" },
+  hero: { backgroundColor: "#0E1A24", borderRadius: 18, height: 180, marginBottom: 14, overflow: "hidden", position: "relative" },
+  heroImg: { height: "100%", width: "100%" },
+  heroOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.30)" },
+  heroTextWrap: { bottom: 16, left: 18, position: "absolute", right: 18 },
+  heroName: { color: "white", fontSize: 24, fontWeight: "800", letterSpacing: -0.3 },
+  heroMetaRow: { alignItems: "center", flexDirection: "row", gap: 6, marginTop: 4 },
+  heroMeta: { color: "rgba(255,255,255,0.9)", fontSize: 13 },
+  heroMetaDot: { color: "rgba(255,255,255,0.7)", fontSize: 13 },
+  editVenueButton: { alignItems: "center", backgroundColor: "white", borderColor: "rgba(14,26,36,0.14)", borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, justifyContent: "center", marginBottom: 12, minHeight: 46, paddingHorizontal: 16 },
+  editVenueText: { color: "#0E1A24", fontSize: 13, fontWeight: "800" },
+  postShiftCard: { alignItems: "center", backgroundColor: "#FFF8F4", borderColor: "#F0531C", borderRadius: 14, borderStyle: "dashed", borderWidth: 1.5, flexDirection: "row", gap: 11, marginBottom: 18, padding: 12 },
+  postShiftIcon: { alignItems: "center", backgroundColor: "#FFF0E7", borderRadius: 12, height: 44, justifyContent: "center", width: 44 },
+  postShiftTitle: { color: "#0E1A24", fontSize: 15, fontWeight: "800" },
+  postShiftText: { color: "#6B7280", fontSize: 11, marginTop: 3 },
+  emptyInline: { alignItems: "center", backgroundColor: "white", borderColor: "rgba(14,26,36,0.08)", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 11, padding: 14 },
+  emptyInlineTitle: { color: "#0E1A24", fontSize: 14, fontWeight: "800" },
 
   row: {
     flexDirection: "row",
@@ -296,7 +321,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0,0,0,0.08)",
     position: "relative",
   },
-  thumb: { width: 56, height: 56, borderRadius: 10 },
+  thumb: { width: 60, height: 60, borderRadius: 12 },
   urgentDot: {
     position: "absolute",
     top: 6,

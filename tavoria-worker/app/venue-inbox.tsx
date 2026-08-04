@@ -1,9 +1,9 @@
 // Venue inbox — list of all applicants to the current venue user's shifts.
 // Tap an item → candidate detail screen (with the real worker data).
 
-import { Feather, Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { Feather } from "@expo/vector-icons";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -19,6 +19,8 @@ import { getApplicationsForCurrentVenueOwner } from "../lib/db";
 import { t } from "../lib/i18n";
 import { getVenueProfile } from "../lib/venueProfile";
 import { localizeRoles } from "../lib/positions";
+import AppBottomNav from "../components/AppBottomNav";
+import FilterChips from "../components/FilterChips";
 
 type ApplicationRow = {
   id: string;
@@ -83,7 +85,7 @@ export default function VenueInbox() {
     setErrorMsg(null);
     try {
       const rows = await getApplicationsForCurrentVenueOwner();
-      setApps(rows as ApplicationRow[]);
+      setApps(rows as unknown as ApplicationRow[]);
       // pull venue's preferred answers from local profile (or first row's venue)
       setVenueAnswers(
         (venueProfile?.preferredInterviewAnswers ?? undefined) as any
@@ -96,10 +98,12 @@ export default function VenueInbox() {
     }
   };
 
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+  );
 
   const filtered =
     filter === "all"
@@ -137,39 +141,11 @@ export default function VenueInbox() {
         </Pressable>
       </View>
 
-      {/* Filter chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterRow}
-        style={{ flexGrow: 0, maxHeight: 44 }}
-      >
-        {FILTERS.map((f) => {
-          const on = filter === f.id;
-          const count = counts[f.id];
-          return (
-            <Pressable
-              key={f.id}
-              onPress={() => setFilter(f.id)}
-              style={[styles.filterChip, on && styles.filterChipOn]}
-            >
-              <Text
-                style={[styles.filterChipTxt, on && styles.filterChipTxtOn]}
-              >
-                {f.label}{" "}
-                <Text
-                  style={[
-                    styles.filterChipCount,
-                    on && styles.filterChipCountOn,
-                  ]}
-                >
-                  ({count})
-                </Text>
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+      <FilterChips
+        options={FILTERS.map((item) => ({ ...item, count: counts[item.id] }))}
+        value={filter}
+        onChange={setFilter}
+      />
 
       <ScrollView
         style={{ flex: 1 }}
@@ -280,6 +256,7 @@ export default function VenueInbox() {
           ))
         )}
       </ScrollView>
+      <AppBottomNav role="venue" active="inbox" />
     </SafeAreaView>
   );
 }
@@ -347,29 +324,6 @@ const styles = StyleSheet.create({
     color: "#0E1A24",
     letterSpacing: -0.4,
   },
-
-  filterRow: {
-    paddingHorizontal: 14,
-    paddingBottom: 10,
-    gap: 8,
-    flexDirection: "row",
-  },
-  filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: "white",
-    borderWidth: 0.5,
-    borderColor: "rgba(0,0,0,0.10)",
-  },
-  filterChipOn: {
-    backgroundColor: "#0E1A24",
-    borderColor: "#0E1A24",
-  },
-  filterChipTxt: { fontSize: 13, fontWeight: "700", color: "#0E1A24" },
-  filterChipTxtOn: { color: "white" },
-  filterChipCount: { fontWeight: "500", color: "#9CA3AF" },
-  filterChipCountOn: { color: "rgba(255,255,255,0.7)" },
 
   scroll: { paddingHorizontal: 14, paddingBottom: 20 },
 

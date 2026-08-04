@@ -1,10 +1,9 @@
-// Sign-in: username + 4-digit PIN. Pre-fills the last username used on this
-// device, so the common case is "open keypad, type 4 digits, done".
+// Sign-in: username + 4-digit PIN. A device-only account chooser remembers
+// usernames and roles, never PINs or Supabase sessions.
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -19,8 +18,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { signInWithUsernamePin } from "../lib/usernameAuth";
 import { t } from "../lib/i18n";
-
-const LAST_USERNAME_KEY = "gigi.last_username";
+import { getCurrentUserContext } from "../lib/db";
+import { setCachedHomeContext } from "../lib/homeContextCache";
+import {
+  forgetAccount,
+  getSavedAccounts,
+  rememberAccount,
+  type SavedAccount,
+} from "../lib/savedAccounts";
 
 export default function SignIn() {
   const router = useRouter();
@@ -28,49 +33,76 @@ export default function SignIn() {
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [pinError, setPinError] = useState(false);
   const [hasRemembered, setHasRemembered] = useState(false);
+  const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>([]);
+  const pinInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     (async () => {
-      try {
-        const last = await AsyncStorage.getItem(LAST_USERNAME_KEY);
-        if (last) {
-          setUsername(last);
+      const accounts = await getSavedAccounts();
+      setSavedAccounts(accounts);
+      if (accounts[0]) {
+          setUsername(accounts[0].username);
           setHasRemembered(true);
-        }
-      } catch {}
+      }
     })();
   }, []);
 
-  const switchAccount = async () => {
+  const chooseAccount = (account: SavedAccount) => {
+    setUsername(account.username);
+    setPin("");
+    setErrorMsg(null);
+    setPinError(false);
+    setHasRemembered(true);
+  };
+
+  const switchAccount = () => {
     setUsername("");
     setPin("");
     setErrorMsg(null);
+    setPinError(false);
     setHasRemembered(false);
-    try {
-      await AsyncStorage.removeItem(LAST_USERNAME_KEY);
-    } catch {}
+  };
+
+  const removeSavedAccount = async (account: SavedAccount) => {
+    const next = await forgetAccount(account.username);
+    setSavedAccounts(next);
+    if (username === account.username) switchAccount();
   };
 
   const onSignIn = async () => {
+    if (busy || !canSubmit) return;
     setErrorMsg(null);
+    setPinError(false);
     setBusy(true);
     try {
       await signInWithUsernamePin({
         username: username.trim().toLowerCase(),
         pin,
       });
-      // Remember the username on this device
-      try {
-        await AsyncStorage.setItem(
-          LAST_USERNAME_KEY,
-          username.trim().toLowerCase()
-        );
-      } catch {}
-      // Home screen detects worker/venue rows and shows Continue cards
+      const context = await getCurrentUserContext().catch(() => null);
+      const roles = [
+        ...(context?.hasWorker ? (["worker"] as const) : []),
+        ...(context?.hasVenue ? (["venue"] as const) : []),
+      ];
+      setSavedAccounts(
+        await rememberAccount({
+          username: username.trim().toLowerCase(),
+          roles,
+        })
+      );
+      // Seed the already-mounted home before replacing this route. If the
+      // context request failed, keep the home behind its neutral auth gate and
+      // let its focus refresh retry instead of flashing the public landing.
+      setCachedHomeContext(context);
       router.replace("/");
     } catch (e: any) {
-      setErrorMsg(e?.message ?? t("auth_pin.err_signin"));
+      const message = e?.message ?? t("auth_pin.err_signin");
+      setErrorMsg(message);
+      setPin("");
+      setPinError(true);
+      requestAnimationFrame(() => pinInputRef.current?.focus());
     } finally {
       setBusy(false);
     }
@@ -115,13 +147,71 @@ export default function SignIn() {
               : t("auth_pin.sign_in_sub_fresh")}
           </Text>
 
+          {savedAccounts.length > 0 && (
+            <View style={styles.savedAccounts}>
+              <Text style={styles.savedAccountsLabel}>
+                {t("auth_pin.saved_accounts")}
+              </Text>
+              {savedAccounts.map((account) => {
+                const selected = account.username === username && hasRemembered;
+                return (
+                  <View
+                    key={account.username}
+                    style={[styles.savedAccount, selected && styles.savedAccountSelected]}
+                  >
+                    <Pressable
+                      onPress={() => chooseAccount(account)}
+                      style={styles.savedAccountMain}
+                    >
+                      <View style={styles.savedAccountIcon}>
+                        <Feather name="user" size={17} color="#0E1A24" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.savedAccountUsername}>{account.username}</Text>
+                        <View style={styles.roleBadges}>
+                          {account.roles.includes("worker") && (
+                            <View style={[styles.roleBadge, styles.workerBadge]}>
+                              <Feather name="briefcase" size={10} color="#185FA5" />
+                              <Text style={[styles.roleBadgeText, { color: "#185FA5" }]}>
+                                {t("auth_pin.role_worker")}
+                              </Text>
+                            </View>
+                          )}
+                          {account.roles.includes("venue") && (
+                            <View style={[styles.roleBadge, styles.venueBadge]}>
+                              <Feather name="home" size={10} color="#F0531C" />
+                              <Text style={[styles.roleBadgeText, { color: "#C2410C" }]}>
+                                {t("auth_pin.role_venue")}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => removeSavedAccount(account)}
+                      hitSlop={10}
+                      style={styles.forgetBtn}
+                      accessibilityLabel={`Forget ${account.username}`}
+                    >
+                      <Feather name="x" size={17} color="#6B7280" />
+                    </Pressable>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>{t("auth_pin.username_label")}</Text>
-            <View style={styles.inputWrap}>
+            <View style={[styles.inputWrap, pinError && styles.inputWrapError]}>
               <Feather name="user" size={16} color="#6B7280" />
               <TextInput
                 value={username}
-                onChangeText={setUsername}
+                onChangeText={(value) => {
+                  setUsername(value);
+                  setHasRemembered(false);
+                }}
                 placeholder="maria-k7p2"
                 placeholderTextColor="#9CA3AF"
                 style={styles.input}
@@ -137,10 +227,13 @@ export default function SignIn() {
             <View style={styles.inputWrap}>
               <Feather name="lock" size={16} color="#6B7280" />
               <TextInput
+                ref={pinInputRef}
                 value={pin}
-                onChangeText={(v) =>
-                  setPin(v.replace(/[^0-9]/g, "").slice(0, 4))
-                }
+                onChangeText={(v) => {
+                  setPin(v.replace(/[^0-9]/g, "").slice(0, 4));
+                  if (pinError) setPinError(false);
+                  if (errorMsg) setErrorMsg(null);
+                }}
                 placeholder={t("auth_pin.pin_dots")}
                 placeholderTextColor="#9CA3AF"
                 style={styles.input}
@@ -163,7 +256,12 @@ export default function SignIn() {
             )}
           </View>
 
-          {errorMsg && <Text style={styles.errorTxt}>{errorMsg}</Text>}
+          {errorMsg && (
+            <View style={styles.errorBox} accessibilityRole="alert">
+              <Feather name="alert-circle" size={16} color="#B91C1C" />
+              <Text style={styles.errorTxt}>{errorMsg} Enter your PIN again to retry.</Text>
+            </View>
+          )}
         </ScrollView>
 
         <View style={styles.bottom}>
@@ -216,6 +314,54 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
+  savedAccounts: { gap: 8, marginTop: 22 },
+  savedAccountsLabel: {
+    color: "#6B7280",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  savedAccount: {
+    alignItems: "center",
+    backgroundColor: "white",
+    borderColor: "rgba(14,26,36,0.10)",
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: "row",
+  },
+  savedAccountSelected: { borderColor: "#F0531C", backgroundColor: "#FFF8F4" },
+  savedAccountMain: {
+    alignItems: "center",
+    flex: 1,
+    flexDirection: "row",
+    gap: 11,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+  },
+  savedAccountIcon: {
+    alignItems: "center",
+    backgroundColor: "#F7F4EE",
+    borderRadius: 999,
+    height: 34,
+    justifyContent: "center",
+    width: 34,
+  },
+  savedAccountUsername: { color: "#0E1A24", fontSize: 15, fontWeight: "700" },
+  roleBadges: { flexDirection: "row", flexWrap: "wrap", gap: 5, marginTop: 4 },
+  roleBadge: {
+    alignItems: "center",
+    borderRadius: 999,
+    flexDirection: "row",
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  workerBadge: { backgroundColor: "#E7F0F9" },
+  venueBadge: { backgroundColor: "#FFEFE6" },
+  roleBadgeText: { fontSize: 9, fontWeight: "800", letterSpacing: 0.5 },
+  forgetBtn: { paddingHorizontal: 12, paddingVertical: 14 },
+
   fieldGroup: { marginTop: 28 },
   label: {
     fontSize: 12,
@@ -236,6 +382,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: "rgba(0,0,0,0.10)",
   },
+  inputWrapError: { borderColor: "#D92D20", borderWidth: 1 },
   input: { flex: 1, fontSize: 16, color: "#0E1A24", padding: 0 },
 
   switchBtn: {
@@ -248,17 +395,18 @@ const styles = StyleSheet.create({
   },
   switchTxt: { color: "#185FA5", fontSize: 13, fontWeight: "600" },
 
+  errorBox: { alignItems: "center", backgroundColor: "#FDECEC", borderRadius: 12, flexDirection: "row", gap: 8, marginTop: 14, padding: 12 },
   errorTxt: {
     color: "#B91C1C",
+    flex: 1,
     fontSize: 13,
-    marginTop: 12,
-    textAlign: "center",
+    lineHeight: 18,
   },
 
   bottom: {
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 16,
+    paddingBottom: 24,
     backgroundColor: "white",
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",

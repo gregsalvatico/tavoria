@@ -16,7 +16,7 @@ const ROLE_TILE_SIZE = (SCREEN_W - 20 * 2 - 8 * 2) / 3;
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
 import { localizeRole } from "../lib/positions";
-import { patchWorkerProfile } from "../lib/workerProfile";
+import { getWorkerProfile, patchWorkerProfile } from "../lib/workerProfile";
 
 type Role = {
   id: string;
@@ -43,16 +43,19 @@ export default function WorkerPositions() {
   const router = useRouter();
   // Apply-flow params come from /record when the worker is mid-apply. We
   // thread them to /worker-experience so the chain lands on /applied.
-  const { next, shiftId, venueId, venueName } = useLocalSearchParams<{
+  const { next, shiftId, venueId, venueName, mode } = useLocalSearchParams<{
     next?: string;
     shiftId?: string;
     venueId?: string;
     venueName?: string;
+    mode?: string;
   }>();
   const isApplyFlow = next === "apply";
+  const isEditMode = mode === "edit";
+  const existing = getWorkerProfile();
 
-  const [picked, setPicked] = useState<string[]>([]);
-  const [ageRange, setAgeRange] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string[]>(() => existing?.positions ?? []);
+  const [ageRange, setAgeRange] = useState<string | null>(() => existing?.ageRange ?? null);
 
   const toggleRole = (id: string) =>
     setPicked((cur) =>
@@ -183,7 +186,7 @@ export default function WorkerPositions() {
                 },
               });
             } else {
-              router.push("/worker-experience");
+              router.push(isEditMode ? "/worker-experience?mode=edit" : "/worker-experience");
             }
           }}
           style={[styles.cta, !canContinue && styles.ctaDisabled]}
@@ -339,7 +342,9 @@ const styles = StyleSheet.create({
   chipTxtOn: { color: "white" },
 
   bottom: {
-    padding: 16,
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     backgroundColor: "white",
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",

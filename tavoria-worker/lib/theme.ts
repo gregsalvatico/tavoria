@@ -4,6 +4,10 @@
 // palette. Phase 2+ migrates per-screen styles to import from this file.
 
 export const colors = {
+  // Action hierarchy: use these for buttons before reaching for the base tokens.
+  primary: "#F0531C", // tangerine — highest-priority conversion action
+  secondary: "#F7F4EE", // paper — outlined supporting action
+  tertiary: "#0E1A24", // navy — utility / exploration action
   paper: "#F7F4EE", // background
   ink: "#0E1A24", // primary text + dark surfaces
   tangerine: "#F0531C", // brand accent + CTA

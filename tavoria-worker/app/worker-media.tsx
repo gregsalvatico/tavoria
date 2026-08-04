@@ -1,4 +1,4 @@
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
@@ -164,7 +164,7 @@ export default function WorkerMedia() {
               </Text>
             </View>
             {!videos[2] && (
-              <Ionicons name="language" size={18} color="#185FA5" />
+              <Feather name="globe" size={18} color="#185FA5" />
             )}
           </Pressable>
         </View>
@@ -351,7 +351,9 @@ const styles = StyleSheet.create({
   tipTxt: { flex: 1, color: "#854F0B", fontSize: 13, lineHeight: 18 },
 
   bottom: {
-    padding: 16,
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     backgroundColor: "white",
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",

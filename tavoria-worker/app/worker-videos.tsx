@@ -1,4 +1,4 @@
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -240,7 +240,7 @@ export default function WorkerVideos() {
         </View>
 
         <View style={styles.tipBox}>
-          <Ionicons name="bulb" size={14} color="#854F0B" />
+          <Feather name="zap" size={14} color="#854F0B" />
           <Text style={styles.tipTxt}>
             Workers with all 3 videos are{" "}
             <Text style={{ fontWeight: "800" }}>3× more likely</Text> to get
@@ -468,7 +468,9 @@ const styles = StyleSheet.create({
   tipTxt: { flex: 1, color: "#854F0B", fontSize: 13, lineHeight: 18 },
 
   bottom: {
-    padding: 16,
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     gap: 10,
     backgroundColor: "white",
     borderTopWidth: 0.5,

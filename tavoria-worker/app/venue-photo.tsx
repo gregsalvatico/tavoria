@@ -1,7 +1,7 @@
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -96,7 +96,7 @@ type VenueStyleOpt = {
   id: string;
   label: string;
   sub: string;
-  ionicon: keyof typeof Ionicons.glyphMap;
+  icon: keyof typeof Feather.glyphMap;
   hue: string;
 };
 
@@ -105,34 +105,36 @@ const VENUE_STYLES: VenueStyleOpt[] = [
     id: "casual",
     label: "Casual",
     sub: "Relaxed pace",
-    ionicon: "water-outline",
+    icon: "droplet",
     hue: "#06B6D4", // ocean teal — wave vibe
   },
   {
     id: "busy",
     label: "Busy",
     sub: "Fast-paced, high volume",
-    ionicon: "flash-outline",
+    icon: "zap",
     hue: "#EC4899", // hot pink
   },
   {
     id: "upscale",
     label: "Upscale",
     sub: "Refined service",
-    ionicon: "star-outline",
+    icon: "star",
     hue: "#3B82F6", // bright blue
   },
   {
     id: "luxury",
     label: "Luxury",
     sub: "Michelin / 5-star",
-    ionicon: "ribbon-outline",
+    icon: "award",
     hue: "#A855F7", // royal purple
   },
 ];
 
 export default function VenuePhoto() {
   const router = useRouter();
+  const scrollRef = useRef<ScrollView>(null);
+  const [setupStep, setSetupStep] = useState<0 | 1>(0);
   const [picked, setPicked] = useState<string | null>("v1");
   const [pickedRoles, setPickedRoles] = useState<string[]>([]);
   const [customRoles, setCustomRoles] = useState<string[]>([]);
@@ -257,11 +259,28 @@ export default function VenuePhoto() {
       cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]
     );
 
+  const moveToSetupStep = (nextStep: 0 | 1) => {
+    setSetupStep(nextStep);
+    requestAnimationFrame(() => scrollRef.current?.scrollTo({ y: 0, animated: false }));
+  };
+
+  const onPrimaryAction = () => {
+    if (setupStep === 0) {
+      moveToSetupStep(1);
+      return;
+    }
+    void onContinue();
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <View style={styles.header}>
         <Pressable
           onPress={() => {
+            if (setupStep > 0) {
+              moveToSetupStep(0);
+              return;
+            }
             if (router.canGoBack()) { router.back(); return; }
             router.replace("/venue-info");
           }}
@@ -270,16 +289,19 @@ export default function VenuePhoto() {
         >
           <Feather name="chevron-left" size={26} color="#0E1A24" />
         </Pressable>
-        <ProgressDots step={2} total={4} />
+        <ProgressDots step={setupStep + 1} total={3} />
         <View style={{ width: 32 }} />
       </View>
 
       <ScrollView
+        ref={scrollRef}
         style={{ flex: 1 }}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* Venue style / pace section */}
+        {setupStep === 0 && (
+          <>
+        {/* Step 1: venue style and the roles it hires for. */}
         <Text
           style={[
             styles.h1,
@@ -309,7 +331,7 @@ export default function VenuePhoto() {
                 ]}
               >
                 <View style={styles.styleTileIconWrap}>
-                  <Ionicons name={s.ionicon} size={30} color="white" />
+                  <Feather name={s.icon} size={30} color="white" />
                 </View>
                 <Text style={styles.styleTileLbl}>{t(`venue_style.${s.id}`)}</Text>
                 <Text style={styles.styleTileSub}>{t(`venue_style.${s.id}_sub`)}</Text>
@@ -407,7 +429,12 @@ export default function VenuePhoto() {
           </View>
         )}
 
-        {/* Pay schedule section */}
+          </>
+        )}
+
+        {setupStep === 1 && (
+          <>
+        {/* Step 2: pay schedule. */}
         <Text
           style={[
             styles.h1,
@@ -474,6 +501,9 @@ export default function VenuePhoto() {
             )}
           </Pressable>
         </View>
+
+          </>
+        )}
 
         <View style={{ height: 12 }} />
       </ScrollView>
@@ -550,7 +580,7 @@ export default function VenuePhoto() {
       <View style={styles.bottom}>
         <Pressable
           disabled={busy}
-          onPress={onContinue}
+          onPress={onPrimaryAction}
           style={[styles.cta, busy && styles.ctaDisabled]}
         >
           {busy ? (
@@ -932,7 +962,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
 
-  bottom: { padding: 20 },
+  bottom: { paddingBottom: 24, paddingHorizontal: 20, paddingTop: 20 },
   cta: {
     flexDirection: "row",
     alignItems: "center",

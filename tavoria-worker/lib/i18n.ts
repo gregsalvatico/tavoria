@@ -27,6 +27,10 @@ const STORAGE_KEY = "gigi.language";
 export const i18n = new I18n({ en, it, fr, es, zh });
 i18n.defaultLocale = "en";
 i18n.enableFallback = true;
+// Never leak i18n-js's internal `[missing "..." value]` diagnostic into the
+// product UI. All known interpolated strings pass their values explicitly;
+// retaining the original token here also keeps legacy manual replacements safe.
+i18n.missingPlaceholder = (_instance, placeholder) => placeholder;
 
 // Bootstrap on app load — pick stored preference, else device locale, else English
 export async function initI18n(): Promise<Language> {

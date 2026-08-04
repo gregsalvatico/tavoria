@@ -363,7 +363,9 @@ const styles = StyleSheet.create({
   photoUploadSub: { fontSize: 12, color: "#6B7280" },
 
   bottom: {
-    padding: 16,
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     backgroundColor: "white",
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",

@@ -46,12 +46,23 @@ export async function insertVenue(input: VenueInsert) {
 export async function updateVenue(
   id: string,
   patch: {
+    name?: string;
+    type?: string;
+    address?: string;
+    city?: string;
+    email?: string;
+    phone?: string;
+    photo_url?: string;
     photo_variant?: number;
     roles?: string[];
     pay_schedule?: string;
     venue_style?: string;
     preferred_interview_answers?: unknown[];
     preferred_interview_completed_at?: string;
+    contact_email_enabled?: boolean;
+    contact_phone_enabled?: boolean;
+    contact_in_person_enabled?: boolean;
+    interview_location_options?: string[];
   }
 ) {
   const { error } = await supabase.from("venues").update(patch).eq("id", id);
@@ -209,13 +220,80 @@ export async function createApplication(input: ApplicationInsert) {
   const userId = session?.user.id;
   if (!userId) throw new Error("No auth session");
 
+  // A worker should have one application per listed shift. Returning the
+  // existing application makes this idempotent if they tap Apply twice or
+  // return to the same shift later.
+  if (input.shift_id) {
+    const { data: existing, error: existingError } = await supabase
+      .from("applications")
+      .select("id")
+      .eq("worker_user_id", userId)
+      .eq("shift_id", input.shift_id)
+      .maybeSingle();
+    if (existingError) throw existingError;
+    if (existing?.id) return existing as { id: string };
+  }
+
   const { data, error } = await supabase
     .from("applications")
     .insert({ ...input, worker_user_id: userId, status: "pending" })
     .select()
     .single();
+  if (!error && data) {
+    void supabase.functions
+      .invoke("notify-on-application", {
+        body: { kind: "application_created", applicationId: data.id },
+      })
+      .then(({ error: notificationError }) => {
+        if (notificationError) console.warn("[notifications] application email failed:", notificationError);
+      })
+      .catch((notificationError) => console.warn("[notifications] application email failed:", notificationError));
+  }
   if (error) throw error;
   return data as { id: string };
+}
+
+export async function updateShift(
+  shiftId: string,
+  patch: Partial<Pick<ShiftInsert, "contract_type" | "hours_start" | "hours_end" | "pay_unit" | "pay_amount" | "start_when" | "start_date" | "days">>
+) {
+  const { error } = await supabase.from("shifts").update(patch).eq("id", shiftId);
+  if (error) throw error;
+}
+
+export async function getCurrentWorkerApplicationForShift(shiftId: string) {
+  const session = await ensureSession();
+  const userId = session?.user.id;
+  if (!userId) return null;
+  const { data, error } = await supabase
+    .from("applications")
+    .select("id, status, message, interview_scheduled_at, interview_location, created_at, updated_at")
+    .eq("worker_user_id", userId)
+    .eq("shift_id", shiftId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+// Whether the current worker has an interview or hire with this venue. Used
+// for the venue board, where there may be more than one shift.
+export async function getCurrentWorkerContactAccessForVenue(venueId: string) {
+  const session = await ensureSession();
+  const userId = session?.user.id;
+  if (!userId) return null;
+  const { data, error } = await supabase
+    .from("applications")
+    .select("id, status, shift_id, interview_scheduled_at, interview_location")
+    .eq("worker_user_id", userId)
+    .eq("venue_id", venueId)
+    .in("status", ["interview_requested", "hired"])
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
 }
 
 // Update an application's status (typically by venue: decline / interview / hire / star)
@@ -225,15 +303,32 @@ export async function createApplication(input: ApplicationInsert) {
 // 0 rows into a thrown error that the UI can surface to the user.
 export async function updateApplicationStatus(
   id: string,
-  status: ApplicationStatus
+  status: ApplicationStatus,
+  interview?: { scheduledAt: string; location: string }
 ) {
   await ensureSession();
+  const update: Record<string, unknown> = { status };
+  if (status === "interview_requested" && interview) {
+    update.interview_scheduled_at = interview.scheduledAt;
+    update.interview_location = interview.location;
+  }
   const { data, error } = await supabase
     .from("applications")
-    .update({ status })
+    .update(update)
     .eq("id", id)
     .select("id, status")
     .single();
+  if (!error && data) {
+    // Email delivery runs after the database write and never blocks the UI.
+    void supabase.functions
+      .invoke("notify-on-application", {
+        body: { kind: "application_status_changed", applicationId: id },
+      })
+      .then(({ error: notificationError }) => {
+        if (notificationError) console.warn("[notifications] status email failed:", notificationError);
+      })
+      .catch((notificationError) => console.warn("[notifications] status email failed:", notificationError));
+  }
   if (error) throw error;
   if (!data) throw new Error("Update failed — no row affected (permission?)");
   return data;
@@ -257,6 +352,19 @@ export async function getDiscoverWorkers() {
     .limit(100);
   if (error) throw error;
   return data ?? [];
+}
+
+// Worker IDs that have applied to one specific venue. This is used by the
+// venue browse feed to distinguish applicants from people they can discover.
+export async function getAppliedWorkerIdsForVenue(venueId: string) {
+  if (!venueId) return [];
+  await ensureSession();
+  const { data, error } = await supabase
+    .from("applications")
+    .select("worker_id")
+    .eq("venue_id", venueId);
+  if (error) throw error;
+  return Array.from(new Set((data ?? []).map((row) => row.worker_id).filter(Boolean)));
 }
 
 // Get the current user's venue (by auth.uid). Returns null if no venue exists.
@@ -285,7 +393,8 @@ export async function getVenueBoard(venueId: string) {
     supabase
       .from("venues")
       .select(
-        `id, name, type, city, address, venue_style, photo_url, pay_schedule`
+        `id, name, type, city, address, email, phone, venue_style, photo_url, pay_schedule,
+         contact_email_enabled, contact_phone_enabled, contact_in_person_enabled`
       )
       .eq("id", venueId)
       .maybeSingle(),
@@ -384,12 +493,18 @@ export async function getDiscoverShifts() {
 // Whether the current authenticated user has any venues / workers
 // Used by the home screen to show "Continue as ..." shortcuts.
 export async function getCurrentUserContext(): Promise<{
+  username?: string;
   hasVenue: boolean;
   venueName?: string;
   venueId?: string;
+  venueCity?: string;
+  venueType?: string;
+  venuePhotoUrl?: string;
   hasWorker: boolean;
   workerName?: string;
   workerId?: string;
+  workerCity?: string;
+  workerPhotoUrl?: string;
 }> {
   const session = await ensureSession();
   const userId = session?.user.id;
@@ -399,24 +514,32 @@ export async function getCurrentUserContext(): Promise<{
   const [venues, workers] = await Promise.all([
     supabase
       .from("venues")
-      .select("id, name")
+      .select("id, name, city, type, photo_url")
       .eq("user_id", userId)
       .limit(1)
       .maybeSingle(),
     supabase
       .from("workers")
-      .select("id, first_name")
+      .select("id, first_name, city, photo_url")
       .eq("user_id", userId)
       .limit(1)
       .maybeSingle(),
   ]);
   return {
+    username: session.user.email?.endsWith("@gigi.local")
+      ? session.user.email.slice(0, -"@gigi.local".length)
+      : undefined,
     hasVenue: !!venues.data,
     venueName: venues.data?.name,
     venueId: venues.data?.id,
+    venueCity: venues.data?.city,
+    venueType: venues.data?.type,
+    venuePhotoUrl: venues.data?.photo_url,
     hasWorker: !!workers.data,
     workerName: workers.data?.first_name,
     workerId: workers.data?.id,
+    workerCity: workers.data?.city,
+    workerPhotoUrl: workers.data?.photo_url,
   };
 }
 
@@ -440,7 +563,7 @@ export async function getApplicationsForCurrentVenueOwner() {
     .from("applications")
     .select(
       `
-      id, status, created_at, message,
+      id, status, created_at, message, interview_scheduled_at, interview_location,
       worker_id, venue_id, shift_id,
       worker:workers(
         id, first_name, last_name, photo_url, video_url,
@@ -585,9 +708,9 @@ export async function getApplicationById(id: string) {
       worker:workers(
         id, first_name, last_name, photo_url, video_url,
         positions, languages, city, country, age_range, years_exp,
-        personality, strengths, interview_answers, email
+        personality, strengths, interview_answers, email, phone, phone_visible
       ),
-      venue:venues(id, name, type, city, preferred_interview_answers)
+      venue:venues(id, name, type, city, address, phone, preferred_interview_answers, interview_location_options)
       `
     )
     .eq("id", id)
@@ -656,10 +779,11 @@ export async function getApplicationsForCurrentWorker() {
     .from("applications")
     .select(
       `
-      id, status, created_at, updated_at,
+      id, status, created_at, updated_at, interview_scheduled_at, interview_location,
       venue_id, shift_id,
       venue:venues(
-        id, name, type, city, photo_url, venue_style, phone
+        id, name, type, city, address, email, phone, photo_url, venue_style,
+        contact_email_enabled, contact_phone_enabled, contact_in_person_enabled
       ),
       shift:shifts(
         id, roles, hours_start, hours_end, pay_amount, pay_unit,

@@ -294,7 +294,9 @@ const styles = StyleSheet.create({
   },
 
   bottom: {
-    padding: 20,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    paddingTop: 20,
     backgroundColor: "#F7F4EE",
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",

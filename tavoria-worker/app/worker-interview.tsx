@@ -18,6 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
 import {
   InterviewQuestion,
+  getQuestionsByIds,
   localizeQuestions,
   pickQuestionsForRoles,
 } from "../lib/interviewQuestions";
@@ -32,18 +33,28 @@ export default function WorkerInterview() {
   const router = useRouter();
   const profile = getWorkerProfile();
   const positions = profile?.positions ?? [];
+  const savedAnswers = profile?.interviewAnswers ?? [];
 
   // Lock the question set on mount so re-renders don't reshuffle.
   // Localize at render time using the active i18n locale.
   const questions = useMemo<InterviewQuestion[]>(
-    () => localizeQuestions(pickQuestionsForRoles(positions)),
+    () => {
+      const savedQuestions = getQuestionsByIds(savedAnswers.map((answer) => answer.q_id));
+      return localizeQuestions(
+        savedQuestions.length === savedAnswers.length && savedQuestions.length > 0
+          ? savedQuestions
+          : pickQuestionsForRoles(positions)
+      );
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
   const total = questions.length;
 
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>(() =>
+    Object.fromEntries(savedAnswers.map((answer) => [answer.q_id, answer.a_id]))
+  );
   const [phase, setPhase] = useState<"questions" | "result">("questions");
 
   // Slide animation for question transitions
@@ -329,7 +340,9 @@ const styles = StyleSheet.create({
   },
 
   bottom: {
-    padding: 16,
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     backgroundColor: "white",
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",

@@ -2,7 +2,7 @@
 // Each row shows the 5 things a worker scans for: pay, role, when, distance, vibe.
 // Tap a row → full shift detail with Apply button (/shift-detail?id=xxx).
 
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -18,11 +18,16 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   getAppliedShiftIdsForCurrentWorker,
-  getCurrentWorkerSummary,
   getDiscoverShifts,
 } from "../lib/db";
 import { t } from "../lib/i18n";
 import { localizeRoles } from "../lib/positions";
+import FilterChips from "../components/FilterChips";
+import {
+  matchesShiftTime,
+  getShiftTimeFilters,
+  type ShiftTimeFilter,
+} from "../lib/shiftFilters";
 
 type ShiftRow = {
   id: string;
@@ -57,38 +62,25 @@ const VENUE_TYPE_PHOTOS: Record<string, number> = {
   beach_club: require("../assets/venue-beach.png"),
 };
 
-type Filter = "all" | "asap" | "today" | "week" | "scheduled";
-const FILTERS: { id: Filter; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "asap", label: "ASAP" },
-  { id: "today", label: "Today" },
-  { id: "week", label: "This week" },
-  { id: "scheduled", label: "Scheduled" },
-];
-
 export default function Discover() {
   const router = useRouter();
   const [rows, setRows] = useState<ShiftRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<ShiftTimeFilter>("all");
   const [hideApplied, setHideApplied] = useState(true);
-  const [sameCity, setSameCity] = useState(false);
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
-  const [myCity, setMyCity] = useState<string | undefined>();
 
   const load = useCallback(async () => {
     setErrorMsg(null);
     try {
-      const [shifts, applied, me] = await Promise.all([
+      const [shifts, applied] = await Promise.all([
         getDiscoverShifts(),
         getAppliedShiftIdsForCurrentWorker().catch(() => []),
-        getCurrentWorkerSummary().catch(() => null),
       ]);
-      setRows(shifts as ShiftRow[]);
+      setRows(shifts as unknown as ShiftRow[]);
       setAppliedIds(new Set(applied));
-      setMyCity(me?.city);
     } catch (e: any) {
       setErrorMsg(e?.message ?? "Could not load shifts.");
     } finally {
@@ -105,36 +97,11 @@ export default function Discover() {
     let list = rows;
 
     // Time / urgency filter
-    if (filter !== "all") {
-      list = list.filter((r) => {
-        const sw = (r.start_when || "").toLowerCase();
-        if (filter === "asap") return sw === "now" || sw === "asap";
-        if (filter === "today") return sw === "now" || sw === "asap";
-        if (filter === "week") {
-          if (sw === "now" || sw === "asap") return true;
-          if (r.start_date) {
-            const d = new Date(r.start_date).getTime();
-            const now = Date.now();
-            return d - now < 7 * 86400 * 1000 && d - now > -86400 * 1000;
-          }
-          return false;
-        }
-        if (filter === "scheduled") return sw === "pickdate" || !!r.start_date;
-        return true;
-      });
-    }
+    if (filter !== "all") list = list.filter((row) => matchesShiftTime(row, filter));
 
     // Hide already applied
     if (hideApplied && appliedIds.size > 0) {
       list = list.filter((r) => !appliedIds.has(r.id));
-    }
-
-    // Same city as worker (proxy for distance until we add GPS)
-    if (sameCity && myCity) {
-      const target = myCity.toLowerCase().trim();
-      list = list.filter(
-        (r) => (r.venue?.city ?? "").toLowerCase().trim() === target
-      );
     }
 
     // Sort: today's shifts → ASAP → future by date → undated (random)
@@ -150,7 +117,7 @@ export default function Discover() {
       return 0;
     });
     return withKey.map((x) => x.r);
-  }, [rows, filter, hideApplied, sameCity, appliedIds, myCity]);
+  }, [rows, filter, hideApplied, appliedIds]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -168,70 +135,23 @@ export default function Discover() {
         <Text style={styles.h1}>
           <Text style={{ color: "#F0531C" }}>S</Text>hifts nearby
         </Text>
-        <Pressable onPress={() => load()} hitSlop={12} style={styles.iconBtn}>
-          <Feather name="refresh-cw" size={20} color="#0E1A24" />
-        </Pressable>
-      </View>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterRow}
-        style={{ flexGrow: 0, maxHeight: 44 }}
-      >
-        {FILTERS.map((f) => {
-          const on = filter === f.id;
-          return (
-            <Pressable
-              key={f.id}
-              onPress={() => setFilter(f.id)}
-              style={[styles.filterChip, on && styles.filterChipOn]}
-            >
-              <Text
-                style={[styles.filterChipTxt, on && styles.filterChipTxtOn]}
-              >
-                {f.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-
-      {/* Secondary toggles */}
-      <View style={styles.toggleRow}>
-        <Pressable
-          onPress={() => setHideApplied(!hideApplied)}
-          style={[styles.toggleChip, hideApplied && styles.toggleChipOn]}
-        >
-          <Feather
-            name={hideApplied ? "check" : "eye"}
-            size={12}
-            color={hideApplied ? "white" : "#0E1A24"}
-          />
-          <Text
-            style={[styles.toggleChipTxt, hideApplied && styles.toggleChipTxtOn]}
-          >
-            Hide already applied
-          </Text>
-        </Pressable>
-        {myCity && (
+        <View style={styles.headerActions}>
           <Pressable
-            onPress={() => setSameCity(!sameCity)}
-            style={[styles.toggleChip, sameCity && styles.toggleChipOn]}
+            onPress={() => setHideApplied(!hideApplied)}
+            style={[styles.toggleChip, hideApplied && styles.toggleChipOn]}
           >
-            <Feather
-              name={sameCity ? "check" : "map-pin"}
-              size={12}
-              color={sameCity ? "white" : "#0E1A24"}
-            />
-            <Text
-              style={[styles.toggleChipTxt, sameCity && styles.toggleChipTxtOn]}
-            >
-              {myCity} only
+            <Feather name={hideApplied ? "check" : "eye"} size={12} color={hideApplied ? "white" : "#0E1A24"} />
+            <Text style={[styles.toggleChipTxt, hideApplied && styles.toggleChipTxtOn]}>
+              {t("shift_filters.hide_applied")}
             </Text>
           </Pressable>
-        )}
+          <Pressable onPress={() => load()} hitSlop={12} style={styles.refreshBtn}>
+            <Feather name="refresh-cw" size={20} color="#0E1A24" />
+          </Pressable>
+        </View>
       </View>
+
+      <FilterChips options={getShiftTimeFilters()} value={filter} onChange={setFilter} />
 
       <ScrollView
         style={{ flex: 1 }}
@@ -447,54 +367,39 @@ const styles = StyleSheet.create({
   },
   iconBtn: { padding: 4, width: 32 },
   h1: {
+    flexShrink: 1,
     fontFamily: "InstrumentSerif_400Regular",
     fontSize: 22,
     fontWeight: "400",
     color: "#0E1A24",
     letterSpacing: -0.4,
   },
-
-  filterRow: {
-    paddingHorizontal: 14,
-    paddingBottom: 10,
-    gap: 8,
+  headerActions: {
     flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
   },
-  filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+  refreshBtn: {
+    width: 34,
+    height: 34,
     borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: "white",
-    borderWidth: 0.5,
-    borderColor: "rgba(0,0,0,0.10)",
-  },
-  filterChipOn: {
-    backgroundColor: "#0E1A24",
-    borderColor: "#0E1A24",
-  },
-  filterChipTxt: { fontSize: 13, fontWeight: "700", color: "#0E1A24" },
-  filterChipTxtOn: { color: "white" },
-
-  toggleRow: {
-    flexDirection: "row",
-    paddingHorizontal: 14,
-    paddingBottom: 10,
-    gap: 6,
-    flexWrap: "wrap",
   },
   toggleChip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    gap: 5,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
     borderRadius: 999,
     backgroundColor: "white",
-    borderWidth: 0.5,
-    borderColor: "rgba(0,0,0,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(14,26,36,0.12)",
   },
   toggleChipOn: { backgroundColor: "#F0531C", borderColor: "#F0531C" },
-  toggleChipTxt: { fontSize: 12, fontWeight: "700", color: "#0E1A24" },
+  toggleChipTxt: { fontSize: 11, fontWeight: "700", color: "#46505A" },
   toggleChipTxtOn: { color: "white" },
 
   scroll: { paddingHorizontal: 14, paddingBottom: 20 },
@@ -522,8 +427,8 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   thumb: {
-    width: 64,
-    height: 64,
+    width: 60,
+    height: 60,
     borderRadius: 12,
     backgroundColor: "#E5E5E0",
   },

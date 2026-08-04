@@ -7,7 +7,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
-  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -16,21 +15,22 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { fillTemplate, telUrl, whatsAppUrl } from "../lib/contact";
-import {
-  getApplicationsForCurrentWorker,
-  getCurrentWorkerFull,
-} from "../lib/db";
+import { getApplicationsForCurrentWorker } from "../lib/db";
 import { t } from "../lib/i18n";
 import { localizeRoles } from "../lib/positions";
+import AppBottomNav from "../components/AppBottomNav";
+import FilterChips from "../components/FilterChips";
 
 const WORKER_LAST_SEEN_KEY = "gigi.worker.apps_last_seen";
+const WORKER_SEEN_INTERVIEW_IDS_KEY = "gigi.worker.seen_interview_application_ids";
 
 type ApplicationRow = {
   id: string;
   status: string;
   created_at: string;
   updated_at?: string;
+  interview_scheduled_at?: string;
+  interview_location?: string;
   venue_id: string;
   shift_id?: string;
   venue?: {
@@ -40,7 +40,12 @@ type ApplicationRow = {
     city?: string;
     photo_url?: string;
     venue_style?: string;
+    address?: string;
+    email?: string;
     phone?: string;
+    contact_email_enabled?: boolean;
+    contact_phone_enabled?: boolean;
+    contact_in_person_enabled?: boolean;
   };
   shift?: {
     id: string;
@@ -89,13 +94,13 @@ export default function WorkerApplications() {
   const [refreshing, setRefreshing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
-  const [workerName, setWorkerName] = useState<string>("");
+  const [seenInterviewIds, setSeenInterviewIds] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     setErrorMsg(null);
     try {
       const rows = await getApplicationsForCurrentWorker();
-      setApps(rows as ApplicationRow[]);
+      setApps(rows as unknown as ApplicationRow[]);
     } catch (e: any) {
       setErrorMsg(e?.message ?? "Could not load applications.");
     } finally {
@@ -106,19 +111,30 @@ export default function WorkerApplications() {
 
   useEffect(() => {
     load();
+    AsyncStorage.getItem(WORKER_SEEN_INTERVIEW_IDS_KEY)
+      .then((value) => {
+        if (!value) return;
+        const ids = JSON.parse(value);
+        if (Array.isArray(ids)) {
+          setSeenInterviewIds(new Set(ids.filter((id) => typeof id === "string")));
+        }
+      })
+      .catch(() => {});
     // Mark "right now" as last-seen so the red "new" corner badges on the
     // home pills clear when the worker returns.
     AsyncStorage.setItem(WORKER_LAST_SEEN_KEY, new Date().toISOString()).catch(
       () => {}
     );
-    // Fetch own first name once for prefilling WhatsApp messages
-    (async () => {
-      try {
-        const w = await getCurrentWorkerFull();
-        if (w?.first_name) setWorkerName(w.first_name as string);
-      } catch {}
-    })();
   }, [load]);
+
+  const markInterviewSeen = useCallback((applicationId: string) => {
+    setSeenInterviewIds((current) => {
+      if (current.has(applicationId)) return current;
+      const next = new Set(current).add(applicationId);
+      AsyncStorage.setItem(WORKER_SEEN_INTERVIEW_IDS_KEY, JSON.stringify([...next])).catch(() => {});
+      return next;
+    });
+  }, []);
 
   const counts = useMemo(() => {
     const c: Record<Filter, number> = {
@@ -161,36 +177,11 @@ export default function WorkerApplications() {
         </Pressable>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterRow}
-        style={{ flexGrow: 0, maxHeight: 48 }}
-      >
-        {FILTERS.map((f) => {
-          const on = filter === f.id;
-          const count = counts[f.id];
-          return (
-            <Pressable
-              key={f.id}
-              onPress={() => setFilter(f.id)}
-              style={[styles.filterChip, on && styles.filterChipOn]}
-            >
-              <Text style={[styles.filterChipTxt, on && styles.filterChipTxtOn]}>
-                {f.label}{" "}
-                <Text
-                  style={[
-                    styles.filterChipCount,
-                    on && styles.filterChipCountOn,
-                  ]}
-                >
-                  ({count})
-                </Text>
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+      <FilterChips
+        options={FILTERS.map((item) => ({ ...item, count: counts[item.id] }))}
+        value={filter}
+        onChange={setFilter}
+      />
 
       <ScrollView
         style={{ flex: 1 }}
@@ -230,7 +221,7 @@ export default function WorkerApplications() {
                   Browse shifts and apply to one — they show up here.
                 </Text>
                 <Pressable
-                  onPress={() => router.push("/discover")}
+                  onPress={() => router.replace("/")}
                   style={styles.emptyCta}
                 >
                   <Feather name="search" size={16} color="white" />
@@ -245,11 +236,13 @@ export default function WorkerApplications() {
               key={a.id}
               a={a}
               router={router}
-              workerName={workerName}
+              hasUnreadInterview={a.status === "interview_requested" && !seenInterviewIds.has(a.id)}
+              onOpen={() => markInterviewSeen(a.id)}
             />
           ))
         )}
       </ScrollView>
+      <AppBottomNav role="worker" active="applications" />
     </SafeAreaView>
   );
 }
@@ -257,11 +250,13 @@ export default function WorkerApplications() {
 function ApplicationCard({
   a,
   router,
-  workerName,
+  hasUnreadInterview,
+  onOpen,
 }: {
   a: ApplicationRow;
   router: ReturnType<typeof useRouter>;
-  workerName: string;
+  hasUnreadInterview: boolean;
+  onOpen: () => void;
 }) {
   const v = a.venue;
   const s = a.shift;
@@ -273,25 +268,31 @@ function ApplicationCard({
     ? { uri: v.photo_url }
     : VENUE_TYPE_PHOTOS[typeKey] ?? VENUE_CAFE;
 
+  const contactUnlocked = a.status === "interview_requested" || a.status === "hired";
+  const contactItems = contactUnlocked
+    ? [
+        v?.contact_email_enabled !== false ? v?.email : undefined,
+        v?.contact_phone_enabled !== false ? v?.phone : undefined,
+        v?.contact_in_person_enabled === true ? "Visit in person" : undefined,
+      ].filter(Boolean)
+    : [];
+
   const payStr =
     s?.pay_amount && s?.pay_unit
       ? `€${s.pay_amount}/${shortUnit(s.pay_unit)}`
       : null;
   const roleStr = localizeRoles(s?.roles ?? []).slice(0, 2).join(" · ") || "Shift";
 
-  // Reveal contact when venue has acted positively
-  const contactUnlocked =
-    a.status === "interview_requested" || a.status === "hired";
-
   return (
     <View style={styles.rowWrap}>
       <Pressable
         onPress={() => {
+          onOpen();
           if (s?.id) {
             router.push({ pathname: "/shift-detail", params: { id: s.id } });
           }
         }}
-        style={styles.row}
+        style={[styles.row, hasUnreadInterview && styles.rowInterviewUpdate]}
       >
         <Image source={photo} style={styles.thumb} resizeMode="cover" />
         <View style={{ flex: 1 }}>
@@ -308,82 +309,85 @@ function ApplicationCard({
             <StatusPill status={a.status} />
             <Text style={styles.timeTxt}>· {formatWhen(a.created_at)}</Text>
           </View>
+          {a.status === "interview_requested" ? (
+            <View style={styles.interviewSchedule}>
+              <Feather name="calendar" size={14} color="#C2410C" />
+              <Text style={styles.interviewScheduleText}>
+                {a.interview_scheduled_at
+                  ? new Date(a.interview_scheduled_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
+                  : t("candidate_actions.status_interview_requested_detail")}
+                {a.interview_location ? ` · ${a.interview_location}` : ""}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.statusDetail}>{statusCopy(a.status).detail}</Text>
+          )}
+          <View style={[styles.contactPreview, contactUnlocked ? styles.contactPreviewOpen : styles.contactPreviewLocked]}>
+            <Feather name={contactUnlocked ? "unlock" : "lock"} size={12} color={contactUnlocked ? "#C2410C" : "#854F0B"} />
+            <Text style={styles.contactPreviewText} numberOfLines={1}>
+              {contactUnlocked
+                ? contactItems.length > 0
+                  ? contactItems.join(" / ")
+                  : "No contact method enabled"
+                : "Contact details unlock after an interview request"}
+            </Text>
+          </View>
         </View>
         <Feather name="chevron-right" size={18} color="#9CA3AF" />
       </Pressable>
 
-      {contactUnlocked && (
-        <View style={styles.contactRow}>
-          {v?.phone ? (
-            <Pressable
-              style={styles.waBtn}
-              onPress={() => {
-                const msg = fillTemplate(
-                  t("contact.wa_msg_worker_to_venue"),
-                  { name: workerName || "Tavoria", venue: v?.name ?? "" }
-                );
-                const url = whatsAppUrl(v.phone!, msg);
-                if (url) Linking.openURL(url).catch(() => {});
-              }}
-            >
-              <Feather name="message-circle" size={13} color="white" />
-              <Text style={styles.waBtnTxt}>{t("contact.whatsapp")}</Text>
-            </Pressable>
-          ) : null}
-          {v?.phone ? (
-            <Pressable
-              style={styles.callBtn}
-              onPress={() => {
-                const url = telUrl(v.phone!);
-                if (url) Linking.openURL(url).catch(() => {});
-              }}
-            >
-              <Feather name="phone-call" size={13} color="#185FA5" />
-              <Text style={styles.callBtnTxt}>{t("contact.call")}</Text>
-            </Pressable>
-          ) : null}
-          {v?.id && (
-            <Pressable
-              style={styles.venueBtn}
-              onPress={() =>
-                router.push({
-                  pathname: "/venue-board",
-                  params: { venueId: v.id },
-                })
-              }
-            >
-              <Feather name="briefcase" size={13} color="#0E1A24" />
-              <Text style={styles.venueBtnTxt}>{t("contact.view_venue")}</Text>
-            </Pressable>
-          )}
-        </View>
-      )}
     </View>
   );
 }
 
 function StatusPill({ status }: { status: string }) {
-  const map: Record<string, { bg: string; fg: string; label: string }> = {
-    pending: {
-      bg: "#F1EFE8",
-      fg: "#6B7280",
-      label: "Waiting for response",
-    },
-    starred: { bg: "#FCF6E8", fg: "#854F0B", label: "You're starred" },
-    interview_requested: {
-      bg: "#E6F1FB",
-      fg: "#185FA5",
-      label: "Interview requested",
-    },
-    hired: { bg: "#EAF3DE", fg: "#3B6D11", label: "Hired" },
-    declined: { bg: "#FCEBEB", fg: "#993556", label: "Declined" },
-  };
-  const s = map[status] ?? { bg: "#F1EFE8", fg: "#6B7280", label: status };
+  const s = statusCopy(status);
   return (
     <View style={[styles.statusPill, { backgroundColor: s.bg }]}>
       <Text style={[styles.statusTxt, { color: s.fg }]}>{s.label}</Text>
     </View>
   );
+}
+
+function statusCopy(status: string) {
+  const map: Record<string, { bg: string; fg: string; label: string; detail: string }> = {
+    pending: {
+      bg: "#F1EFE8",
+      fg: "#6B7280",
+      label: t("candidate_actions.status_pending"),
+      detail: t("candidate_actions.status_pending_detail"),
+    },
+    starred: {
+      bg: "#FCF6E8",
+      fg: "#854F0B",
+      label: t("candidate_actions.status_starred"),
+      detail: t("candidate_actions.status_starred_detail"),
+    },
+    interview_requested: {
+      bg: "#E6F1FB",
+      fg: "#185FA5",
+      label: t("candidate_actions.status_interview_requested"),
+      detail: t("candidate_actions.status_interview_requested_detail"),
+    },
+    hired: {
+      bg: "#EAF3DE",
+      fg: "#3B6D11",
+      label: t("candidate_actions.status_hired"),
+      detail: t("candidate_actions.status_hired_detail"),
+    },
+    declined: {
+      bg: "#FCEBEB",
+      fg: "#993556",
+      label: t("candidate_actions.status_declined"),
+      detail: t("candidate_actions.status_declined_detail"),
+    },
+  };
+  return map[status] ?? {
+    bg: "#F1EFE8",
+    fg: "#6B7280",
+    label: status,
+    detail: "",
+  };
 }
 
 function shortUnit(u: string) {
@@ -422,26 +426,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.4,
   },
 
-  filterRow: {
-    paddingHorizontal: 14,
-    paddingBottom: 10,
-    gap: 8,
-    flexDirection: "row",
-  },
-  filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: "white",
-    borderWidth: 0.5,
-    borderColor: "rgba(0,0,0,0.10)",
-  },
-  filterChipOn: { backgroundColor: "#0E1A24", borderColor: "#0E1A24" },
-  filterChipTxt: { fontSize: 13, fontWeight: "700", color: "#0E1A24" },
-  filterChipTxtOn: { color: "white" },
-  filterChipCount: { fontWeight: "500", color: "#9CA3AF" },
-  filterChipCountOn: { color: "rgba(255,255,255,0.7)" },
-
   scroll: { paddingHorizontal: 14, paddingBottom: 20 },
   loadingWrap: { paddingVertical: 60, alignItems: "center" },
   emptyWrap: {
@@ -471,53 +455,6 @@ const styles = StyleSheet.create({
   emptyCtaTxt: { color: "white", fontWeight: "800", fontSize: 14 },
 
   rowWrap: { marginBottom: 8 },
-  contactRow: {
-    flexDirection: "row",
-    gap: 6,
-    flexWrap: "wrap",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "white",
-    marginTop: -8,
-    borderBottomLeftRadius: 14,
-    borderBottomRightRadius: 14,
-    borderTopWidth: 0.5,
-    borderTopColor: "rgba(0,0,0,0.08)",
-  },
-  waBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#25D366",
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-  },
-  waBtnTxt: { color: "white", fontWeight: "800", fontSize: 12 },
-  callBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#E6F1FB",
-    borderWidth: 1,
-    borderColor: "#185FA5",
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-  },
-  callBtnTxt: { color: "#185FA5", fontWeight: "800", fontSize: 12 },
-  venueBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "rgba(11,15,26,0.20)",
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-  },
-  venueBtnTxt: { color: "#0E1A24", fontWeight: "800", fontSize: 12 },
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -528,6 +465,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: "rgba(0,0,0,0.08)",
   },
+  rowInterviewUpdate: { backgroundColor: "#FFF3EC", borderColor: "#F0531C", borderWidth: 2 },
   thumb: {
     width: 60,
     height: 60,
@@ -558,6 +496,13 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   timeTxt: { fontSize: 11, color: "#9CA3AF" },
+  statusDetail: { color: "#6B7280", fontSize: 11, lineHeight: 15, marginTop: 5 },
+  interviewSchedule: { alignItems: "flex-start", backgroundColor: "#FFE3D1", borderRadius: 9, flexDirection: "row", gap: 6, marginTop: 7, paddingHorizontal: 8, paddingVertical: 7 },
+  interviewScheduleText: { color: "#9A3412", flex: 1, fontSize: 11, fontWeight: "700", lineHeight: 15 },
+  contactPreview: { alignItems: "center", alignSelf: "flex-start", borderRadius: 8, flexDirection: "row", gap: 5, marginTop: 7, maxWidth: "100%", paddingHorizontal: 7, paddingVertical: 5 },
+  contactPreviewOpen: { backgroundColor: "#FFE3D1" },
+  contactPreviewLocked: { backgroundColor: "#F1EFE8" },
+  contactPreviewText: { color: "#5D6670", fontSize: 10, lineHeight: 14 },
   statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
   statusTxt: {
     fontSize: 11,

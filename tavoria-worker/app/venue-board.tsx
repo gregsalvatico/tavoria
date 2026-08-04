@@ -16,8 +16,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getCurrentWorkerFull, getVenueBoard } from "../lib/db";
+import { getCurrentWorkerContactAccessForVenue, getCurrentWorkerFull, getVenueBoard } from "../lib/db";
 import { localizeRoles } from "../lib/positions";
+import ContactPersonModal from "../components/ContactPersonModal";
 
 const VENUE_TYPE_PHOTOS: Record<string, any> = {
   cafe: require("../assets/venue-cafe.png"),
@@ -47,6 +48,11 @@ type Venue = {
   venue_style?: string;
   photo_url?: string;
   pay_schedule?: string;
+  email?: string;
+  phone?: string;
+  contact_email_enabled?: boolean;
+  contact_phone_enabled?: boolean;
+  contact_in_person_enabled?: boolean;
 };
 
 type ShiftRow = {
@@ -69,6 +75,8 @@ export default function VenueBoard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [contactAccess, setContactAccess] = useState<any | null>(null);
+  const [contactOpen, setContactOpen] = useState(false);
 
   const load = useCallback(async () => {
     if (!venueId) {
@@ -78,9 +86,13 @@ export default function VenueBoard() {
     }
     setErrorMsg(null);
     try {
-      const data = await getVenueBoard(venueId);
+      const [data, access] = await Promise.all([
+        getVenueBoard(venueId),
+        getCurrentWorkerContactAccessForVenue(venueId),
+      ]);
       setVenue(data.venue as Venue);
       setShifts((data.shifts ?? []) as ShiftRow[]);
+      setContactAccess(access);
     } catch (e: any) {
       setErrorMsg(e?.message ?? "Could not load venue.");
     } finally {
@@ -117,6 +129,11 @@ export default function VenueBoard() {
     ? { uri: venue.photo_url }
     : VENUE_TYPE_PHOTOS[(venue?.type || "cafe").toLowerCase()] ??
       VENUE_TYPE_PHOTOS.cafe;
+  const contactsUnlocked = !!contactAccess;
+  const contactEmail = contactsUnlocked && venue?.contact_email_enabled !== false ? venue?.email : undefined;
+  const contactPhone = contactsUnlocked && venue?.contact_phone_enabled !== false ? venue?.phone : undefined;
+  const visitAddress = contactsUnlocked && venue?.contact_in_person_enabled === true ? venue?.address : undefined;
+  const hasContactMethod = !!(contactEmail || contactPhone || visitAddress);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -182,6 +199,27 @@ export default function VenueBoard() {
               </View>
             </View>
 
+            <Pressable
+              style={[styles.contactCard, contactsUnlocked ? styles.contactCardOpen : styles.contactCardLocked]}
+              onPress={() => contactsUnlocked && hasContactMethod && setContactOpen(true)}
+              disabled={!contactsUnlocked || !hasContactMethod}
+            >
+              <View style={[styles.contactIcon, contactsUnlocked ? styles.contactIconOpen : styles.contactIconLocked]}>
+                <Feather name={contactsUnlocked ? "unlock" : "lock"} size={16} color={contactsUnlocked ? "#F0531C" : "#854F0B"} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.contactTitle}>{contactsUnlocked ? "Venue contact details" : "Contact details locked"}</Text>
+                <Text style={styles.contactText} numberOfLines={contactsUnlocked ? 2 : 1}>
+                  {contactsUnlocked
+                    ? hasContactMethod
+                      ? [contactEmail, contactPhone, visitAddress].filter(Boolean).join(" · ")
+                      : "This venue has not enabled a contact method yet."
+                    : "Apply, then wait for the venue to request an interview or hire you."}
+                </Text>
+              </View>
+              {contactsUnlocked && hasContactMethod ? <Feather name="chevron-right" size={18} color="#F0531C" /> : null}
+            </Pressable>
+
             <Text style={styles.sectionTitle}>
               {shifts.length > 0
                 ? `${shifts.length} shift${shifts.length === 1 ? "" : "s"} available`
@@ -204,6 +242,15 @@ export default function VenueBoard() {
           </>
         )}
       </ScrollView>
+      <ContactPersonModal
+        visible={contactOpen}
+        onClose={() => setContactOpen(false)}
+        name={venue?.name ?? "venue"}
+        email={contactEmail}
+        phone={contactPhone}
+        visitAddress={visitAddress}
+        initialMessage={`Hi ${venue?.name ?? ""}, Iâ€™m following up about a shift on Tavoria.`.trim()}
+      />
     </SafeAreaView>
   );
 }
@@ -310,6 +357,15 @@ const styles = StyleSheet.create({
   },
   heroMeta: { color: "rgba(255,255,255,0.9)", fontSize: 13 },
   heroMetaDot: { color: "rgba(255,255,255,0.7)", fontSize: 13 },
+
+  contactCard: { alignItems: "center", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 10, marginBottom: 16, padding: 12 },
+  contactCardOpen: { backgroundColor: "#FFF4EE", borderColor: "#F7C7AB" },
+  contactCardLocked: { backgroundColor: "#EAE7DF", borderColor: "#DED8CC" },
+  contactIcon: { alignItems: "center", borderRadius: 9, height: 34, justifyContent: "center", width: 34 },
+  contactIconOpen: { backgroundColor: "#FFE1CE" },
+  contactIconLocked: { backgroundColor: "#DDD6C9" },
+  contactTitle: { color: "#0E1A24", fontSize: 13, fontWeight: "800" },
+  contactText: { color: "#5D6670", fontSize: 11, lineHeight: 16, marginTop: 2 },
 
   sectionTitle: {
     fontFamily: "InstrumentSerif_400Regular",

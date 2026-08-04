@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
   stepLbl: { color: "rgba(255,255,255,0.55)", fontSize: 11, textAlign: "center" },
   stepConn: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.15)" },
 
-  bottom: { gap: 10, alignItems: "center" },
+  bottom: { gap: 10, alignItems: "center", paddingBottom: 24 },
   cta: {
     width: "100%",
     flexDirection: "row",
