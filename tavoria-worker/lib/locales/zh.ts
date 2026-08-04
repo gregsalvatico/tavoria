@@ -501,6 +501,19 @@ export default {
     visit: "到店联系",
     no_contact: "该{{recipient}}尚未提供联系方式。",
   },
+  external_link: {
+    unavailable_title: "无法打开链接",
+    unavailable_body: "无法在此设备上打开{{target}}。请确认已安装相应应用后重试。",
+    email: "电子邮件应用",
+    whatsapp: "WhatsApp",
+    phone: "电话应用",
+    maps: "地图应用",
+  },
+  interview_form: {
+    invalid_time: "请输入有效的 24 小时时间，例如 10:00。",
+    invalid_date: "请选择未来的日期和时间。",
+    invalid_location: "请选择或填写面试地点。",
+  },
   docs: {
     cv: "简历",
     cv_sub: "PDF,适合正式门店",

@@ -24,7 +24,6 @@ import {
   Alert,
   Animated,
   Image,
-  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -35,6 +34,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { telUrl, whatsAppUrl } from "../lib/contact";
+import { openExternalLink } from "../lib/externalLinks";
 import AppBottomNav from "../components/AppBottomNav";
 import ApplicationActionModal, {
   type ApplicationAction,
@@ -559,7 +559,7 @@ export default function Candidate() {
                               venue: venueName || "Tavoria",
                             });
                             const url = whatsAppUrl(view.phone!, msg);
-                            if (url) Linking.openURL(url).catch(() => {});
+                            void openExternalLink(url, t("external_link.whatsapp"));
                           }}
                         >
                           <Feather name="message-circle" size={14} color="white" />
@@ -571,7 +571,7 @@ export default function Candidate() {
                           style={styles.callBtn}
                           onPress={() => {
                             const url = telUrl(view.phone!);
-                            if (url) Linking.openURL(url).catch(() => {});
+                            void openExternalLink(url, t("external_link.phone"));
                           }}
                         >
                           <Feather name="phone-call" size={14} color="#185FA5" />

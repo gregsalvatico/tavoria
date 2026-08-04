@@ -74,14 +74,18 @@ export default function ApplicationActionModal({
     : locationType === "video"
     ? t("candidate_actions.location_video")
     : customLocation.trim();
-  const parsedInterviewDate = new Date(`${date}T${time}:00`);
+  const normalizedTime = time.trim();
+  const timeValid = /^([01]\d|2[0-3]):[0-5]\d$/.test(normalizedTime);
+  const parsedInterviewDate = new Date(`${date}T${normalizedTime}:00`);
+  const dateValid = /^\d{4}-\d{2}-\d{2}$/.test(date) && !Number.isNaN(parsedInterviewDate.getTime()) && parsedInterviewDate.getTime() > Date.now();
   const interviewValid =
     action !== "interview" ||
-    (/^\d{4}-\d{2}-\d{2}$/.test(date) &&
-      /^\d{2}:\d{2}$/.test(time) &&
-      !Number.isNaN(parsedInterviewDate.getTime()) &&
-      parsedInterviewDate.getTime() > Date.now() &&
-      !!interviewLocation);
+    (dateValid && timeValid && !!interviewLocation);
+  const interviewError = action !== "interview" ? null
+    : !timeValid ? t("interview_form.invalid_time")
+    : !dateValid ? t("interview_form.invalid_date")
+    : !interviewLocation ? t("interview_form.invalid_location")
+    : null;
   const minDateKey = defaultInterviewDate();
 
   return (
@@ -130,7 +134,7 @@ export default function ApplicationActionModal({
                 </View>
                 <View style={styles.timeField}>
                   <Text style={styles.compactLabel}>Time</Text>
-                  <TextInput value={time} onChangeText={setTime} placeholder="10:00" placeholderTextColor="#9CA3AF" style={styles.formInput} keyboardType="numbers-and-punctuation" />
+                  <TextInput value={time} onChangeText={setTime} placeholder="10:00" placeholderTextColor="#9CA3AF" style={[styles.formInput, !timeValid && styles.formInputInvalid]} keyboardType="numbers-and-punctuation" />
                 </View>
               </View>
 
@@ -212,8 +216,14 @@ export default function ApplicationActionModal({
                   onChangeText={setCustomLocation}
                   placeholder={t("candidate_actions.location_other_placeholder")}
                   placeholderTextColor="#9CA3AF"
-                  style={styles.formInput}
+                  style={[styles.formInput, !interviewLocation && styles.formInputInvalid]}
                 />
+              ) : null}
+              {interviewError ? (
+                <View style={styles.validationMessage} accessibilityRole="alert">
+                  <Feather name="alert-circle" size={14} color="#B42318" />
+                  <Text style={styles.validationText}>{interviewError}</Text>
+                </View>
               ) : null}
             </View>
           ) : null}
@@ -308,6 +318,9 @@ const styles = StyleSheet.create({
   timeField: { flexBasis: 92, flexGrow: 0, flexShrink: 1, minWidth: 0 },
   compactLabel: { color: "#6B7280", fontSize: 10, fontWeight: "800", letterSpacing: 0.5, marginBottom: 5, textTransform: "uppercase" },
   formInput: { backgroundColor: "#F7F4EE", borderColor: "rgba(14,26,36,0.14)", borderRadius: 12, borderWidth: 1, color: "#0E1A24", fontSize: 14, minHeight: 47, paddingHorizontal: 10 },
+  formInputInvalid: { borderColor: "#B42318", borderWidth: 1.5 },
+  validationMessage: { alignItems: "center", flexDirection: "row", gap: 6, marginTop: 9 },
+  validationText: { color: "#B42318", flex: 1, fontSize: 12, lineHeight: 17 },
   datePickerButton: { alignItems: "center", backgroundColor: "#F7F4EE", borderColor: "rgba(14,26,36,0.14)", borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 7, minHeight: 47, paddingHorizontal: 10 },
   datePickerText: { color: "#0E1A24", flex: 1, fontSize: 13, fontWeight: "700" },
   calendar: { backgroundColor: "#F7F4EE", borderColor: "rgba(14,26,36,0.12)", borderRadius: 14, borderWidth: 1, marginTop: 9, padding: 10 },

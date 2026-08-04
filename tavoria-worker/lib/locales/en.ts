@@ -502,6 +502,19 @@ export default {
     visit: "Visit in person",
     no_contact: "This {{recipient}} has not shared contact details yet.",
   },
+  external_link: {
+    unavailable_title: "Couldn't open link",
+    unavailable_body: "We couldn't open {{target}} on this device. Check that an app is installed, then try again.",
+    email: "your email app",
+    whatsapp: "WhatsApp",
+    phone: "your phone app",
+    maps: "your maps app",
+  },
+  interview_form: {
+    invalid_time: "Use a valid 24-hour time, for example 10:00.",
+    invalid_date: "Choose a future date and time.",
+    invalid_location: "Choose or enter an interview location.",
+  },
   docs: {
     cv: "CV / Resume",
     cv_sub: "PDF, helps with formal venues",

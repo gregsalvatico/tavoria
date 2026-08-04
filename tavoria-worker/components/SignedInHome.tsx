@@ -4,7 +4,6 @@ import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
-  Linking,
   Modal,
   Pressable,
   RefreshControl,
@@ -23,6 +22,7 @@ import {
 } from "../lib/db";
 import { LANGUAGES, type Language, t } from "../lib/i18n";
 import { localizeRoles } from "../lib/positions";
+import { openExternalLink } from "../lib/externalLinks";
 import AppBottomNav from "./AppBottomNav";
 import FilterChips from "./FilterChips";
 import {
@@ -440,7 +440,7 @@ export default function SignedInHome({
                   detail="hello@tavoriapp.com"
                   onPress={() => {
                     setDrawerOpen(false);
-                    void Linking.openURL("mailto:hello@tavoriapp.com");
+                    void openExternalLink("mailto:hello@tavoriapp.com", t("external_link.email"));
                   }}
                 />
                 <DrawerAction icon="log-out" label={t("common.sign_out")} danger onPress={() => { setDrawerOpen(false); void onSignOut(); }} />

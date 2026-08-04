@@ -2,7 +2,6 @@ import { Feather } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { useState } from "react";
 import {
-  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -11,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { mailtoUrl, mapsUrl, telUrl, whatsAppUrl } from "../lib/contact";
+import { openExternalLink } from "../lib/externalLinks";
 import { t } from "../lib/i18n";
 
 type Props = {
@@ -34,9 +34,7 @@ export default function ContactPersonModal({
   recipientType = "venue",
 }: Props) {
   const [copied, setCopied] = useState(false);
-  const open = (url: string) => {
-    if (url) Linking.openURL(url).catch(() => {});
-  };
+  const open = (url: string | null, target: string) => openExternalLink(url, target);
   const copyEmail = async () => {
     if (!email) return;
     await Clipboard.setStringAsync(email);
@@ -65,7 +63,7 @@ export default function ContactPersonModal({
           <Text style={styles.intro}>{t("contact_modal.intro")}</Text>
 
           {email ? (
-            <Pressable style={[styles.action, styles.emailAction]} onPress={() => open(mailtoUrl(email, `Tavoria - ${name}`, ""))}>
+            <Pressable style={[styles.action, styles.emailAction]} onPress={() => void open(mailtoUrl(email, `Tavoria - ${name}`, ""), t("external_link.email"))}>
               <Feather name="mail" size={18} color="#185FA5" />
               <View style={{ flex: 1 }}>
                 <Text style={styles.actionTitle}>{t("contact_modal.open_email")}</Text>
@@ -76,7 +74,7 @@ export default function ContactPersonModal({
           ) : null}
 
           {phone ? (
-            <Pressable style={[styles.action, styles.whatsAppAction]} onPress={() => open(whatsAppUrl(phone, ""))}>
+            <Pressable style={[styles.action, styles.whatsAppAction]} onPress={() => void open(whatsAppUrl(phone, ""), t("external_link.whatsapp"))}>
               <Feather name="message-circle" size={18} color="white" />
               <View style={{ flex: 1 }}>
                 <Text style={styles.actionTitleLight}>{t("contact_modal.whatsapp")}</Text>
@@ -97,7 +95,7 @@ export default function ContactPersonModal({
           ) : null}
 
           {phone ? (
-            <Pressable style={styles.action} onPress={() => open(telUrl(phone))}>
+            <Pressable style={styles.action} onPress={() => void open(telUrl(phone), t("external_link.phone"))}>
               <Feather name="phone-call" size={18} color="#0E1A24" />
               <View style={{ flex: 1 }}>
                 <Text style={styles.actionTitle}>{t("contact_modal.call", { recipient: recipientLabel.toLowerCase() })}</Text>
@@ -108,7 +106,7 @@ export default function ContactPersonModal({
           ) : null}
 
           {visitAddress ? (
-            <Pressable style={[styles.action, styles.visitAction]} onPress={() => open(mapsUrl(visitAddress))}>
+            <Pressable style={[styles.action, styles.visitAction]} onPress={() => void open(mapsUrl(visitAddress), t("external_link.maps"))}>
               <Feather name="map-pin" size={18} color="#F0531C" />
               <View style={{ flex: 1 }}>
                 <Text style={styles.actionTitle}>{t("contact_modal.visit")}</Text>

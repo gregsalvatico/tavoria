@@ -504,6 +504,19 @@ export default {
     visit: "Venir sur place",
     no_contact: "Cet {{recipient}} n'a pas encore partage ses coordonnees.",
   },
+  external_link: {
+    unavailable_title: "Impossible d'ouvrir le lien",
+    unavailable_body: "Nous n'avons pas pu ouvrir {{target}} sur cet appareil. Verifiez qu'une application est installee, puis reessayez.",
+    email: "votre application e-mail",
+    whatsapp: "WhatsApp",
+    phone: "votre application telephone",
+    maps: "votre application de cartes",
+  },
+  interview_form: {
+    invalid_time: "Utilisez une heure valide au format 24 h, par exemple 10:00.",
+    invalid_date: "Choisissez une date et une heure futures.",
+    invalid_location: "Choisissez ou saisissez le lieu de l'entretien.",
+  },
   docs: {
     cv: "CV",
     cv_sub: "PDF, utile pour les lieux formels",

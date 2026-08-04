@@ -6,7 +6,6 @@ import { clearVenueProfile } from "../lib/venueProfile";
 import { clearWorkerProfile } from "../lib/workerProfile";
 import {
   Alert,
-  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -25,6 +24,7 @@ import {
 import { downloadVenueQRPoster } from "../lib/qrPoster";
 import { initProEligibility, isProEligible } from "../lib/proEligibility";
 import { getVenueProfile } from "../lib/venueProfile";
+import { openExternalLink } from "../lib/externalLinks";
 import SignedInHome from "../components/SignedInHome";
 import ShareTavoriaModal from "../components/ShareTavoriaModal";
 import {
@@ -894,7 +894,7 @@ function LegalFooter() {
         </Pressable>
         <Text style={styles.legalDot}>  ·  </Text>
         <Pressable
-          onPress={() => Linking.openURL("mailto:hello@tavoriapp.com").catch(() => {})}
+          onPress={() => void openExternalLink("mailto:hello@tavoriapp.com", t("external_link.email"))}
           hitSlop={8}
         >
           <Text style={styles.legalLink}>hello@tavoriapp.com</Text>
@@ -912,7 +912,7 @@ function WhatsAppFAB() {
     "https://wa.me/+393331234567?text=" + encodeURIComponent("Ciao Tavoria");
   return (
     <Pressable
-      onPress={() => Linking.openURL(WA_URL).catch(() => {})}
+      onPress={() => void openExternalLink(WA_URL, t("external_link.whatsapp"))}
       style={styles.waFab}
       hitSlop={6}
       accessibilityLabel="Chat on WhatsApp"
