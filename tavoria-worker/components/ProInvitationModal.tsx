@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { t } from "../lib/i18n";
 
 type Props = {
   visible: boolean;
@@ -21,17 +22,15 @@ export default function ProInvitationModal({ visible, onClose, onExplore }: Prop
           <View style={styles.icon}>
             <Feather name="star" size={20} color="#F0531C" />
           </View>
-          <Text style={styles.title}>Invite candidates with Pro</Text>
-          <Text style={styles.body}>
-            Tavoria Pro will let you request an interview before a worker applies to one of your shifts.
-          </Text>
-          <Text style={styles.note}>Pro is coming soon. You can still review applicants for free today.</Text>
+          <Text style={styles.title}>{t("venue_pro.title")}</Text>
+          <Text style={styles.body}>{t("venue_pro.sub")}</Text>
+          <Text style={styles.note}>{t("common.coming_soon")}</Text>
           <Pressable style={styles.primary} onPress={onExplore}>
-            <Text style={styles.primaryText}>Explore Tavoria Pro</Text>
+            <Text style={styles.primaryText}>{t("venue_pro.cta")}</Text>
             <Feather name="arrow-right" size={18} color="white" />
           </Pressable>
           <Pressable style={styles.secondary} onPress={onClose}>
-            <Text style={styles.secondaryText}>Not now</Text>
+            <Text style={styles.secondaryText}>{t("common.not_now")}</Text>
           </Pressable>
         </View>
       </View>

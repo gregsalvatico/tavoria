@@ -2,66 +2,29 @@ import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { t } from "../lib/i18n";
 
 type Role = "venue" | "worker";
-
-const venueSteps = [
-  {
-    icon: "plus-circle" as const,
-    title: "Post a shift",
-    body: "Add the role, pay and timing. Workers can then find it, scan your QR or open your link.",
-  },
-  {
-    icon: "users" as const,
-    title: "Review candidates",
-    body: "See who applied and open their profile.",
-  },
-  {
-    icon: "calendar" as const,
-    title: "Request an interview",
-    body: "Choose the date, time and meeting options. The worker is notified and contact details unlock.",
-  },
-  {
-    icon: "check-circle" as const,
-    title: "Confirm the outcome",
-    body: "After the interview, mark them hired or declined. They get the update in the app and by email.",
-  },
-];
-
-const workerSteps = [
-  {
-    icon: "user" as const,
-    title: "Create your profile",
-    body: "Add your experience and availability so venues can assess you.",
-  },
-  {
-    icon: "search" as const,
-    title: "Find a shift and apply",
-    body: "Browse shifts, follow a venue link or scan a QR. Applying sends your profile to the venue.",
-  },
-  {
-    icon: "bell" as const,
-    title: "Wait for a response",
-    body: "Your application stays pending while the venue reviews it. Interview requests are highlighted and emailed to you.",
-  },
-  {
-    icon: "calendar" as const,
-    title: "Arrange the interview",
-    body: "See the proposed date, time and location. The venue's contact options then unlock.",
-  },
-  {
-    icon: "check-circle" as const,
-    title: "See the final decision",
-    body: "The venue marks you hired or declined. You see the result in the app and by email.",
-  },
-];
 
 export default function HowItWorks() {
   const router = useRouter();
   const { role: roleParam } = useLocalSearchParams<{ role?: string }>();
   const role: Role = roleParam === "venue" ? "venue" : "worker";
   const isVenue = role === "venue";
-  const steps = isVenue ? venueSteps : workerSteps;
+  const steps = isVenue
+    ? [
+        { icon: "plus-circle" as const, title: t("how_it_works.venue_step_1_title"), body: t("how_it_works.venue_step_1_body") },
+        { icon: "users" as const, title: t("how_it_works.venue_step_2_title"), body: t("how_it_works.venue_step_2_body") },
+        { icon: "calendar" as const, title: t("how_it_works.venue_step_3_title"), body: t("how_it_works.venue_step_3_body") },
+        { icon: "check-circle" as const, title: t("how_it_works.venue_step_4_title"), body: t("how_it_works.venue_step_4_body") },
+      ]
+    : [
+        { icon: "user" as const, title: t("how_it_works.worker_step_1_title"), body: t("how_it_works.worker_step_1_body") },
+        { icon: "search" as const, title: t("how_it_works.worker_step_2_title"), body: t("how_it_works.worker_step_2_body") },
+        { icon: "bell" as const, title: t("how_it_works.worker_step_3_title"), body: t("how_it_works.worker_step_3_body") },
+        { icon: "calendar" as const, title: t("how_it_works.worker_step_4_title"), body: t("how_it_works.worker_step_4_body") },
+        { icon: "check-circle" as const, title: t("how_it_works.worker_step_5_title"), body: t("how_it_works.worker_step_5_body") },
+      ];
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -71,28 +34,28 @@ export default function HowItWorks() {
           hitSlop={12}
           style={styles.backButton}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t("common.back")}
         >
           <Feather name="arrow-left" size={21} color="white" />
         </Pressable>
-        <Text style={styles.headerLabel}>HOW IT WORKS</Text>
+        <Text style={styles.headerLabel}>{t("how_it_works.header")}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={[styles.badge, isVenue ? styles.venueBadge : styles.workerBadge]}>
           <Feather name={isVenue ? "briefcase" : "coffee"} size={14} color="white" />
-          <Text style={styles.badgeText}>{isVenue ? "FOR VENUES" : "FOR WORKERS"}</Text>
+          <Text style={styles.badgeText}>{isVenue ? t("how_it_works.for_venues") : t("how_it_works.for_workers")}</Text>
         </View>
 
-        <Text style={styles.title}>{isVenue ? "From a shift to a great hire." : "From your profile to your next shift."}</Text>
+        <Text style={styles.title}>{isVenue ? t("how_it_works.venue_title") : t("how_it_works.worker_title")}</Text>
         <Text style={styles.intro}>
           {isVenue
-            ? "Tavoria helps you find people, agree an interview, then take the final decision."
-            : "Tavoria helps venues find you, then makes every next step clear."}
+            ? t("how_it_works.venue_intro")
+            : t("how_it_works.worker_intro")}
         </Text>
 
-        <View style={styles.sectionLabel}><Text style={styles.sectionLabelText}>THE FLOW</Text></View>
+        <View style={styles.sectionLabel}><Text style={styles.sectionLabelText}>{t("how_it_works.flow")}</Text></View>
         <View style={styles.stepsCard}>
           {steps.map((step, index) => (
             <View key={step.title} style={styles.step}>
@@ -103,7 +66,7 @@ export default function HowItWorks() {
                 {index < steps.length - 1 ? <View style={styles.connector} /> : null}
               </View>
               <View style={styles.stepCopy}>
-                <Text style={styles.stepNumber}>STEP {index + 1}</Text>
+                <Text style={styles.stepNumber}>{t("how_it_works.step", { number: index + 1 })}</Text>
                 <Text style={styles.stepTitle}>{step.title}</Text>
                 <Text style={styles.stepBody}>{step.body}</Text>
               </View>
@@ -111,19 +74,19 @@ export default function HowItWorks() {
           ))}
         </View>
 
-        <View style={styles.sectionLabel}><Text style={styles.sectionLabelText}>GOOD TO KNOW</Text></View>
+        <View style={styles.sectionLabel}><Text style={styles.sectionLabelText}>{t("how_it_works.good_to_know")}</Text></View>
         <View style={styles.noteCard}>
-          <Note icon="lock" text="Contact details stay hidden until an interview is requested." />
-          <Note icon="mail" text="Important updates are shown in the app and sent by email." />
-          <Note icon="message-circle" text="Once contact is unlocked, you arrange the details directly by email, phone, WhatsApp or in person." />
+          <Note icon="lock" text={t("how_it_works.note_contact_locked")} />
+          <Note icon="mail" text={t("how_it_works.note_email")} />
+          <Note icon="message-circle" text={t("how_it_works.note_contact_unlocked")} />
         </View>
 
         {isVenue ? (
-          <View style={styles.proCard}>
+          <Pressable style={styles.proCard} onPress={() => router.push("/venue-pro")} accessibilityRole="link">
             <View style={styles.proKicker}><Feather name="star" size={13} color="#F0531C" /><Text style={styles.proKickerText}>TAVORIA PRO</Text></View>
-            <Text style={styles.proTitle}>Invite before they apply</Text>
-            <Text style={styles.proText}>With Pro, venues will be able to request an interview from a candidate who has not applied yet. Pro is coming soon.</Text>
-          </View>
+            <Text style={styles.proTitle}>{t("how_it_works.pro_title")}</Text>
+            <Text style={styles.proText}>{t("how_it_works.pro_body")}</Text>
+          </Pressable>
         ) : null}
       </ScrollView>
     </SafeAreaView>

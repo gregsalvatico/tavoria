@@ -19,6 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   getAppliedShiftIdsForCurrentWorker,
   getDiscoverShifts,
+  getCurrentUserContext,
 } from "../lib/db";
 import { t } from "../lib/i18n";
 import { localizeRoles } from "../lib/positions";
@@ -71,16 +72,19 @@ export default function Discover() {
   const [filter, setFilter] = useState<ShiftTimeFilter>("all");
   const [hideApplied, setHideApplied] = useState(true);
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
+  const [hasAccount, setHasAccount] = useState(false);
 
   const load = useCallback(async () => {
     setErrorMsg(null);
     try {
-      const [shifts, applied] = await Promise.all([
+      const [shifts, applied, account] = await Promise.all([
         getDiscoverShifts(),
         getAppliedShiftIdsForCurrentWorker().catch(() => []),
+        getCurrentUserContext().catch(() => ({ hasVenue: false, hasWorker: false })),
       ]);
       setRows(shifts as unknown as ShiftRow[]);
       setAppliedIds(new Set(applied));
+      setHasAccount(account.hasVenue || account.hasWorker);
     } catch (e: any) {
       setErrorMsg(e?.message ?? "Could not load shifts.");
     } finally {
@@ -184,7 +188,7 @@ export default function Discover() {
             </Text>
           </View>
         ) : (
-          filtered.map((r) => <ShiftRowItem key={r.id} row={r} router={router} />)
+          filtered.map((r) => <ShiftRowItem key={r.id} row={r} router={router} showPay={hasAccount} />)
         )}
       </ScrollView>
     </SafeAreaView>
@@ -194,9 +198,11 @@ export default function Discover() {
 function ShiftRowItem({
   row,
   router,
+  showPay,
 }: {
   row: ShiftRow;
   router: ReturnType<typeof useRouter>;
+  showPay: boolean;
 }) {
   const v = row.venue;
   // Normalise venue type to match our key set (lowercase, strip "club"/" club" variants)
@@ -242,10 +248,32 @@ function ShiftRowItem({
 
       <View style={{ flex: 1 }}>
         <View style={styles.line1}>
-          <Text style={styles.venueName} numberOfLines={1}>
-            {v?.name || "Venue"}
-          </Text>
-          {payStr && <Text style={styles.payBig}>{payStr}</Text>}
+          <Pressable
+            onPress={(event) => {
+              event.stopPropagation();
+              if (v?.id) router.push({ pathname: "/venue-board", params: { venueId: v.id } });
+            }}
+            style={styles.venueNameLink}
+          >
+            <Text style={styles.venueName} numberOfLines={1}>
+              {v?.name || "Venue"}
+            </Text>
+            {!!v?.id && <Feather name="arrow-up-right" size={14} color="#185FA5" />}
+          </Pressable>
+          {payStr && (showPay ? (
+            <Text style={styles.payBig}>{payStr}</Text>
+          ) : (
+            <Pressable
+              style={styles.payLocked}
+              onPress={(event) => {
+                event.stopPropagation();
+                router.push("/signin");
+              }}
+            >
+              <Feather name="lock" size={11} color="#F0531C" />
+              <Text style={styles.payLockedTxt}>{t("shift_detail.pay_signin")}</Text>
+            </Pressable>
+          ))}
         </View>
 
         <View style={styles.line2}>
@@ -459,11 +487,14 @@ const styles = StyleSheet.create({
     color: "#0E1A24",
     letterSpacing: -0.2,
   },
+  venueNameLink: { alignItems: "center", flex: 1, flexDirection: "row", gap: 4, minWidth: 0 },
   payBig: {
     fontSize: 15,
     fontWeight: "900",
     color: "#F0531C",
   },
+  payLocked: { alignItems: "center", backgroundColor: "#FFF4EE", borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 5 },
+  payLockedTxt: { color: "#C2410C", fontSize: 10, fontWeight: "800" },
 
   line2: {
     flexDirection: "row",

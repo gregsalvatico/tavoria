@@ -98,7 +98,7 @@ export default function WorkerPhotos() {
       const isWeb = Platform.OS === "web";
       // Web: HTML file input with capture="user" hints the camera on phone
       // browsers; desktop falls back to file picker. No permission ask.
-      let res: { canceled: boolean; assets: Array<{ uri: string }> };
+      let res: { canceled: boolean; assets: Array<{ uri: string }> | null };
       if (isWeb) {
         res = await pickImageWeb({
           camera: source === "camera" ? "user" : false,
@@ -133,7 +133,7 @@ export default function WorkerPhotos() {
               })
             : await ImagePicker.launchImageLibraryAsync(opts);
       }
-      if (res.canceled || !res.assets[0]) return;
+      if (res.canceled || !res.assets?.[0]) return;
       const uri = res.assets[0].uri;
 
       // Quick "safety check" UI while we upload

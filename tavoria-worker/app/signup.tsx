@@ -368,9 +368,23 @@ export default function Signup() {
           </Pressable>
 
           <Text style={styles.legal}>{t("auth_pin.sign_up_legal")}</Text>
-          <Text style={styles.requirements}>
-            Enter your name and email, matching 4-digit PINs, and accept the Terms to continue.
-          </Text>
+          <Pressable
+            onPress={() =>
+              router.replace({
+                pathname: "/signin",
+                params: {
+                  ...(next ? { next } : {}),
+                  ...(shiftId ? { shiftId } : {}),
+                  ...(venueId ? { venueId } : {}),
+                  ...(venueName ? { venueName } : {}),
+                },
+              })
+            }
+            style={styles.authSwitch}
+          >
+            <Text style={styles.authSwitchPrompt}>{t("auth_pin.already_have_account")}</Text>
+            <Text style={styles.authSwitchLink}>{t("auth_pin.sign_in_title")}</Text>
+          </Pressable>
         </ScrollView>
 
         <View style={styles.bottom}>
@@ -533,13 +547,9 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
   },
   ctaDisabled: { backgroundColor: "rgba(11,15,26,0.15)" },
-  requirements: {
-    color: "#6B7280",
-    fontSize: 12,
-    lineHeight: 17,
-    textAlign: "center",
-    marginTop: 10,
-  },
+  authSwitch: { alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 18, paddingVertical: 8 },
+  authSwitchPrompt: { color: "#6B7280", fontSize: 13 },
+  authSwitchLink: { color: "#185FA5", fontSize: 13, fontWeight: "800" },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
 
   termsRow: {

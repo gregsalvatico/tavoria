@@ -53,7 +53,7 @@ export default function WorkerVideos() {
   const router = useRouter();
   // Seed completed state from the worker's existing profile so a video
   // already uploaded during signup shows as "Recorded" here.
-  const [done, setDone] = useState<Record<string, boolean>>(() => {
+  const [done, setDone] = useState<Record<string, boolean>>((): Record<string, boolean> => {
     const p = getWorkerProfile();
     return p?.videoUrl ? { intro: true } : {};
   });

@@ -23,7 +23,7 @@ type Faq = { q: string; a: string };
 const FAQS: Faq[] = [
   {
     q: "Tavoria è gratis?",
-    a: "Sì — per lo staff è gratis per sempre. Per i locali è gratis fino a settembre 2026, poi €19 ogni volta che assumi qualcuno. Nessun abbonamento.",
+    a: "Sì. Tavoria è gratis fino al 2027. Dopo, i locali pagano €19 per assunzione. Tavoria Pro è in arrivo.",
   },
   {
     q: "Come funziona il QR?",
@@ -197,7 +197,7 @@ export default function Home() {
                 Per lo staff
               </a>
               <a href="#pricing" style={{ fontSize: 15, color: "#46505A", textDecoration: "none", fontWeight: 500 }}>
-                Prezzi
+                Tavoria Pro
               </a>
               <a href="#faq" style={{ fontSize: 15, color: "#46505A", textDecoration: "none", fontWeight: 500 }}>
                 FAQ
@@ -271,7 +271,7 @@ export default function Home() {
           <div className="landing-nav-mobile-menu">
             <a href="#venues" onClick={() => setMobileNavOpen(false)}>Per i locali</a>
             <a href="#staff" onClick={() => setMobileNavOpen(false)}>Per lo staff</a>
-            <a href="#pricing" onClick={() => setMobileNavOpen(false)}>Prezzi</a>
+            <a href="#pricing" onClick={() => setMobileNavOpen(false)}>Tavoria Pro</a>
             <a href="#faq" onClick={() => setMobileNavOpen(false)}>FAQ</a>
             <a className="mobile-nav-app" href={appRoute()}>
               Apri l&apos;app
@@ -433,10 +433,10 @@ export default function Home() {
               }}
             >
               <span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}>
-                <span style={{ color: "#1F9D6B" }}>✓</span> Gratis per i locali fino a settembre 2026
+                <span style={{ color: "#1F9D6B" }}>✓</span> Gratis per tutti fino al 2027
               </span>
               <span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}>
-                <span style={{ color: "#1F9D6B" }}>✓</span> Sempre gratis per lo staff
+                <span style={{ color: "#1F9D6B" }}>✓</span> Poi €19 per assunzione
               </span>
               <span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}>
                 <span style={{ color: "#1F9D6B" }}>✓</span> GDPR · server UE
@@ -737,10 +737,10 @@ export default function Home() {
                   color: "#0E1A24",
                 }}
               >
-                €0
+                Incluso
               </div>
               <div style={{ fontSize: 13, color: "#5C6670", marginTop: 6 }}>
-                Per lo staff, per sempre
+                Per tutti fino al 2027
               </div>
             </div>
           </div>
@@ -1741,8 +1741,7 @@ export default function Home() {
                   margin: 0,
                 }}
               >
-                Niente commissioni d&apos;agenzia, mai. Paghi €19 solo quando
-                assumi davvero — e fino a settembre 2026 nemmeno quello.
+                Tutto quello che ti serve per assumere è incluso fino al 2027.
               </p>
             </div>
             <div
@@ -1886,7 +1885,7 @@ export default function Home() {
                 marginBottom: 16,
               }}
             >
-              Prezzi
+                Tavoria Pro
             </div>
             <h2
               style={{
@@ -1897,7 +1896,7 @@ export default function Home() {
                 margin: "0 0 14px",
               }}
             >
-              Trasparente. <span style={{ fontStyle: "italic" }}>Niente sorprese.</span>
+              Gratis fino al 2027. <span style={{ fontStyle: "italic" }}>Per tutti.</span>
             </h2>
             <p
               style={{
@@ -1907,8 +1906,7 @@ export default function Home() {
                 margin: 0,
               }}
             >
-              Lo staff non paga mai. I locali pagano solo quando assumono — e
-              fino a settembre 2026, neanche quello.
+              Gratis fino al 2027. Poi €19 per assunzione. Tavoria Pro è in arrivo.
             </p>
           </div>
           <div
@@ -1950,9 +1948,9 @@ export default function Home() {
                 }}
               >
                 <span style={{ fontFamily: FONT_SERIF, fontSize: 54, lineHeight: 1 }}>
-                  €0
+                  Gratis
                 </span>
-                <span style={{ fontSize: 15, color: "#5C6670" }}>per sempre</span>
+                <span style={{ fontSize: 15, color: "#5C6670" }}>fino al 2027</span>
               </div>
               <p
                 style={{
@@ -1962,7 +1960,7 @@ export default function Home() {
                   lineHeight: 1.5,
                 }}
               >
-                Nessun costo nascosto. Mai. Trovi solo lavoro.
+                Tavoria è gratuito fino al 2027.
               </p>
               <div
                 style={{
@@ -2027,7 +2025,7 @@ export default function Home() {
                   borderRadius: 999,
                 }}
               >
-                GRATIS FINO A SET 2026
+                  GRATIS FINO AL 2027
               </span>
               <div
                 style={{
@@ -2050,10 +2048,10 @@ export default function Home() {
                 }}
               >
                 <span style={{ fontFamily: FONT_SERIF, fontSize: 54, lineHeight: 1 }}>
-                  €19
+                  Pro
                 </span>
                 <span style={{ fontSize: 15, color: "rgba(247,244,238,0.7)" }}>
-                  per assunzione
+                  in arrivo
                 </span>
               </div>
               <p
@@ -2064,8 +2062,7 @@ export default function Home() {
                   lineHeight: 1.5,
                 }}
               >
-                Gratis fino a settembre 2026. Poi paghi solo quando assumi.
-                Nessun abbonamento.
+                Gratis fino al 2027. Poi €19 per assunzione. Tavoria Pro è in arrivo.
               </p>
               <div
                 style={{
@@ -2088,7 +2085,7 @@ export default function Home() {
                   <span style={{ color: "#F0531C" }}>✓</span> Identità + diritto al lavoro verificati
                 </div>
                 <div style={{ display: "flex", gap: 10, fontSize: 14.5 }}>
-                  <span style={{ color: "#F0531C" }}>✓</span> Paghi solo quando assumi
+                  <span style={{ color: "#F0531C" }}>✓</span> Poi €19 per assunzione
                 </div>
               </div>
               <a
@@ -2486,7 +2483,7 @@ export default function Home() {
             }}
           >
             Pubblica un turno in due minuti. Stampa il QR. Assumi entro la
-            giornata. Gratis per i locali fino a settembre 2026.
+            giornata. Gratis fino al 2027.
           </p>
           <div
             style={{
@@ -2608,7 +2605,7 @@ export default function Home() {
                     Per lo staff
                   </a>
                   <a href="#pricing" style={{ color: "rgba(247,244,238,0.72)", textDecoration: "none" }}>
-                    Prezzi
+                    Tavoria Pro
                   </a>
                   <a href="#faq" style={{ color: "rgba(247,244,238,0.72)", textDecoration: "none" }}>
                     FAQ

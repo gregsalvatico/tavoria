@@ -22,12 +22,19 @@
 // dependency in the native bundle.
 
 import { Platform } from "react-native";
+import { Asset } from "expo-asset";
 
 // QRCode is lazy-loaded inside each generator function so module load
 // of this file doesn't pull in the qrcode package on app boot. The package
 // has Node.js-leaning entry resolution that can crash Metro's web bundle
 // (Buffer undefined) when imported at top level.
 type QRCodeMod = typeof import("qrcode");
+
+const HANKEN_REGULAR = require("@expo-google-fonts/hanken-grotesk/400Regular/HankenGrotesk_400Regular.ttf");
+const HANKEN_BOLD = require("@expo-google-fonts/hanken-grotesk/700Bold/HankenGrotesk_700Bold.ttf");
+const INSTRUMENT_SERIF = require("@expo-google-fonts/instrument-serif/400Regular/InstrumentSerif_400Regular.ttf");
+const HANKEN_FAMILY = "HankenGrotesk";
+const DISPLAY_FAMILY = "InstrumentSerif";
 
 // Brand
 const ORANGE = "#F0531C";
@@ -40,7 +47,7 @@ const PAPER = "#FFFFFF"; // pure white prints better than cream
 const PAGE_W = 210;
 const PAGE_H = 297;
 // QR target size — large enough to scan from ~1.5m
-const QR_SIZE_MM = 100;
+const QR_SIZE_MM = 118;
 
 export type PosterOpts = {
   venueId: string;
@@ -59,6 +66,29 @@ export async function downloadVenueQRPoster(opts: PosterOpts): Promise<void> {
   } else {
     await generatePosterNative(url, opts);
   }
+}
+
+async function loadFontBase64(moduleId: number): Promise<string> {
+  const asset = Asset.fromModule(moduleId);
+  await asset.downloadAsync();
+  const response = await fetch(asset.localUri ?? asset.uri);
+  const buffer = await response.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return globalThis.btoa(binary);
+}
+
+async function loadPosterFonts(): Promise<{ regular: string; bold: string; display: string }> {
+  const [regular, bold, display] = await Promise.all([
+    loadFontBase64(HANKEN_REGULAR),
+    loadFontBase64(HANKEN_BOLD),
+    loadFontBase64(INSTRUMENT_SERIF),
+  ]);
+  return { regular, bold, display };
 }
 
 // -------- Web: jsPDF --------------------------------------------------------
@@ -82,7 +112,15 @@ async function generatePosterWeb(url: string, opts: PosterOpts): Promise<void> {
     orientation: "portrait",
     unit: "mm",
     format: "a4",
+    compress: true,
   });
+  const fonts = await loadPosterFonts();
+  doc.addFileToVFS("HankenGrotesk-Regular.ttf", fonts.regular);
+  doc.addFileToVFS("HankenGrotesk-Bold.ttf", fonts.bold);
+  doc.addFileToVFS("InstrumentSerif-Regular.ttf", fonts.display);
+  doc.addFont("HankenGrotesk-Regular.ttf", HANKEN_FAMILY, "normal");
+  doc.addFont("HankenGrotesk-Bold.ttf", HANKEN_FAMILY, "bold");
+  doc.addFont("InstrumentSerif-Regular.ttf", DISPLAY_FAMILY, "normal");
 
   // Paper background
   doc.setFillColor(PAPER);
@@ -91,16 +129,16 @@ async function generatePosterWeb(url: string, opts: PosterOpts): Promise<void> {
   // --- Venue name AT THE VERY TOP, biggest element on the poster.
   //     This is what people walking past see first; it anchors the whole
   //     thing as "this specific restaurant" rather than a generic ad.
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(40);
+  doc.setFont(DISPLAY_FAMILY, "normal");
+  doc.setFontSize(48);
   doc.setTextColor(NEAR_BLACK);
-  doc.text(opts.venueName || "", PAGE_W / 2, 36, { align: "center" });
+  doc.text(opts.venueName || "", PAGE_W / 2, 32, { align: "center" });
 
   if (opts.venueCity) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(13);
     doc.setTextColor(GRAY_500);
-    doc.text(`${opts.venueCity}, Italia`, PAGE_W / 2, 46, { align: "center" });
+    doc.text(`${opts.venueCity}, Italia`, PAGE_W / 2, 45, { align: "center" });
   }
 
   // --- "CERCASI STAFF" black band just below the venue name.
@@ -108,24 +146,31 @@ async function generatePosterWeb(url: string, opts: PosterOpts): Promise<void> {
   //     prints cleanly on any office b&w printer — venues will often print
   //     these on the cheapest available device. Sized BIG so it reads as a
   //     hiring notice from across the street.
-  doc.setFillColor(NEAR_BLACK);
-  doc.rect(0, 54, PAGE_W, 22, "F");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
-  doc.setTextColor("#FFFFFF");
-  doc.text("CERCASI STAFF", PAGE_W / 2, 69, { align: "center" });
+  doc.setFont(HANKEN_FAMILY, "bold");
+  doc.setFontSize(24);
+  doc.setTextColor(ORANGE);
+  doc.text("CERCASI STAFF", PAGE_W / 2, 61, { align: "center" });
 
-  // --- Headline (Italian) ----------------------------------------------
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(22);
+  doc.setFont(HANKEN_FAMILY, "normal");
+  doc.setFontSize(12);
   doc.setTextColor(NEAR_BLACK);
-  doc.text("QUESTO LOCALE", PAGE_W / 2, 92, { align: "center" });
-  doc.text("STA ASSUMENDO.", PAGE_W / 2, 102, { align: "center" });
+  doc.text("Non è il menù — è un’offerta di lavoro.", PAGE_W / 2, 72, {
+    align: "center",
+  });
 
   // --- QR code ----------------------------------------------------------
   const qrX = (PAGE_W - QR_SIZE_MM) / 2;
-  const qrY = 118; // pushed down so headline has breathing room above
-  doc.addImage(qrDataUrl, "PNG", qrX, qrY, QR_SIZE_MM, QR_SIZE_MM);
+  const qrY = 84;
+  doc.addImage(
+    qrDataUrl,
+    "PNG",
+    qrX,
+    qrY,
+    QR_SIZE_MM,
+    QR_SIZE_MM,
+    undefined,
+    "FAST"
+  );
 
   // Small orange "T" overlay in the centre of the QR (ECC level H tolerates
   // up to ~30% obstruction). Square white background so the T pops.
@@ -140,7 +185,7 @@ async function generatePosterWeb(url: string, opts: PosterOpts): Promise<void> {
   doc.text("T", PAGE_W / 2, logoY + logoSize - 4, { align: "center" });
 
   // --- Sub-copy (Italian) ----------------------------------------------
-  const subY = qrY + QR_SIZE_MM + 14;
+  const subY = qrY + QR_SIZE_MM + 13;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(14);
   doc.setTextColor(GRAY_700);
@@ -149,25 +194,14 @@ async function generatePosterWeb(url: string, opts: PosterOpts): Promise<void> {
   });
   doc.text("Lavora in giornata.", PAGE_W / 2, subY + 7, { align: "center" });
 
-  // Anti-menu disclaimer line — black italic so it survives b&w printing.
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(11);
-  doc.setTextColor(NEAR_BLACK);
-  doc.text(
-    "Non è il menù — è un'offerta di lavoro.",
-    PAGE_W / 2,
-    subY + 17,
-    { align: "center" }
-  );
-
   // --- Tavoria wordmark at the bottom (the credit / where it came from) ---
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(28);
+  doc.setFont(DISPLAY_FAMILY, "normal");
+  doc.setFontSize(34);
   const tWidth = doc.getTextWidth("T");
   const restWidth = doc.getTextWidth("avoria.");
   const wordmarkTotal = tWidth + restWidth;
   const wordmarkX = (PAGE_W - wordmarkTotal) / 2;
-  const wordmarkY = PAGE_H - 32;
+  const wordmarkY = PAGE_H - 31;
   doc.setTextColor(ORANGE);
   doc.text("T", wordmarkX, wordmarkY);
   doc.setTextColor(NEAR_BLACK);
@@ -179,7 +213,7 @@ async function generatePosterWeb(url: string, opts: PosterOpts): Promise<void> {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.setTextColor(NEAR_BLACK);
-  doc.text("tavoriapp.com", PAGE_W / 2, PAGE_H - 18, { align: "center" });
+  doc.text("tavoriapp.com", PAGE_W / 2, PAGE_H - 21, { align: "center" });
 
   // Trigger browser download
   const filename = sanitizeFilename(`tavoria-qr-${opts.venueName || "venue"}.pdf`);
@@ -210,7 +244,8 @@ async function generatePosterNative(url: string, opts: PosterOpts): Promise<void
     color: { dark: NEAR_BLACK, light: "#FFFFFF" },
   });
 
-  const html = buildPosterHtml({ qrSvg, opts });
+  const fonts = await loadPosterFonts();
+  const html = buildPosterHtml({ qrSvg, opts, fonts });
 
   // @page rule + 0 margins keeps the HTML scaled to a true A4 surface.
   const { uri } = await Print.printToFileAsync({
@@ -235,9 +270,11 @@ async function generatePosterNative(url: string, opts: PosterOpts): Promise<void
 function buildPosterHtml({
   qrSvg,
   opts,
+  fonts,
 }: {
   qrSvg: string;
   opts: PosterOpts;
+  fonts: { regular: string; bold: string; display: string };
 }): string {
   // The SVG comes with its own width/height; strip those so CSS sizing wins.
   const sizedSvg = qrSvg
@@ -252,20 +289,38 @@ function buildPosterHtml({
 <head>
   <meta charset="utf-8" />
   <style>
+    @font-face {
+      font-family: "Hanken Grotesk";
+      src: url("data:font/ttf;base64,${fonts.regular}") format("truetype");
+      font-style: normal;
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: "Hanken Grotesk";
+      src: url("data:font/ttf;base64,${fonts.bold}") format("truetype");
+      font-style: normal;
+      font-weight: 700 900;
+    }
+    @font-face {
+      font-family: "Instrument Serif";
+      src: url("data:font/ttf;base64,${fonts.display}") format("truetype");
+      font-style: normal;
+      font-weight: 400;
+    }
     @page { size: A4; margin: 0; }
     html, body {
       margin: 0;
       padding: 0;
       background: ${PAPER};
       color: ${NEAR_BLACK};
-      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-family: "Hanken Grotesk", Arial, sans-serif;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
     .page {
       width: 210mm;
       height: 297mm;
-      padding: 22mm 24mm;
+      padding: 16mm 24mm;
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
@@ -274,8 +329,9 @@ function buildPosterHtml({
     }
     /* Tavoria wordmark — now smaller, sits at the footer as the credit */
     .wordmark {
-      font-size: 28pt;
-      font-weight: 900;
+      font-family: "Instrument Serif", Georgia, serif;
+      font-size: 34pt;
+      font-weight: 400;
       letter-spacing: -1pt;
       line-height: 1;
       color: ${NEAR_BLACK};
@@ -300,7 +356,7 @@ function buildPosterHtml({
       position: relative;
       width: ${QR_SIZE_MM}mm;
       height: ${QR_SIZE_MM}mm;
-      margin: 18mm auto 8mm; /* breathing room above the QR */
+      margin: 10mm auto 8mm;
     }
     .qr-wrap svg { display: block; width: 100%; height: 100%; }
     .qr-logo {
@@ -330,8 +386,9 @@ function buildPosterHtml({
     .footer .rule { margin: 0 0 6mm; }
     /* Venue name — the biggest thing on the poster, at the very top */
     .venue {
-      font-size: 42pt;
-      font-weight: 900;
+      font-family: "Instrument Serif", Georgia, serif;
+      font-size: 48pt;
+      font-weight: 400;
       letter-spacing: -1pt;
       color: ${NEAR_BLACK};
       margin: 0 0 2mm;
@@ -340,7 +397,7 @@ function buildPosterHtml({
     .city {
       font-size: 13pt;
       color: ${GRAY_500};
-      margin: 0 0 6mm;
+      margin: 0 0 9mm;
       text-align: center;
     }
     .url {
@@ -356,22 +413,20 @@ function buildPosterHtml({
        across the street. */
     .staff-band {
       width: 100%;
-      background: ${NEAR_BLACK};
-      color: #FFFFFF;
+      color: ${ORANGE};
       text-align: center;
-      font-size: 20pt;
+      font-size: 24pt;
       font-weight: 900;
-      letter-spacing: 6pt;
-      padding: 7mm 0;
-      margin: 0 0 8mm;
+      letter-spacing: 0;
+      padding: 0;
+      margin: 0;
     }
     /* Italian anti-menu disclaimer below the QR — black italic so it
        survives b&w printing. */
     .not-menu {
-      font-style: italic;
-      font-size: 11pt;
+      font-size: 12pt;
       color: ${NEAR_BLACK};
-      margin: 4mm 0 0;
+      margin: 3mm 0 0;
     }
   </style>
 </head>
@@ -380,13 +435,12 @@ function buildPosterHtml({
     <p class="venue">${escapeHtml(opts.venueName || "")}</p>
     ${city ? `<p class="city">${city}</p>` : ""}
     <div class="staff-band">CERCASI STAFF</div>
-    <p class="headline">QUESTO LOCALE<br/>STA ASSUMENDO.</p>
+    <p class="not-menu">Non è il menù — è un'offerta di lavoro.</p>
     <div class="qr-wrap">
       ${sizedSvg}
       <div class="qr-logo">T</div>
     </div>
     <p class="sub">Inquadra il QR. Registrati in 5 minuti.<br/>Lavora in giornata.</p>
-    <p class="not-menu">Non è il menù — è un'offerta di lavoro.</p>
     <div class="spacer"></div>
     <div class="footer">
       <h1 class="wordmark"><span class="t">T</span>avoria<span class="t">.</span></h1>

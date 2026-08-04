@@ -71,13 +71,15 @@ const VENUE_TYPE_PHOTOS: Record<string, number> = {
 
 type Filter = "all" | "waiting" | "interview" | "hired" | "declined";
 
-const FILTERS: { id: Filter; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "waiting", label: "Waiting" },
-  { id: "interview", label: "Interview" },
-  { id: "hired", label: "Hired" },
-  { id: "declined", label: "Declined" },
-];
+function getFilters(): { id: Filter; label: string }[] {
+  return [
+    { id: "all", label: t("application_filters.all") },
+    { id: "waiting", label: t("application_filters.waiting") },
+    { id: "interview", label: t("application_filters.interview") },
+    { id: "hired", label: t("application_filters.hired") },
+    { id: "declined", label: t("application_filters.declined") },
+  ];
+}
 
 const STATUS_TO_FILTER: Record<string, Filter> = {
   pending: "waiting",
@@ -155,6 +157,7 @@ export default function WorkerApplications() {
     filter === "all"
       ? apps
       : apps.filter((a) => STATUS_TO_FILTER[a.status] === filter);
+  const filters = getFilters();
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -178,7 +181,7 @@ export default function WorkerApplications() {
       </View>
 
       <FilterChips
-        options={FILTERS.map((item) => ({ ...item, count: counts[item.id] }))}
+        options={filters.map((item) => ({ ...item, count: counts[item.id] }))}
         value={filter}
         onChange={setFilter}
       />
@@ -212,7 +215,7 @@ export default function WorkerApplications() {
               {filter === "all"
                 ? "No applications yet"
                 : `No applications in "${
-                    FILTERS.find((f) => f.id === filter)?.label
+                    filters.find((f) => f.id === filter)?.label
                   }"`}
             </Text>
             {filter === "all" && (
@@ -297,9 +300,19 @@ function ApplicationCard({
         <Image source={photo} style={styles.thumb} resizeMode="cover" />
         <View style={{ flex: 1 }}>
           <View style={styles.line1}>
-            <Text style={styles.venueName} numberOfLines={1}>
-              {v?.name || "Venue"}
-            </Text>
+            <Pressable
+              onPress={(event) => {
+                event.stopPropagation();
+                const venueId = v?.id ?? a.venue_id;
+                if (venueId) router.push({ pathname: "/venue-board", params: { venueId } });
+              }}
+              style={styles.venueNameLink}
+            >
+              <Text style={styles.venueName} numberOfLines={1}>
+                {v?.name || "Venue"}
+              </Text>
+              <Feather name="arrow-up-right" size={14} color="#185FA5" />
+            </Pressable>
             {payStr && <Text style={styles.pay}>{payStr}</Text>}
           </View>
           <Text style={styles.role} numberOfLines={1}>
@@ -465,7 +478,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: "rgba(0,0,0,0.08)",
   },
-  rowInterviewUpdate: { backgroundColor: "#FFF3EC", borderColor: "#F0531C", borderWidth: 2 },
+  rowInterviewUpdate: { backgroundColor: "#FFAB7D", borderColor: "#F0531C", borderWidth: 2 },
   thumb: {
     width: 60,
     height: 60,
@@ -485,6 +498,7 @@ const styles = StyleSheet.create({
     color: "#0E1A24",
     letterSpacing: -0.2,
   },
+  venueNameLink: { alignItems: "center", flex: 1, flexDirection: "row", gap: 4, minWidth: 0 },
   pay: { fontSize: 14, fontWeight: "900", color: "#F0531C" },
   role: {
     fontFamily: "InstrumentSerif_400Regular", fontSize: 13, fontWeight: "400", color: "#6B7280", marginTop: 3 },

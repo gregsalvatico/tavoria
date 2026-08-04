@@ -8,7 +8,7 @@ import Wordmark from "./Wordmark";
 const LINKS = [
   { href: "/per-locali", label: "Per locali" },
   { href: "/per-staff", label: "Per staff" },
-  { href: "/prezzi", label: "Prezzi" },
+  { href: "/prezzi", label: "Tavoria Pro" },
   { href: "/fondatori", label: "Fondatori" },
 ];
 

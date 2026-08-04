@@ -93,3 +93,42 @@ export async function signInWithUsernamePin(params: {
     throw error;
   }
 }
+
+export async function changeUsernamePin(params: {
+  currentPin: string;
+  newPin: string;
+}): Promise<{ emailNotificationSent: boolean }> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const email = session?.user.email;
+  if (!email?.endsWith(`@${SYNTHETIC_EMAIL_DOMAIN}`)) {
+    throw new Error("You need to sign in again before changing your PIN.");
+  }
+
+  // Re-authenticate before changing the credential. This is intentionally
+  // separate from the active session so a stolen unlocked device cannot
+  // silently replace the account PIN.
+  const { error: verifyError } = await supabase.auth.signInWithPassword({
+    email,
+    password: pinToPassword(params.currentPin),
+  });
+  if (verifyError) {
+    throw new Error("Your current PIN is incorrect.");
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({
+    password: pinToPassword(params.newPin),
+  });
+  if (updateError) throw updateError;
+
+  try {
+    const { data, error } = await supabase.functions.invoke("notify-pin-change", {
+      body: {},
+    });
+    if (error) return { emailNotificationSent: false };
+    return { emailNotificationSent: data?.sent === true };
+  } catch {
+    return { emailNotificationSent: false };
+  }
+}

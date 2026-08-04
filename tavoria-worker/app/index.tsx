@@ -10,7 +10,6 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
   View,
@@ -27,6 +26,7 @@ import { downloadVenueQRPoster } from "../lib/qrPoster";
 import { initProEligibility, isProEligible } from "../lib/proEligibility";
 import { getVenueProfile } from "../lib/venueProfile";
 import SignedInHome from "../components/SignedInHome";
+import ShareTavoriaModal from "../components/ShareTavoriaModal";
 import {
   getCachedHomeContext,
   setCachedHomeContext,
@@ -52,6 +52,7 @@ export default function Welcome() {
     () => getCachedHomeContext() !== null
   );
   const [pendingCount, setPendingCount] = useState<number>(0);
+  const [shareOpen, setShareOpen] = useState(false);
   const [workerCounts, setWorkerCounts] = useState<WorkerStatusCounts>({
     hired: 0,
     interview: 0,
@@ -129,14 +130,7 @@ export default function Welcome() {
     });
   };
 
-  const onShare = async () => {
-    try {
-      const message = ctx.hasWorker
-        ? t("home_in.share_worker_msg")
-        : t("home_in.share_venue_msg");
-      await Share.share({ message });
-    } catch {}
-  };
+  const onShare = () => setShareOpen(true);
 
   // Re-check on each focus so "Continue as ..." shortcuts appear immediately
   // after the user finishes onboarding
@@ -312,7 +306,8 @@ export default function Welcome() {
   }
 
   return (
-    <SignedInHome
+    <>
+      <SignedInHome
       ctx={ctx}
       lang={lang}
       pendingCount={pendingCount}
@@ -340,8 +335,13 @@ export default function Welcome() {
         }
       }}
       onShare={onShare}
-      onSignOut={signOut}
-    />
+        onSignOut={signOut}
+      />
+      <ShareTavoriaModal
+        visible={shareOpen}
+        onClose={() => setShareOpen(false)}
+      />
+    </>
   );
 
   /* Legacy signed-in layout retained temporarily while the new feed-first

@@ -52,7 +52,7 @@ export default function WorkerWelcome() {
             </Pressable>
           </Link>
           <Text style={styles.tinyTxt}>
-            No subscription. Pay €2.99/week only to unlock Pro filters.
+            Tavoria is free for everyone until 2027.
           </Text>
         </View>
       </View>

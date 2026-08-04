@@ -1,10 +1,10 @@
 import Button from "./Button";
 
 const STAFF_ROWS = [
-  "Profilo gratuito, sempre",
+  "Tavoria gratis fino al 2027",
   "Candidatura video in 30 secondi",
   "Contatto diretto col locale",
-  "Nessuna commissione, nessuna trattenuta",
+  "Tutte le funzioni incluse fino al 2027",
 ];
 
 const VENUE_ROWS = [
@@ -12,7 +12,7 @@ const VENUE_ROWS = [
   "QR poster brandizzato",
   "Video di ogni candidato",
   "Verifica identità + diritto al lavoro",
-  "Paghi solo quando assumi",
+  "Poi €19 per assunzione",
 ];
 
 function Check({ className = "" }: { className?: string }) {
@@ -60,13 +60,13 @@ export default function PricingBlock() {
 
         <div className="mt-8 flex items-baseline gap-3">
           <span className="font-serif text-[72px] font-medium leading-none text-navy tnum sm:text-[88px]">
-            €0
+            Gratis
           </span>
-          <span className="font-serif text-2xl italic text-navy/70">per sempre.</span>
+          <span className="font-serif text-2xl italic text-navy/70">fino al 2027.</span>
         </div>
 
         <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-mute">
-          Niente costi nascosti. Mai. Trovi lavoro e basta.
+          Tavoria è gratis fino al 2027, senza costi o abbonamenti.
         </p>
 
         <ul className="mt-10 space-y-0">
@@ -106,16 +106,15 @@ export default function PricingBlock() {
 
         <div className="mt-8 flex items-baseline gap-3">
           <span className="font-serif text-[72px] font-medium leading-none text-cream tnum sm:text-[88px]">
-            €19
+            Pro
           </span>
           <span className="font-serif text-xl italic text-cream/70">
-            per assunzione.
+            in arrivo.
           </span>
         </div>
 
         <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-cream/75">
-          <span className="font-semibold text-brass">Gratis fino a settembre 2026.</span>{" "}
-          Poi paghi solo quando assumi. Niente abbonamenti, niente sorprese.
+          Gratis fino al 2027. Poi €19 per assunzione. Tavoria Pro è in arrivo.
         </p>
 
         <ul className="mt-10 space-y-0">

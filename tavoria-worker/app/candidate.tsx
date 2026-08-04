@@ -44,6 +44,7 @@ import InterviewOutcomeModal, {
   type InterviewOutcome,
 } from "../components/InterviewOutcomeModal";
 import ProInvitationModal from "../components/ProInvitationModal";
+import ContactPersonModal from "../components/ContactPersonModal";
 
 function yearsShort(n: number): string {
   const key = `worker_experience.years_short_${n}`;
@@ -91,6 +92,7 @@ export default function Candidate() {
   const [interviewLocation, setInterviewLocation] = useState<string>("");
   const [outcomeOpen, setOutcomeOpen] = useState(false);
   const [proInviteOpen, setProInviteOpen] = useState(false);
+  const [contactApplicantOpen, setContactApplicantOpen] = useState(false);
   const applicationId = incomingAppId ?? null;
   // If navigated with applicationId, fetch that specific applicant from Supabase
   const [remoteWorker, setRemoteWorker] = useState<any | null>(null);
@@ -543,6 +545,13 @@ export default function Candidate() {
                     {!isOwnerMode && (
                       <View style={styles.contactBtnRow}>
                         <Pressable
+                          style={styles.contactApplicantBtn}
+                          onPress={() => setContactApplicantOpen(true)}
+                        >
+                          <Feather name="send" size={14} color="#0E1A24" />
+                          <Text style={styles.contactApplicantBtnTxt}>{t("contact_modal.contact_applicant")}</Text>
+                        </Pressable>
+                        <Pressable
                           style={styles.waBtn}
                           onPress={() => {
                             const msg = t("contact.wa_msg_venue_to_worker", {
@@ -654,8 +663,8 @@ export default function Candidate() {
                 >
                   <Feather name="star" size={18} color="#F0531C" />
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.proInviteTitle}>Request interview with Pro</Text>
-                    <Text style={styles.proInviteText}>Invite candidates before they apply.</Text>
+                    <Text style={styles.proInviteTitle}>{t("venue_pro.cta")}</Text>
+                    <Text style={styles.proInviteText}>{t("venue_pro.sub")}</Text>
                   </View>
                   <Feather name="chevron-right" size={18} color="#46505A" />
                 </Pressable>
@@ -701,6 +710,13 @@ export default function Candidate() {
           setProInviteOpen(false);
           router.push("/venue-pro");
         }}
+      />
+      <ContactPersonModal
+        visible={contactApplicantOpen}
+        onClose={() => setContactApplicantOpen(false)}
+        name={view.firstName}
+        phone={view.phoneVisible === false ? undefined : view.phone}
+        recipientType="applicant"
       />
 
       {/* Fullscreen video modal */}
@@ -1178,6 +1194,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",
   },
+  contactApplicantBtn: { alignItems: "center", backgroundColor: "#F1EFE8", borderColor: "rgba(14,26,36,0.14)", borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 10, paddingVertical: 6 },
+  contactApplicantBtnTxt: { color: "#0E1A24", fontSize: 12, fontWeight: "800" },
   videoAbsentText: { color: "rgba(255,255,255,0.55)", fontSize: 11, fontWeight: "700", marginTop: 8 },
   interviewActions: { borderTopColor: "rgba(0,0,0,0.08)", borderTopWidth: 0.5, gap: 9, padding: 12 },
   requestInterviewButton: { alignItems: "center", backgroundColor: "#F0531C", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 54, paddingHorizontal: 18 },

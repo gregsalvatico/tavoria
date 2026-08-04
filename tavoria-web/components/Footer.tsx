@@ -4,7 +4,7 @@ import Wordmark from "./Wordmark";
 const PAGES = [
   { href: "/per-locali", label: "Per locali" },
   { href: "/per-staff", label: "Per staff" },
-  { href: "/prezzi", label: "Prezzi" },
+  { href: "/prezzi", label: "Tavoria Pro" },
   { href: "/fondatori", label: "Fondatori" },
   { href: "/stampa", label: "Stampa" },
   { href: "/faq", label: "FAQ" },

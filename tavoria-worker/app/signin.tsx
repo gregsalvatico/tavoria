@@ -2,7 +2,7 @@
 // usernames and roles, never PINs or Supabase sessions.
 
 import { Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -29,6 +29,12 @@ import {
 
 export default function SignIn() {
   const router = useRouter();
+  const { next, shiftId, venueId, venueName } = useLocalSearchParams<{
+    next?: string;
+    shiftId?: string;
+    venueId?: string;
+    venueName?: string;
+  }>();
   const [username, setUsername] = useState("");
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
@@ -96,7 +102,11 @@ export default function SignIn() {
       // context request failed, keep the home behind its neutral auth gate and
       // let its focus refresh retry instead of flashing the public landing.
       setCachedHomeContext(context);
-      router.replace("/");
+      if (next === "venue-board" && venueId) {
+        router.replace({ pathname: "/venue-board", params: { venueId } });
+      } else {
+        router.replace("/");
+      }
     } catch (e: any) {
       const message = e?.message ?? t("auth_pin.err_signin");
       setErrorMsg(message);
@@ -262,6 +272,24 @@ export default function SignIn() {
               <Text style={styles.errorTxt}>{errorMsg} Enter your PIN again to retry.</Text>
             </View>
           )}
+
+          <Pressable
+            onPress={() =>
+              router.replace({
+                pathname: "/signup",
+                params: {
+                  ...(next ? { next } : {}),
+                  ...(shiftId ? { shiftId } : {}),
+                  ...(venueId ? { venueId } : {}),
+                  ...(venueName ? { venueName } : {}),
+                },
+              })
+            }
+            style={styles.authSwitch}
+          >
+            <Text style={styles.authSwitchPrompt}>{t("auth_pin.new_here")}</Text>
+            <Text style={styles.authSwitchLink}>{t("auth_pin.sign_up_title")}</Text>
+          </Pressable>
         </ScrollView>
 
         <View style={styles.bottom}>
@@ -402,6 +430,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
+  authSwitch: { alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 26, paddingVertical: 8 },
+  authSwitchPrompt: { color: "#6B7280", fontSize: 13 },
+  authSwitchLink: { color: "#185FA5", fontSize: 13, fontWeight: "800" },
 
   bottom: {
     paddingHorizontal: 20,

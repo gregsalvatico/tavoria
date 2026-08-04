@@ -5,9 +5,9 @@ import Button from "@/components/Button";
 import Section, { Divider } from "@/components/Section";
 
 export const metadata: Metadata = {
-  title: "Prezzi — Gratis durante il lancio, €19 per assunzione da settembre",
+  title: "Tavoria — Gratis fino al 2027",
   description:
-    "Per il staff: sempre gratis. Per i locali: gratis fino a settembre 2026, poi €19 ogni volta che assumi. Niente abbonamenti, niente fee nascoste.",
+    "Tavoria è gratis fino al 2027. Dopo, i locali pagano €19 per assunzione. Tavoria Pro è in arrivo.",
 };
 
 const VENUE_INCLUDED = [
@@ -24,7 +24,7 @@ const STAFF_INCLUDED = [
   "Candidature illimitate",
   "Notifiche quando ti scelgono",
   "Contatto diretto col locale",
-  "Nessuna fee. Mai.",
+  "Tutte le funzioni incluse fino al 2027",
 ];
 
 export default function Prezzi() {
@@ -34,13 +34,13 @@ export default function Prezzi() {
       <main>
         <Section
           tone="cream"
-          eyebrow="Prezzi"
+          eyebrow="Tavoria"
           heading={
             <>
-              Trasparente. <em className="italic">Niente sorprese.</em>
+              Gratis fino al 2027. <em className="italic">Per tutti.</em>
             </>
           }
-          lede="Paghi solo se assumi. Niente abbonamenti, niente fee per pubblicare un turno."
+          lede="Gratis fino al 2027. Poi €19 per assunzione. Tavoria Pro è in arrivo."
           centered
         />
 
@@ -53,13 +53,13 @@ export default function Prezzi() {
                 Per il staff
               </p>
               <p className="mt-6 font-serif text-6xl leading-none text-navy">
-                Gratis.
+                Tutto incluso.
               </p>
               <p className="mt-2 font-serif text-2xl italic text-navy/80">
-                Per sempre.
+                Fino al 2027.
               </p>
               <p className="mt-6 text-base leading-relaxed text-mute">
-                Niente costi nascosti. Mai. Trovi lavoro e basta.
+                Crea il tuo profilo, candidati e parla con i locali: è tutto incluso fino al 2027.
               </p>
               <ul className="mt-8 space-y-3">
                 {STAFF_INCLUDED.map((item) => (
@@ -104,21 +104,17 @@ export default function Prezzi() {
             {/* Venue card */}
             <div className="relative rounded-3xl bg-navy p-10 text-cream shadow-xl">
               <span className="absolute -top-3 left-10 rounded-full bg-orange px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
-                Lancio Milano
+                GRATIS FINO AL 2027
               </span>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brass">
                 Per i locali
               </p>
-              <p className="mt-6 font-serif text-6xl leading-none">€0</p>
+              <p className="mt-6 font-serif text-5xl leading-none">Tutto incluso.</p>
               <p className="mt-2 font-serif text-xl italic text-cream/80">
-                fino a settembre 2026
+                Fino al 2027.
               </p>
               <p className="mt-6 text-base leading-relaxed text-cream/80">
-                Poi{" "}
-                <span className="font-semibold text-cream">
-                  €19 per assunzione
-                </span>
-                . Paghi solo se assumi davvero. Niente abbonamenti.
+                Gratis fino al 2027. Poi €19 per assunzione. Tavoria Pro è in arrivo.
               </p>
               <ul className="mt-8 space-y-3">
                 {VENUE_INCLUDED.map((item) => (
@@ -164,55 +160,30 @@ export default function Prezzi() {
 
         <Divider />
 
-        {/* Small print */}
         <Section
           tone="cream"
           tight
-          eyebrow="Domande frequenti sul prezzo"
-          heading="Quello che ti chiedi prima di firmare."
+          eyebrow="Tavoria Pro"
+          heading="Oggi è tutto incluso."
         >
           <div className="grid gap-8 md:grid-cols-2">
-            <div>
-              <h3 className="font-serif text-lg text-navy">
-                Cosa conta come &ldquo;assunzione&rdquo;?
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-mute">
-                Quando premi &ldquo;Assumi&rdquo; nell&apos;app su un candidato
-                e quel candidato accetta. Conferma esplicita da entrambe le
-                parti. Niente trucchi.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-serif text-lg text-navy">
-                E se il candidato non si presenta?
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-mute">
-                Hai 7 giorni per segnalarlo. Se il candidato non si presenta o
-                non risponde, annulliamo la fee. Zero rischio.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-serif text-lg text-navy">
-                Posso annullare in qualsiasi momento?
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-mute">
-                Sì. Non c&apos;è nessun contratto. Cancelli l&apos;account
-                quando vuoi. Niente penali.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-serif text-lg text-navy">
-                Fatturazione e IVA?
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-mute">
-                Fattura elettronica al tuo P. IVA, IVA italiana inclusa.
-                Tutto in regola con K3Y Solutions S.r.l.
-              </p>
-            </div>
+            <Info title="Fino a quando Tavoria è gratis?" body="Per tutti fino al 2027: staff e locali possono usare Tavoria senza costi." />
+            <Info title="Cosa succede dopo il 2027?" body="I locali pagano €19 per assunzione. Tavoria Pro è in arrivo." />
+            <Info title="Posso usare Tavoria già oggi?" body="Sì. Tutte le funzioni disponibili oggi sono incluse fino al 2027." />
+            <Info title="Ci sono pagamenti attivi?" body="No. Non ci sono pagamenti o abbonamenti attivi in questo momento." />
           </div>
         </Section>
       </main>
       <Footer />
     </>
+  );
+}
+
+function Info({ title, body }: { title: string; body: string }) {
+  return (
+    <div>
+      <h3 className="font-serif text-lg text-navy">{title}</h3>
+      <p className="mt-2 text-sm leading-relaxed text-mute">{body}</p>
+    </div>
   );
 }

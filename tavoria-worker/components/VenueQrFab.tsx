@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { getCurrentVenueRow } from "../lib/db";
 import { downloadVenueQRPoster } from "../lib/qrPoster";
+import { t } from "../lib/i18n";
 
 type VenueInfo = { id: string; name?: string | null; city?: string | null };
 
@@ -58,13 +59,13 @@ export default function VenueQrFab() {
       });
     } catch (error) {
       console.warn("[venue-qr] download failed:", error);
-      Alert.alert("Could not download the QR poster", String((error as Error)?.message ?? error));
+      Alert.alert(t("common.try_again"), String((error as Error)?.message ?? error));
     }
   };
 
   return (
     <>
-      <Pressable style={styles.fab} onPress={() => void loadQr()} accessibilityLabel="Show venue QR code">
+      <Pressable style={styles.fab} onPress={() => void loadQr()} accessibilityLabel={t("home_in.print_qr")}>
         <Feather name="maximize" size={21} color="white" />
       </Pressable>
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
@@ -73,8 +74,8 @@ export default function VenueQrFab() {
           <View style={styles.card}>
             <View style={styles.header}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.title}>Your venue QR code</Text>
-                <Text style={styles.subtitle}>Workers can scan it to open your venue.</Text>
+                <Text style={styles.title}>{t("qr_modal.title")}</Text>
+                <Text style={styles.subtitle}>{t("qr_modal.sub")}</Text>
               </View>
               <Pressable onPress={() => setOpen(false)} hitSlop={10} style={styles.close}>
                 <Feather name="x" size={19} color="#46505A" />
@@ -84,12 +85,12 @@ export default function VenueQrFab() {
               {loading ? <ActivityIndicator color="#F0531C" size="large" /> : dataUrl ? (
                 <Image source={{ uri: dataUrl }} style={styles.image} />
               ) : (
-                <Text style={styles.error}>Could not create the QR preview. Please try again.</Text>
+                <Text style={styles.error}>{t("common.try_again")}</Text>
               )}
             </View>
             <Pressable style={[styles.download, !venue && styles.downloadDisabled]} onPress={() => void download()} disabled={!venue}>
               <Feather name="download" size={18} color="white" />
-              <Text style={styles.downloadText}>Download QR poster</Text>
+              <Text style={styles.downloadText}>{t("home_in.print_qr")}</Text>
             </Pressable>
           </View>
         </View>

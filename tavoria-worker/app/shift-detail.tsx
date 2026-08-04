@@ -22,6 +22,7 @@ import {
   createApplication,
   getCurrentWorkerApplicationForShift,
   getCurrentWorkerFull,
+  getCurrentUserContext,
   updateShiftStatus,
 } from "../lib/db";
 import { t } from "../lib/i18n";
@@ -76,6 +77,7 @@ export default function ShiftDetail() {
   const [shiftStatus, setShiftStatus] = useState<"live" | "paused">("live");
   const [application, setApplication] = useState<any | null>(null);
   const [contactOpen, setContactOpen] = useState(false);
+  const [hasAccount, setHasAccount] = useState(false);
 
   // Determine if the current signed-in user owns the venue that posted this shift
   useEffect(() => {
@@ -127,7 +129,7 @@ export default function ShiftDetail() {
     }
     (async () => {
       try {
-        const [shiftResult, existingApplication] = await Promise.all([
+        const [shiftResult, existingApplication, account] = await Promise.all([
           supabase
             .from("shifts")
             .select(
@@ -143,10 +145,12 @@ export default function ShiftDetail() {
             .eq("id", id)
             .maybeSingle(),
           getCurrentWorkerApplicationForShift(id).catch(() => null),
+          getCurrentUserContext().catch(() => ({ hasVenue: false, hasWorker: false })),
         ]);
         if (shiftResult.error) throw shiftResult.error;
         setShift(shiftResult.data);
         setApplication(existingApplication);
+        setHasAccount(account.hasVenue || account.hasWorker);
       } catch (e: any) {
         setErrorMsg(e?.message ?? "Could not load shift.");
       } finally {
@@ -338,7 +342,14 @@ export default function ShiftDetail() {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.venueName}>{v?.name ?? "Venue"}</Text>
+          <Pressable
+            disabled={!shift.venue_id}
+            onPress={() => router.push({ pathname: "/venue-board", params: { venueId: shift.venue_id } })}
+            style={styles.venueNameLink}
+          >
+            <Text style={styles.venueName}>{v?.name ?? "Venue"}</Text>
+            <Feather name="arrow-up-right" size={19} color="#185FA5" />
+          </Pressable>
           <View style={styles.metaRow}>
             {v?.type && (
               <Tag>{(() => {
@@ -363,17 +374,28 @@ export default function ShiftDetail() {
           </View>
 
           {/* Big pay block */}
-          <View style={styles.paySection}>
+          <Pressable
+            style={[styles.paySection, !hasAccount && styles.paySectionLocked]}
+            onPress={() => {
+              if (!hasAccount) router.push("/signin");
+            }}
+            disabled={hasAccount}
+          >
             <Text style={styles.paySectionLbl}>{t("shift_detail.pay_label")}</Text>
-            <Text style={styles.paySectionVal}>{payStr}</Text>
-            {v?.pay_schedule && (
+            {hasAccount ? <Text style={styles.paySectionVal}>{payStr}</Text> : (
+              <View style={styles.payLockedDetail}>
+                <Feather name="lock" size={15} color="#F0531C" />
+                <Text style={styles.payLockedDetailTxt}>{t("shift_detail.pay_signin")}</Text>
+              </View>
+            )}
+            {hasAccount && v?.pay_schedule && (
               <Text style={styles.paySectionMeta}>
                 {t("shift_detail.paid_prefix", {
                   schedule: payScheduleLabel(v.pay_schedule),
                 })}
               </Text>
             )}
-          </View>
+          </Pressable>
 
           <KV icon="briefcase" label={t("shift_detail.position")}>
             {roleStr}
@@ -646,6 +668,7 @@ const styles = StyleSheet.create({
     color: "#0E1A24",
     letterSpacing: -0.4,
   },
+  venueNameLink: { alignItems: "center", alignSelf: "flex-start", flexDirection: "row", gap: 7 },
   metaRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -686,6 +709,9 @@ const styles = StyleSheet.create({
     letterSpacing: -0.6,
   },
   paySectionMeta: { fontSize: 12, color: "#854F0B", marginTop: 4 },
+  paySectionLocked: { backgroundColor: "#FFF4EE", borderColor: "#F7C7AB", borderWidth: 1 },
+  payLockedDetail: { alignItems: "center", flexDirection: "row", gap: 7, marginTop: 5 },
+  payLockedDetailTxt: { color: "#C2410C", fontSize: 15, fontWeight: "800" },
 
   kv: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
   kvIcon: {

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const ITEMS = [
   {
     q: "Tavoria è gratis?",
-    a: "Sì, per il staff sempre gratis. Per i locali è gratis fino a settembre 2026, poi €19 ogni volta che assumi una persona.",
+    a: "Sì. Tavoria è gratis fino al 2027. Dopo, i locali pagano €19 per assunzione. Tavoria Pro è in arrivo.",
   },
   {
     q: "Come funziona il QR?",
@@ -39,8 +39,8 @@ const ITEMS = [
     a: "Sì. Pubblichi turni di qualsiasi durata: una serata, un weekend, una stagione, o un contratto a tempo indeterminato. Lo specifichi quando crei l'annuncio.",
   },
   {
-    q: "Cosa succede se il candidato non si presenta?",
-    a: "Hai 7 giorni per segnalarlo. Se il candidato non si presenta o non risponde dopo l'assunzione, annulliamo la fee di €19. Zero rischio.",
+    q: "Cosa succede dopo il 2027?",
+    a: "I locali pagano €19 per assunzione. Tavoria Pro è in arrivo.",
   },
 ];
 

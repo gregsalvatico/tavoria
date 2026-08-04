@@ -96,7 +96,7 @@ type Props = {
   proEligible: boolean;
   onChangeLanguage: (language: Language) => Promise<void>;
   onPrintQr: () => Promise<void>;
-  onShare: () => Promise<void>;
+  onShare: () => void | Promise<void>;
   onSignOut: () => Promise<void>;
 };
 
@@ -190,11 +190,11 @@ export default function SignedInHome({
   const candidateFilterOptions = useMemo(() => {
     const appliedCount = candidateRows.filter((worker) => appliedWorkerIds.has(worker.id)).length;
     return [
-      { id: "all" as const, label: "All", count: candidateRows.length },
-      { id: "applied" as const, label: "Applied", count: appliedCount },
-      { id: "not_applied" as const, label: "Not applied", count: candidateRows.length - appliedCount },
+      { id: "all" as const, label: t("candidate_filters.all"), count: candidateRows.length },
+      { id: "applied" as const, label: t("candidate_filters.applied"), count: appliedCount },
+      { id: "not_applied" as const, label: t("candidate_filters.not_applied"), count: candidateRows.length - appliedCount },
     ];
-  }, [appliedWorkerIds, candidateRows]);
+  }, [appliedWorkerIds, candidateRows, lang]);
 
   const avatar = (
     <View style={styles.avatar}>
@@ -339,9 +339,19 @@ export default function SignedInHome({
           ))
         ) : (
           visibleRows.map((row) => (
-            <HomeShiftRow key={row.id} row={row} venueMode={venueMode} onOpen={() => {
-              router.push({ pathname: "/shift-detail", params: { id: row.id } });
-            }} />
+            <HomeShiftRow
+              key={row.id}
+              row={row}
+              venueMode={venueMode}
+              onOpen={() => {
+                router.push({ pathname: "/shift-detail", params: { id: row.id } });
+              }}
+              onOpenVenue={() => {
+                if (row.venue?.id) {
+                  router.push({ pathname: "/venue-board", params: { venueId: row.venue.id } });
+                }
+              }}
+            />
           ))
         )}
       </ScrollView>
@@ -382,7 +392,7 @@ export default function SignedInHome({
                 <DrawerSection>
                   <DrawerAction icon="printer" label={t("home_in.print_qr")} onPress={() => { setDrawerOpen(false); void onPrintQr(); }} />
                   <DrawerAction icon="share-2" label={t("home_in.share_gigi")} onPress={() => { setDrawerOpen(false); void onShare(); }} />
-                  <DrawerAction icon="compass" label="How Tavoria works" detail="Your hiring flow" onPress={() => go("/how-it-works?role=venue")} />
+                  <DrawerAction icon="compass" label={t("how_it_works.drawer_title")} detail={t("how_it_works.drawer_venue_detail")} onPress={() => go("/how-it-works?role=venue")} />
                 </DrawerSection>
               )}
 
@@ -390,7 +400,7 @@ export default function SignedInHome({
                 <DrawerSection>
                   <DrawerAction icon="maximize" label={t("home.scan_qr")} onPress={() => go("/scan")} />
                   <DrawerAction icon="share-2" label={t("home_in.share_profile")} onPress={() => { setDrawerOpen(false); void onShare(); }} />
-                  <DrawerAction icon="compass" label="How Tavoria works" detail="Your job flow" onPress={() => go("/how-it-works?role=worker")} />
+                  <DrawerAction icon="compass" label={t("how_it_works.drawer_title")} detail={t("how_it_works.drawer_worker_detail")} onPress={() => go("/how-it-works?role=worker")} />
                 </DrawerSection>
               )}
 
@@ -417,6 +427,12 @@ export default function SignedInHome({
                     setDrawerOpen(false);
                     setLanguageOpen(true);
                   }}
+                />
+                <DrawerAction
+                  icon="key"
+                  label={t("change_pin.drawer")}
+                  detail={t("change_pin.drawer_detail")}
+                  onPress={() => go("/change-pin")}
                 />
                 <DrawerAction
                   icon="mail"
@@ -567,10 +583,12 @@ function HomeShiftRow({
   row,
   venueMode,
   onOpen,
+  onOpenVenue,
 }: {
   row: ShiftRow;
   venueMode: boolean;
   onOpen: () => void;
+  onOpenVenue: () => void;
 }) {
   const photo = row.venue?.photo_url
     ? { uri: row.venue.photo_url }
@@ -587,9 +605,22 @@ function HomeShiftRow({
       <Image source={photo} style={styles.shiftImage} resizeMode="cover" />
       <View style={styles.shiftBody}>
         <View style={styles.shiftTopLine}>
-          <Text style={styles.shiftVenue} numberOfLines={1}>
-            {venueMode ? roles : row.venue?.name || "Venue"}
-          </Text>
+          {venueMode || !row.venue?.id ? (
+            <Text style={styles.shiftVenue} numberOfLines={1}>
+              {venueMode ? roles : row.venue?.name || "Venue"}
+            </Text>
+          ) : (
+            <Pressable
+              onPress={(event) => {
+                event.stopPropagation();
+                onOpenVenue();
+              }}
+              style={styles.shiftVenueLink}
+            >
+              <Text style={styles.shiftVenue} numberOfLines={1}>{row.venue.name || "Venue"}</Text>
+              <Feather name="arrow-up-right" size={14} color="#185FA5" />
+            </Pressable>
+          )}
           {urgent && (
             <View style={styles.urgentBadge}>
               <Feather name="zap" size={10} color="#B91C1C" />
@@ -697,6 +728,7 @@ const styles = StyleSheet.create({
   shiftBody: { flex: 1, minWidth: 0 },
   shiftTopLine: { alignItems: "center", flexDirection: "row", gap: 8 },
   shiftVenue: { color: "#0E1A24", flex: 1, fontSize: 16, fontWeight: "700" },
+  shiftVenueLink: { alignItems: "center", flex: 1, flexDirection: "row", gap: 4, minWidth: 0 },
   shiftRoles: { color: "#46505A", fontSize: 13, marginTop: 2 },
   shiftMeta: { alignItems: "center", flexDirection: "row", marginTop: 6 },
   shiftPay: { color: "#F0531C", fontSize: 12, fontWeight: "800" },

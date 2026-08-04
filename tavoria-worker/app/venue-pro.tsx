@@ -40,7 +40,7 @@ export default function VenuePro() {
         <Text style={styles.heroSub}>{t("venue_pro.sub")}</Text>
 
         <View style={styles.comparisonLabel}>
-          <Text style={styles.comparisonLabelText}>YOUR VENUE TODAY</Text>
+          <Text style={styles.comparisonLabelText}>{t("venue_pro.free_kicker")}</Text>
         </View>
         <View style={styles.freeCard}>
           <View style={styles.freeKickerRow}>
@@ -57,18 +57,18 @@ export default function VenuePro() {
         </View>
 
         <View style={styles.comparisonLabel}>
-          <Text style={styles.comparisonLabelText}>WITH TAVORIA PRO</Text>
+          <Text style={styles.comparisonLabelText}>{t("venue_pro.kicker")}</Text>
         </View>
         <View style={styles.proCard}>
-          <ProBullet text="Invite candidates before they apply" />
-          <ProBullet text="See more of each candidate's portfolio" />
-          <ProBullet text="Use advanced candidate filters" />
+          <ProBullet text={t("venue_pro.bullet1")} />
+          <ProBullet text={t("venue_pro.bullet2")} />
+          <ProBullet text={t("venue_pro.bullet3")} />
         </View>
       </ScrollView>
 
       <View style={styles.bottom}>
         <Text style={styles.price}>{t("venue_pro.price")}</Text>
-        <Text style={styles.comingSoon}>Subscriptions are not available yet.</Text>
+        <Text style={styles.comingSoon}>{t("common.coming_soon")}</Text>
         <Pressable style={[styles.cta, styles.ctaDisabled]} disabled>
           <Text style={styles.ctaTxt}>{t("venue_pro.cta")}</Text>
           <Feather name="lock" size={18} color="#6B7280" />

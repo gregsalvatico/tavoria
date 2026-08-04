@@ -53,13 +53,15 @@ type ApplicationRow = {
 
 type Filter = "all" | "pending" | "interview" | "hired" | "declined";
 
-const FILTERS: { id: Filter; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "pending", label: "New" },
-  { id: "interview", label: "Interview" },
-  { id: "hired", label: "Hired" },
-  { id: "declined", label: "Declined" },
-];
+function getFilters(): { id: Filter; label: string }[] {
+  return [
+    { id: "all", label: t("application_filters.all") },
+    { id: "pending", label: t("application_filters.new") },
+    { id: "interview", label: t("application_filters.interview") },
+    { id: "hired", label: t("application_filters.hired") },
+    { id: "declined", label: t("application_filters.declined") },
+  ];
+}
 
 const STATUS_TO_FILTER: Record<string, Filter> = {
   pending: "pending",
@@ -119,6 +121,7 @@ export default function VenueInbox() {
     declined: apps.filter((a) => STATUS_TO_FILTER[a.status] === "declined")
       .length,
   };
+  const filters = getFilters();
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -142,7 +145,7 @@ export default function VenueInbox() {
       </View>
 
       <FilterChips
-        options={FILTERS.map((item) => ({ ...item, count: counts[item.id] }))}
+        options={filters.map((item) => ({ ...item, count: counts[item.id] }))}
         value={filter}
         onChange={setFilter}
       />
@@ -177,7 +180,7 @@ export default function VenueInbox() {
               {filter === "all"
                 ? "When workers apply to your shifts, they'll show up here."
                 : `No applicants in "${
-                    FILTERS.find((f) => f.id === filter)?.label
+                    filters.find((f) => f.id === filter)?.label
                   }".`}
             </Text>
           </View>

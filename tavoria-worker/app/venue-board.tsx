@@ -16,7 +16,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getCurrentWorkerContactAccessForVenue, getCurrentWorkerFull, getVenueBoard } from "../lib/db";
+import { getCurrentUserContext, getCurrentWorkerContactAccessForVenue, getVenueBoard } from "../lib/db";
 import { localizeRoles } from "../lib/positions";
 import ContactPersonModal from "../components/ContactPersonModal";
 
@@ -107,8 +107,8 @@ export default function VenueBoard() {
     if (!venueId) return;
     (async () => {
       try {
-        const worker = await getCurrentWorkerFull();
-        if (!worker) {
+        const account = await getCurrentUserContext();
+        if (!account.hasWorker && !account.hasVenue) {
           router.replace({
             pathname: "/signup",
             params: { next: "venue-board", venueId },
@@ -209,7 +209,7 @@ export default function VenueBoard() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.contactTitle}>{contactsUnlocked ? "Venue contact details" : "Contact details locked"}</Text>
-                <Text style={styles.contactText} numberOfLines={contactsUnlocked ? 2 : 1}>
+                <Text style={styles.contactText}>
                   {contactsUnlocked
                     ? hasContactMethod
                       ? [contactEmail, contactPhone, visitAddress].filter(Boolean).join(" · ")
