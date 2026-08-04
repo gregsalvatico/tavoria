@@ -1,6 +1,8 @@
 // ISO 3166-1 alpha-2 country codes with English names.
 // Flag emoji is computed from the code (regional indicator symbols).
 
+import { getCurrentLang } from "./i18n";
+
 export type Country = { code: string; name: string };
 
 export const COUNTRIES: Country[] = [
@@ -225,10 +227,17 @@ export function flagFromCode(code?: string | null): string {
   return String.fromCodePoint(first) + String.fromCodePoint(second);
 }
 
-export function countryNameFromCode(code?: string | null): string | undefined {
+export function countryNameFromCode(code?: string | null, locale?: string): string | undefined {
   if (!code) return undefined;
-  const c = COUNTRIES.find((x) => x.code === code.toUpperCase());
-  return c?.name;
+  const countryCode = code.toUpperCase();
+  const fallback = COUNTRIES.find((x) => x.code === countryCode)?.name;
+  try {
+    const activeLocale = locale ?? getCurrentLang();
+    const language = activeLocale === "zh" ? "zh-CN" : activeLocale;
+    return new Intl.DisplayNames(language ? [language] : undefined, { type: "region" }).of(countryCode) ?? fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 // Italy work eligibility values stored on workers.work_eligibility_it

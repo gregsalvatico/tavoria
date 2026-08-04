@@ -514,6 +514,10 @@ export default {
     invalid_date: "请选择未来的日期和时间。",
     invalid_location: "请选择或填写面试地点。",
   },
+  country_picker: { title: "选择国家/地区", search: "搜索国家/地区…", empty: "没有与“{{query}}”匹配的国家/地区" },
+  shift_edit: {
+    title: "编辑班次", intro: "更新求职者会在此职位中看到的详情。", contract: "合同类型", contract_placeholder: "例如：兼职", start_time: "开始时间", end_time: "结束时间", pay: "薪资", pay_period: "支付周期", save: "保存更改",
+  },
   docs: {
     cv: "简历",
     cv_sub: "PDF,适合正式门店",

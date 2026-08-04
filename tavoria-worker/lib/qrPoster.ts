@@ -132,13 +132,13 @@ async function generatePosterWeb(url: string, opts: PosterOpts): Promise<void> {
   doc.setFont(DISPLAY_FAMILY, "normal");
   doc.setFontSize(48);
   doc.setTextColor(NEAR_BLACK);
-  doc.text(opts.venueName || "", PAGE_W / 2, 32, { align: "center" });
+  doc.text(opts.venueName || "", PAGE_W / 2, 38, { align: "center" });
 
   if (opts.venueCity) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(13);
     doc.setTextColor(GRAY_500);
-    doc.text(`${opts.venueCity}, Italia`, PAGE_W / 2, 45, { align: "center" });
+    doc.text(`${opts.venueCity}, Italia`, PAGE_W / 2, 51, { align: "center" });
   }
 
   // --- "CERCASI STAFF" black band just below the venue name.
@@ -149,18 +149,18 @@ async function generatePosterWeb(url: string, opts: PosterOpts): Promise<void> {
   doc.setFont(HANKEN_FAMILY, "bold");
   doc.setFontSize(24);
   doc.setTextColor(ORANGE);
-  doc.text("CERCASI STAFF", PAGE_W / 2, 61, { align: "center" });
+  doc.text("CERCASI STAFF", PAGE_W / 2, 67, { align: "center" });
 
   doc.setFont(HANKEN_FAMILY, "normal");
   doc.setFontSize(12);
   doc.setTextColor(NEAR_BLACK);
-  doc.text("Non è il menù — è un’offerta di lavoro.", PAGE_W / 2, 72, {
+  doc.text("Non è il menù — è un’offerta di lavoro.", PAGE_W / 2, 78, {
     align: "center",
   });
 
   // --- QR code ----------------------------------------------------------
   const qrX = (PAGE_W - QR_SIZE_MM) / 2;
-  const qrY = 84;
+  const qrY = 90;
   doc.addImage(
     qrDataUrl,
     "PNG",
@@ -201,7 +201,7 @@ async function generatePosterWeb(url: string, opts: PosterOpts): Promise<void> {
   const restWidth = doc.getTextWidth("avoria.");
   const wordmarkTotal = tWidth + restWidth;
   const wordmarkX = (PAGE_W - wordmarkTotal) / 2;
-  const wordmarkY = PAGE_H - 31;
+  const wordmarkY = PAGE_H - 37;
   doc.setTextColor(ORANGE);
   doc.text("T", wordmarkX, wordmarkY);
   doc.setTextColor(NEAR_BLACK);
@@ -213,7 +213,7 @@ async function generatePosterWeb(url: string, opts: PosterOpts): Promise<void> {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.setTextColor(NEAR_BLACK);
-  doc.text("tavoriapp.com", PAGE_W / 2, PAGE_H - 21, { align: "center" });
+  doc.text("tavoriapp.com", PAGE_W / 2, PAGE_H - 27, { align: "center" });
 
   // Trigger browser download
   const filename = sanitizeFilename(`tavoria-qr-${opts.venueName || "venue"}.pdf`);
@@ -320,7 +320,9 @@ function buildPosterHtml({
     .page {
       width: 210mm;
       height: 297mm;
-      padding: 16mm 24mm;
+      /* Generous print-safe margins keep the design clear when venues tape
+         the poster to a door or place it in a frame. */
+      padding: 22mm 24mm;
       box-sizing: border-box;
       display: flex;
       flex-direction: column;

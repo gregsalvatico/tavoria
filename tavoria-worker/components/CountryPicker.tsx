@@ -12,7 +12,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { COUNTRIES, Country, flagFromCode } from "../lib/countries";
+import { COUNTRIES, Country, countryNameFromCode, flagFromCode } from "../lib/countries";
+import { getCurrentLang, t } from "../lib/i18n";
 
 type Props = {
   visible: boolean;
@@ -27,19 +28,24 @@ export default function CountryPicker({
   selectedCode,
   onClose,
   onSelect,
-  title = "Choose country",
+  title = t("country_picker.title"),
 }: Props) {
   const [query, setQuery] = useState("");
+  const language = getCurrentLang();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return COUNTRIES;
-    return COUNTRIES.filter(
+    const countries = COUNTRIES.map((country) => ({
+      ...country,
+      name: countryNameFromCode(country.code, language) ?? country.name,
+    }));
+    if (!q) return countries;
+    return countries.filter(
       (c) =>
         c.name.toLowerCase().includes(q) ||
         c.code.toLowerCase().startsWith(q)
     );
-  }, [query]);
+  }, [language, query]);
 
   return (
     <Modal
@@ -61,7 +67,7 @@ export default function CountryPicker({
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search…"
+            placeholder={t("country_picker.search")}
             placeholderTextColor="#9CA3AF"
             style={styles.search}
             autoCapitalize="none"
@@ -100,7 +106,7 @@ export default function CountryPicker({
           }}
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
-              <Text style={styles.emptyTxt}>No country matches "{query}"</Text>
+              <Text style={styles.emptyTxt}>{t("country_picker.empty", { query })}</Text>
             </View>
           }
         />

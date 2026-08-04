@@ -517,6 +517,10 @@ export default {
     invalid_date: "Choisissez une date et une heure futures.",
     invalid_location: "Choisissez ou saisissez le lieu de l'entretien.",
   },
+  country_picker: { title: "Choisissez un pays", search: "Rechercher des pays…", empty: "Aucun pays ne correspond à \"{{query}}\"" },
+  shift_edit: {
+    title: "Modifier le shift", intro: "Mettez à jour les détails visibles par les travailleurs dans cette offre.", contract: "Type de contrat", contract_placeholder: "ex. Temps partiel", start_time: "Heure de début", end_time: "Heure de fin", pay: "Rémunération", pay_period: "Période de paiement", save: "Enregistrer les modifications",
+  },
   docs: {
     cv: "CV",
     cv_sub: "PDF, utile pour les lieux formels",

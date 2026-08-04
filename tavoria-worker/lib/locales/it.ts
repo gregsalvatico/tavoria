@@ -517,6 +517,10 @@ export default {
     invalid_date: "Scegli una data e un orario futuri.",
     invalid_location: "Scegli o inserisci il luogo del colloquio.",
   },
+  country_picker: { title: "Scegli il paese", search: "Cerca paesi…", empty: "Nessun paese corrisponde a \"{{query}}\"" },
+  shift_edit: {
+    title: "Modifica turno", intro: "Aggiorna i dettagli che lo staff vede in questo annuncio.", contract: "Tipo di contratto", contract_placeholder: "es. Part-time", start_time: "Ora di inizio", end_time: "Ora di fine", pay: "Compenso", pay_period: "Periodo di pagamento", save: "Salva modifiche",
+  },
   docs: {
     cv: "CV / Curriculum",
     cv_sub: "PDF, utile per locali formali",

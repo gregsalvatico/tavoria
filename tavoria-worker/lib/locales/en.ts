@@ -515,6 +515,10 @@ export default {
     invalid_date: "Choose a future date and time.",
     invalid_location: "Choose or enter an interview location.",
   },
+  country_picker: { title: "Choose country", search: "Search countries…", empty: "No country matches \"{{query}}\"" },
+  shift_edit: {
+    title: "Edit shift", intro: "Update the details workers see on this offer.", contract: "Contract type", contract_placeholder: "e.g. Part-time", start_time: "Start time", end_time: "End time", pay: "Pay", pay_period: "Pay period", save: "Save changes",
+  },
   docs: {
     cv: "CV / Resume",
     cv_sub: "PDF, helps with formal venues",

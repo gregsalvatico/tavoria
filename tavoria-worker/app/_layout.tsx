@@ -6,7 +6,7 @@
 // Phase 1 of the redesign: just the font loading + default font. Phase 2+
 // rewrites each screen's typography in detail.
 
-import { Stack } from "expo-router";
+import { Stack, useRootNavigationState, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import { useEffect, useState } from "react";
@@ -26,6 +26,25 @@ import {
   DMMono_500Medium,
 } from "@expo-google-fonts/dm-mono";
 import { Text, TextInput, View } from "react-native";
+import { supabase } from "../lib/supabase";
+
+// Screens in this list read or change an existing user's private account
+// data. Public discovery, QR and onboarding routes intentionally stay open.
+const PROTECTED_ROUTES = new Set([
+  "applied",
+  "candidate",
+  "change-pin",
+  "post-shift",
+  "profile",
+  "record",
+  "shift-edit",
+  "venue-browse-workers",
+  "venue-edit",
+  "venue-inbox",
+  "venue-pro",
+  "venue-shifts",
+  "worker-applications",
+]);
 
 // Mutate the default <Text> / <TextInput> style so every component without an
 // explicit fontFamily inherits Hanken Grotesk. Saves migrating every <Text>
@@ -42,6 +61,9 @@ function applyDefaultFont(family: string) {
 }
 
 export default function RootLayout() {
+  const router = useRouter();
+  const segments = useSegments();
+  const rootNavigationState = useRootNavigationState();
   const [fontsLoaded] = useFonts({
     HankenGrotesk_400Regular,
     HankenGrotesk_500Medium,
@@ -57,9 +79,54 @@ export default function RootLayout() {
   // deep links / page refreshes that don't land on / would skip initI18n and
   // fall back to English even when the user previously picked Italian.
   const [i18nReady, setI18nReady] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState(false);
   useEffect(() => {
     initI18n().finally(() => setI18nReady(true));
   }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const refreshAuth = async () => {
+      // getUser() confirms that the locally cached session still belongs to
+      // an active Supabase account. getSession() alone can be stale after an
+      // account is deleted or credentials change on another device.
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+      if (!active) return;
+      setIsSignedIn(!error && !!user && user.is_anonymous !== true);
+      setAuthReady(true);
+    };
+
+    void refreshAuth();
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
+      setIsSignedIn(!!session?.user && session.user.is_anonymous !== true);
+      setAuthReady(true);
+    });
+
+    return () => {
+      active = false;
+      data.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    const route = segments[0];
+    if (
+      !rootNavigationState?.key ||
+      !authReady ||
+      !route ||
+      !PROTECTED_ROUTES.has(route) ||
+      isSignedIn
+    ) {
+      return;
+    }
+    router.replace("/");
+  }, [authReady, isSignedIn, rootNavigationState?.key, router, segments]);
 
   if (fontsLoaded) applyDefaultFont("HankenGrotesk_400Regular");
 

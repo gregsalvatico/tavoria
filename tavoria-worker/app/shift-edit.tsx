@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { updateShift } from "../lib/db";
+import { t } from "../lib/i18n";
+import { localizeContractType } from "../lib/contractTypes";
 import { supabase } from "../lib/supabase";
 
 const UNITS = ["hour", "day", "week", "month"] as const;
@@ -28,7 +30,7 @@ export default function ShiftEdit() {
         router.back();
         return;
       }
-      setContract(data.contract_type ?? "");
+      setContract(localizeContractType(data.contract_type));
       setStart(data.hours_start ?? "");
       setEnd(data.hours_end ?? "");
       setPay(data.pay_amount?.toString() ?? "");
@@ -54,14 +56,14 @@ export default function ShiftEdit() {
   };
 
   return <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-    <View style={styles.header}><Pressable onPress={() => router.back()} hitSlop={12}><Feather name="chevron-left" size={26} color="#0E1A24" /></Pressable><Text style={styles.title}>Edit shift</Text><View style={{ width: 26 }} /></View>
+    <View style={styles.header}><Pressable onPress={() => router.back()} hitSlop={12}><Feather name="chevron-left" size={26} color="#0E1A24" /></Pressable><Text style={styles.title}>{t("shift_edit.title")}</Text><View style={{ width: 26 }} /></View>
     {loading ? <View style={styles.loading}><ActivityIndicator color="#F0531C" size="large" /></View> : <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <Text style={styles.intro}>Update the details workers see on this offer.</Text>
-      <Field label="Contract type" value={contract} onChangeText={setContract} placeholder="e.g. Part-time" />
-      <View style={styles.timeRow}><View style={{ flex: 1 }}><Field label="Start time" value={start} onChangeText={setStart} placeholder="18:00" /></View><View style={{ flex: 1 }}><Field label="End time" value={end} onChangeText={setEnd} placeholder="23:00" /></View></View>
-      <Field label="Pay" value={pay} onChangeText={setPay} placeholder="12" keyboardType="decimal-pad" />
-      <Text style={styles.label}>Pay period</Text><View style={styles.unitRow}>{UNITS.map((item) => <Pressable key={item} onPress={() => setUnit(item)} style={[styles.unit, unit === item && styles.unitOn]}><Text style={[styles.unitText, unit === item && styles.unitTextOn]}>Per {item}</Text></Pressable>)}</View>
-      <Pressable style={[styles.save, saving && { opacity: 0.6 }]} onPress={save} disabled={saving}>{saving ? <ActivityIndicator color="white" /> : <><Feather name="check" size={18} color="white" /><Text style={styles.saveText}>Save changes</Text></>}</Pressable>
+      <Text style={styles.intro}>{t("shift_edit.intro")}</Text>
+      <Field label={t("shift_edit.contract")} value={contract} onChangeText={setContract} placeholder={t("shift_edit.contract_placeholder")} />
+      <View style={styles.timeRow}><View style={{ flex: 1 }}><Field label={t("shift_edit.start_time")} value={start} onChangeText={setStart} placeholder="18:00" /></View><View style={{ flex: 1 }}><Field label={t("shift_edit.end_time")} value={end} onChangeText={setEnd} placeholder="23:00" /></View></View>
+      <Field label={t("shift_edit.pay")} value={pay} onChangeText={setPay} placeholder="12" keyboardType="decimal-pad" />
+      <Text style={styles.label}>{t("shift_edit.pay_period")}</Text><View style={styles.unitRow}>{UNITS.map((item) => <Pressable key={item} onPress={() => setUnit(item)} style={[styles.unit, unit === item && styles.unitOn]}><Text style={[styles.unitText, unit === item && styles.unitTextOn]}>{t(`post_shift.per_${item}`)}</Text></Pressable>)}</View>
+      <Pressable style={[styles.save, saving && { opacity: 0.6 }]} onPress={save} disabled={saving}>{saving ? <ActivityIndicator color="white" /> : <><Feather name="check" size={18} color="white" /><Text style={styles.saveText}>{t("shift_edit.save")}</Text></>}</Pressable>
     </ScrollView>}
   </SafeAreaView>;
 }

@@ -47,17 +47,16 @@ const ROLES = [
 
 const CONTRACTS: {
   id: string;
-  label: string;
   defaultUnit: "hour" | "month";
   icon: keyof typeof Feather.glyphMap;
   hue: string;
 }[] = [
-  { id: "oneoff", label: "One-off", defaultUnit: "hour", icon: "zap", hue: "#F59E0B" },
-  { id: "twodays", label: "2 days", defaultUnit: "hour", icon: "calendar", hue: "#EC4899" },
-  { id: "pt", label: "Part-time", defaultUnit: "hour", icon: "clock", hue: "#06B6D4" },
-  { id: "ft", label: "Full-time", defaultUnit: "month", icon: "briefcase", hue: "#A855F7" },
-  { id: "seasonal", label: "Seasonal", defaultUnit: "hour", icon: "sun", hue: "#10B981" },
-  { id: "custom", label: "Other", defaultUnit: "hour", icon: "more-horizontal", hue: "#6B7280" },
+  { id: "oneoff", defaultUnit: "hour", icon: "zap", hue: "#F59E0B" },
+  { id: "twodays", defaultUnit: "hour", icon: "calendar", hue: "#EC4899" },
+  { id: "pt", defaultUnit: "hour", icon: "clock", hue: "#06B6D4" },
+  { id: "ft", defaultUnit: "month", icon: "briefcase", hue: "#A855F7" },
+  { id: "seasonal", defaultUnit: "hour", icon: "sun", hue: "#10B981" },
+  { id: "custom", defaultUnit: "hour", icon: "more-horizontal", hue: "#6B7280" },
 ];
 
 // Map contract id → t() key suffix under post_shift.*
@@ -127,10 +126,6 @@ export default function PostShift() {
   const [busy, setBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const contractObj = useMemo(
-    () => CONTRACTS.find((c) => c.id === contract) ?? null,
-    [contract]
-  );
   const [payUnit, setPayUnit] = useState<"hour" | "day" | "week" | "month" | "later">("hour");
   const [pay, setPay] = useState<number>(0);
 
@@ -544,8 +539,11 @@ export default function PostShift() {
             setBusy(true);
             const contractLabel =
               contract === "custom"
-                ? customContract.trim() || "Custom"
-                : contractObj?.label ?? null;
+                ? customContract.trim() || t("post_shift.other")
+                : contract
+                ? t(`post_shift.${CONTRACT_KEYS[contract] ?? contract}`)
+                : null;
+            const contractValue = contract === "custom" ? customContract.trim() || undefined : contract ?? undefined;
             // Resolve the venue_id. Use the in-memory cache first; if missing
             // (after sign-in / app restart), hydrate it from Supabase.
             let venueId = getVenueProfile()?.id;
@@ -571,7 +569,7 @@ export default function PostShift() {
               await insertShift({
                 venue_id: venueId,
                 roles,
-                contract_type: contractLabel ?? undefined,
+                contract_type: contractValue,
                 days: dayCodes,
                 hours_start: firstShift
                   ? fmtHHMM(firstShift.fromMins)

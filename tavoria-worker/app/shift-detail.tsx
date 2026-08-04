@@ -26,6 +26,7 @@ import {
   updateShiftStatus,
 } from "../lib/db";
 import { t } from "../lib/i18n";
+import { localizeContractType } from "../lib/contractTypes";
 import { localizeRole, localizeRoles } from "../lib/positions";
 import ContactPersonModal from "../components/ContactPersonModal";
 
@@ -408,7 +409,7 @@ export default function ShiftDetail() {
           </KV>
           {shift.contract_type && (
             <KV icon="file-text" label={t("shift_detail.contract")}>
-              {shift.contract_type}
+              {localizeContractType(shift.contract_type)}
             </KV>
           )}
           <VenueContactDetails
