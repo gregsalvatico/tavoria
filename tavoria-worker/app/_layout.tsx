@@ -46,6 +46,15 @@ const PROTECTED_ROUTES = new Set([
   "worker-applications",
 ]);
 
+// Every lasting Tavoria account uses a generated username backed by this
+// internal email domain. Anonymous Supabase sessions have no such email, so
+// they must never unlock a private screen.
+function isSignedInTavoriaUser(
+  user: { email?: string | null; is_anonymous?: boolean } | null
+): boolean {
+  return !!user?.email?.endsWith("@gigi.local") && user.is_anonymous !== true;
+}
+
 // Mutate the default <Text> / <TextInput> style so every component without an
 // explicit fontFamily inherits Hanken Grotesk. Saves migrating every <Text>
 // in Phase 1.
@@ -81,6 +90,8 @@ export default function RootLayout() {
   const [i18nReady, setI18nReady] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const currentRoute = segments[0];
+  const isProtectedRoute = !!currentRoute && PROTECTED_ROUTES.has(currentRoute);
   useEffect(() => {
     initI18n().finally(() => setI18nReady(true));
   }, []);
@@ -97,14 +108,14 @@ export default function RootLayout() {
         error,
       } = await supabase.auth.getUser();
       if (!active) return;
-      setIsSignedIn(!error && !!user && user.is_anonymous !== true);
+      setIsSignedIn(!error && isSignedInTavoriaUser(user));
       setAuthReady(true);
     };
 
     void refreshAuth();
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!active) return;
-      setIsSignedIn(!!session?.user && session.user.is_anonymous !== true);
+      setIsSignedIn(isSignedInTavoriaUser(session?.user ?? null));
       setAuthReady(true);
     });
 
@@ -115,18 +126,16 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    const route = segments[0];
     if (
       !rootNavigationState?.key ||
       !authReady ||
-      !route ||
-      !PROTECTED_ROUTES.has(route) ||
+      !isProtectedRoute ||
       isSignedIn
     ) {
       return;
     }
     router.replace("/");
-  }, [authReady, isSignedIn, rootNavigationState?.key, router, segments]);
+  }, [authReady, isProtectedRoute, isSignedIn, rootNavigationState?.key, router]);
 
   if (fontsLoaded) applyDefaultFont("HankenGrotesk_400Regular");
 
@@ -145,6 +154,16 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: "#F7F4EE" },
         }}
       />
+      {isProtectedRoute && (!authReady || !isSignedIn) ? (
+        <View
+          pointerEvents="auto"
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundColor: "#F7F4EE",
+          }}
+        />
+      ) : null}
     </>
   );
 }
