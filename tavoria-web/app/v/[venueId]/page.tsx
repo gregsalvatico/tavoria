@@ -1,5 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
+import { supabaseAdmin } from "../../../lib/supabase";
 
 type Venue = {
   id: string;
@@ -12,11 +12,10 @@ type Venue = {
 
 async function loadVenue(venueId: string): Promise<Venue | null> {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-    const { data, error } = await supabase
+    // This public page is server-rendered. Use the server-only admin client
+    // so the venue card is available even though anonymous visitors cannot
+    // read protected venue rows through the public Data API.
+    const { data, error } = await supabaseAdmin
       .from("venues")
       .select("id, name, type, city, photo_url, address")
       .eq("id", venueId)
@@ -103,6 +102,12 @@ export default async function VenueLanding({
         <p className="mt-4 text-center text-sm text-mute2">
           Candidati in pochi minuti, senza scaricare nulla.
         </p>
+        <Link
+          href="/#venues"
+          className="mt-8 inline-flex min-h-12 items-center justify-center rounded-2xl border border-ink2/15 px-5 text-sm font-semibold text-ink2 transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+        >
+          Come funziona Tavoria
+        </Link>
       </div>
     </main>
   );
