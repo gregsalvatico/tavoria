@@ -12,7 +12,7 @@ const VENUE_ROWS = [
   "QR poster brandizzato",
   "Video di ogni candidato",
   "Verifica identità + diritto al lavoro",
-  "Poi €19 per assunzione",
+  "Tavoria Pro in arrivo",
 ];
 
 function Check({ className = "" }: { className?: string }) {
@@ -114,7 +114,7 @@ export default function PricingBlock() {
         </div>
 
         <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-cream/75">
-          Gratis fino al 2027. Poi €19 per assunzione. Tavoria Pro è in arrivo.
+          Gratis fino al 2027. Tavoria Pro è in arrivo.
         </p>
 
         <ul className="mt-10 space-y-0">

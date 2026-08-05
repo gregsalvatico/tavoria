@@ -839,7 +839,7 @@ export default {
     bullet2: "Contacta a los mejores primero",
     bullet3: "Turnos enviados a candidatos compatibles",
     cta: "Tavoria Pro · próximamente",
-    price: "Gratis hasta 2027 · después 19 € por contratación",
+    price: "Gratis hasta 2027 · Tavoria Pro próximamente",
     free_kicker: "INCLUIDO EN TU CUENTA",
     free_title: "Candidatos que vienen a ti",
     free_b1: "Candidatos desde tu QR en la puerta",
@@ -945,7 +945,7 @@ export default {
       "Tavoria no gestiona los pagos entre Staff y Local. Salarios, propinas, gastos, impuestos, cotizaciones y cualquier otra cantidad debida por el trabajo realizado se deben directamente del Local al Staff, según su acuerdo y la ley aplicable. Cualquier disputa de pago es entre Staff y Local. Tavoria no está obligada a mediar, recuperar o reembolsar importe alguno, pero puede suspender cuentas ante indicios creíbles de impago o fraude.",
     s9_h: "9. Tavoria Pro (función futura)",
     s9_p:
-      "Tavoria es gratis hasta 2027. Después, los locales pagan 19 € por contratación. Tavoria Pro llegará próximamente. Las funciones gratuitas actuales siguen disponibles según estos Términos.",
+      "Tavoria es gratis hasta 2027. Tavoria Pro llegará próximamente. Las funciones gratuitas actuales siguen disponibles según estos Términos.",
     s10_h: "10. Uso aceptable",
     s10_p:
       "Te comprometes a no: usar Tavoria con fines ilícitos; publicar contenidos falsos, engañosos, ofensivos, difamatorios, sexualmente explícitos, de odio, discriminatorios o de acoso; suplantar a otra persona o empresa; recopilar, scrapear o copiar datos de otros usuarios; hacer ingeniería inversa o interferir con la app; usar Tavoria para reclutar trabajos ilegales, peligrosos o que impliquen a menores; eludir controles de pago, edad, identidad o derecho a trabajar.",

@@ -1,14 +1,11 @@
 import { Feather } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   Image,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -25,10 +22,9 @@ import {
   getVenueProfile,
   patchVenueProfile,
 } from "../lib/venueProfile";
-import { updateVenue, uploadVenuePhoto } from "../lib/db";
+import { updateVenue } from "../lib/db";
 import { t } from "../lib/i18n";
 import { localizeRole } from "../lib/positions";
-import { pickImageWeb } from "../lib/webMedia";
 
 type Schedule = {
   id: PayScheduleId;
@@ -145,73 +141,6 @@ export default function VenuePhoto() {
   const [customScheduleOpen, setCustomScheduleOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [uploadedPhotoUri, setUploadedPhotoUri] = useState<string | null>(
-    () => getVenueProfile()?.photoUrl ?? null
-  );
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-
-  // Real venue photo upload (logo or storefront)
-  async function pickAndUploadPhoto(source: "camera" | "library") {
-    setErrorMsg(null);
-    const venueId = getVenueProfile()?.id;
-    if (!venueId) {
-      Alert.alert(
-        "Venue not saved yet",
-        "Go back and finish the venue info step first."
-      );
-      return;
-    }
-    let uri: string;
-    if (Platform.OS === "web") {
-      // Web: HTML file input. capture="environment" hints the back camera
-      // (better for venue/storefront photos) on phone browsers; desktop
-      // falls back to file picker.
-      const res = await pickImageWeb({
-        camera: source === "camera" ? "environment" : false,
-      });
-      if (res.canceled || !res.assets[0]) return;
-      uri = res.assets[0].uri;
-    } else {
-      const perm =
-        source === "camera"
-          ? await ImagePicker.requestCameraPermissionsAsync()
-          : await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) {
-        Alert.alert(
-          source === "camera"
-            ? "Camera permission needed"
-            : "Photos permission needed",
-          "Enable in Settings to continue."
-        );
-        return;
-      }
-      const opts = {
-        mediaTypes: ["images"] as ImagePicker.MediaType[],
-        allowsEditing: true,
-        aspect: [4, 3] as [number, number],
-        quality: 0.7,
-      };
-      const res =
-        source === "camera"
-          ? await ImagePicker.launchCameraAsync(opts)
-          : await ImagePicker.launchImageLibraryAsync(opts);
-      if (res.canceled || !res.assets[0]) return;
-      uri = res.assets[0].uri;
-    }
-    setUploadingPhoto(true);
-    try {
-      const url = await uploadVenuePhoto(venueId, uri);
-      patchVenueProfile({ photoUrl: url });
-      setUploadedPhotoUri(url);
-      // When user uploads their own photo, clear the variant selection
-      setPicked(null);
-    } catch (e: any) {
-      Alert.alert("Upload failed", e?.message ?? "Try again.");
-    } finally {
-      setUploadingPhoto(false);
-    }
-  }
-
   const onContinue = async () => {
     setErrorMsg(null);
     setBusy(true);

@@ -7,7 +7,7 @@ import Section, { Divider } from "@/components/Section";
 export const metadata: Metadata = {
   title: "Tavoria — Gratis fino al 2027",
   description:
-    "Tavoria è gratis fino al 2027. Dopo, i locali pagano €19 per assunzione. Tavoria Pro è in arrivo.",
+    "Tavoria è gratis fino al 2027. Tavoria Pro è in arrivo.",
 };
 
 const VENUE_INCLUDED = [
@@ -40,7 +40,7 @@ export default function Prezzi() {
               Gratis fino al 2027. <em className="italic">Per tutti.</em>
             </>
           }
-          lede="Gratis fino al 2027. Poi €19 per assunzione. Tavoria Pro è in arrivo."
+          lede="Gratis fino al 2027. Tavoria Pro è in arrivo."
           centered
         />
 
@@ -114,7 +114,7 @@ export default function Prezzi() {
                 Fino al 2027.
               </p>
               <p className="mt-6 text-base leading-relaxed text-cream/80">
-                Gratis fino al 2027. Poi €19 per assunzione. Tavoria Pro è in arrivo.
+                Gratis fino al 2027. Tavoria Pro è in arrivo.
               </p>
               <ul className="mt-8 space-y-3">
                 {VENUE_INCLUDED.map((item) => (
@@ -168,7 +168,7 @@ export default function Prezzi() {
         >
           <div className="grid gap-8 md:grid-cols-2">
             <Info title="Fino a quando Tavoria è gratis?" body="Per tutti fino al 2027: staff e locali possono usare Tavoria senza costi." />
-            <Info title="Cosa succede dopo il 2027?" body="I locali pagano €19 per assunzione. Tavoria Pro è in arrivo." />
+            <Info title="Cosa succede dopo il 2027?" body="Tavoria Pro è in arrivo. Condivideremo gli eventuali cambiamenti prima che entrino in vigore." />
             <Info title="Posso usare Tavoria già oggi?" body="Sì. Tutte le funzioni disponibili oggi sono incluse fino al 2027." />
             <Info title="Ci sono pagamenti attivi?" body="No. Non ci sono pagamenti o abbonamenti attivi in questo momento." />
           </div>

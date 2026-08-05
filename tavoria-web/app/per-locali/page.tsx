@@ -44,7 +44,7 @@ const BENEFITS = [
   },
   {
     title: "Tutto incluso fino al 2027",
-    body: "Gratis fino al 2027. Poi €19 per assunzione. Tavoria Pro è in arrivo.",
+    body: "Gratis fino al 2027. Tavoria Pro è in arrivo.",
   },
   {
     title: "Pronto in 24 ore",
@@ -166,7 +166,7 @@ export default function PerLocali() {
               Inizia gratis →
             </Button>
             <p className="text-sm text-mute">
-              Gratis fino al 2027. Poi €19 per assunzione. Tavoria Pro è in arrivo.
+              Gratis fino al 2027. Tavoria Pro è in arrivo.
             </p>
           </div>
         </Section>

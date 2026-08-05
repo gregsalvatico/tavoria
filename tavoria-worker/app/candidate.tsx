@@ -250,16 +250,21 @@ export default function Candidate() {
   // Dot count for the photo strip — until we wire multiple photos, show 1 dot per uploaded photo
   const photoCount = view.photoUrl ? 1 : 0;
 
-  // Video player for the intro video. Built even if no URL so the hook order is stable.
+  // Keep one native VideoView attached to this player at a time. Android cannot
+  // mount the same expo-video player in both the preview and modal together.
   const [videoOpen, setVideoOpen] = useState(false);
-  const player = useVideoPlayer(view.videoUrl ?? "", (p) => {
+  const player = useVideoPlayer(view.videoUrl ?? null, (p) => {
     p.loop = false;
+    p.muted = true;
   });
   useEffect(() => {
     if (videoOpen) {
+      player.muted = false;
       player.play();
     } else {
       player.pause();
+      player.currentTime = 0;
+      player.muted = true;
     }
   }, [videoOpen, player]);
 
@@ -458,12 +463,13 @@ export default function Candidate() {
             <Text style={styles.sectionLabel}>{t("candidate_actions.videos_label")}</Text>
             <View style={styles.videoRow}>
               <View style={styles.videoBoxBig}>
-                {view.videoUrl ? (
+                {view.videoUrl && !videoOpen ? (
                   <VideoView
                     player={player}
                     style={styles.videoThumb}
                     contentFit="cover"
                     nativeControls={false}
+                    surfaceType="textureView"
                   />
                 ) : (
                   <View style={[styles.videoThumb, styles.videoEmptyBox]}>
@@ -477,8 +483,14 @@ export default function Candidate() {
                 )}
                 {view.videoUrl ? <>
                   <View style={styles.videoOverlay} pointerEvents="none" />
-                  <Pressable style={styles.videoPlayCircleBig} onPress={() => setVideoOpen(true)} hitSlop={20}>
-                    <Feather name="play" size={32} color="white" />
+                  <Pressable
+                    style={styles.videoPlayCircleBig}
+                    onPress={() => setVideoOpen(true)}
+                    hitSlop={20}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open intro video"
+                  >
+                    <Feather name="maximize-2" size={24} color="white" />
                   </Pressable>
                 </> : null}
                 {view.videoUrl ? (

@@ -258,14 +258,22 @@ export default function Profile() {
     }
   };
 
-  // Video modal
+  // Keep one native VideoView attached to this player at a time. Android cannot
+  // mount the same expo-video player in both the preview and modal together.
   const [videoOpen, setVideoOpen] = useState(false);
-  const player = useVideoPlayer(view.videoUrl ?? "", (p) => {
+  const player = useVideoPlayer(view.videoUrl ?? null, (p) => {
     p.loop = false;
+    p.muted = true;
   });
   useEffect(() => {
-    if (videoOpen) player.play();
-    else player.pause();
+    if (videoOpen) {
+      player.muted = false;
+      player.play();
+    } else {
+      player.pause();
+      player.currentTime = 0;
+      player.muted = true;
+    }
   }, [videoOpen, player]);
 
   const hasInterview = view.interviewAnswers.length > 0;
@@ -468,7 +476,7 @@ export default function Profile() {
               }}
               disabled={!view.videoUrl && !isOwnerMode}
             >
-              {view.videoUrl ? <VideoView player={player} style={styles.videoFullImg} contentFit="cover" nativeControls={false} /> : <View style={[styles.videoFullImg, styles.videoDark]}>
+              {view.videoUrl && !videoOpen ? <VideoView player={player} style={styles.videoFullImg} contentFit="cover" nativeControls={false} surfaceType="textureView" /> : <View style={[styles.videoFullImg, styles.videoDark]}>
                 <Feather
                   name={view.videoUrl ? "video" : "video-off"}
                   size={32}
@@ -477,8 +485,8 @@ export default function Profile() {
               </View>}
               {view.videoUrl ? <><View style={styles.videoOverlay} /><View style={styles.videoPlay}>
                 <Feather
-                  name="play"
-                  size={22}
+                  name="maximize-2"
+                  size={20}
                   color="white"
                 />
               </View></> : null}

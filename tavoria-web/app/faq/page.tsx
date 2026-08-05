@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const ITEMS = [
   {
     q: "Tavoria è gratis?",
-    a: "Sì. Tavoria è gratis fino al 2027. Dopo, i locali pagano €19 per assunzione. Tavoria Pro è in arrivo.",
+    a: "Sì. Tavoria è gratis fino al 2027. Tavoria Pro è in arrivo.",
   },
   {
     q: "Come funziona il QR?",
@@ -40,7 +40,7 @@ const ITEMS = [
   },
   {
     q: "Cosa succede dopo il 2027?",
-    a: "I locali pagano €19 per assunzione. Tavoria Pro è in arrivo.",
+    a: "Tavoria Pro è in arrivo. Condivideremo gli eventuali cambiamenti prima che entrino in vigore.",
   },
 ];
 

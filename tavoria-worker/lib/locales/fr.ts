@@ -838,7 +838,7 @@ export default {
     bullet2: "Contacte les meilleurs en premier",
     bullet3: "Shifts poussés aux candidats correspondants",
     cta: "Tavoria Pro · bientôt disponible",
-    price: "Gratuit jusqu'en 2027 · puis 19 € par embauche",
+    price: "Gratuit jusqu'en 2027 · Tavoria Pro bientôt disponible",
     free_kicker: "INCLUS DANS TON COMPTE",
     free_title: "Les candidats qui viennent à toi",
     free_b1: "Candidats depuis ton QR à la porte",
@@ -944,7 +944,7 @@ export default {
       "Tavoria ne traite pas les paiements entre Staff et Lieu. Les salaires, pourboires, frais, impôts, cotisations et toute autre somme due pour le travail effectué sont dus directement par le Lieu au Staff, selon l'accord entre les parties et la loi applicable. Tout litige de paiement est entre Staff et Lieu. Tavoria n'est pas tenue de médier, recouvrer ou rembourser quoi que ce soit, mais peut suspendre des comptes en cas d'éléments crédibles d'impayé ou de fraude.",
     s9_h: "9. Tavoria Pro (fonction future)",
     s9_p:
-      "Tavoria est gratuit jusqu'en 2027. Ensuite, les établissements paient 19 € par embauche. Tavoria Pro arrive bientôt. Les fonctionnalités gratuites actuelles restent disponibles selon les présentes Conditions.",
+      "Tavoria est gratuit jusqu'en 2027. Tavoria Pro arrive bientôt. Les fonctionnalités gratuites actuelles restent disponibles selon les présentes Conditions.",
     s10_h: "10. Usage acceptable",
     s10_p:
       "Tu t'engages à ne pas : utiliser Tavoria à des fins illicites ; publier des contenus faux, trompeurs, offensants, diffamatoires, sexuellement explicites, haineux, discriminatoires ou de harcèlement ; usurper l'identité d'autrui ; collecter, scraper ou copier les données d'autres utilisateurs ; faire de la rétro-ingénierie ou interférer avec l'app ; utiliser Tavoria pour recruter pour un travail illégal, dangereux ou impliquant des mineurs ; contourner les contrôles de paiement, d'âge, d'identité ou de droit au travail.",

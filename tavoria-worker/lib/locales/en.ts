@@ -804,7 +804,7 @@ export default {
     bullet2: "Approach top candidates first",
     bullet3: "Shifts pushed to matching candidates",
     cta: "Tavoria Pro · coming soon",
-    price: "Free until 2027 · then €19 per hire",
+    price: "Free until 2027 · Tavoria Pro coming soon",
     free_kicker: "INCLUDED WITH YOUR ACCOUNT",
     free_title: "Applicants who come to you",
     free_b1: "Applicants from your QR sticker",
@@ -942,7 +942,7 @@ export default {
       "Tavoria does not process payments between Workers and Venues. Wages, tips, expenses, taxes, social contributions and any other amount owed for work performed are owed directly by the Venue to the Worker, in accordance with their agreement and applicable law. Any payment dispute is between the Worker and the Venue. Tavoria has no obligation to mediate, recover or refund any amount, but may suspend accounts in case of credible evidence of unpaid wages or fraud.",
     s9_h: "9. Tavoria Pro (future feature)",
     s9_p:
-      "Tavoria is free until 2027. After that, venues pay €19 per hire. Tavoria Pro is coming soon. The current free features remain available under these Terms.",
+      "Tavoria is free until 2027. Tavoria Pro is coming soon. The current free features remain available under these Terms.",
     s10_h: "10. Acceptable use",
     s10_p:
       "You agree not to: use Tavoria for any illegal purpose; post false, misleading, offensive, defamatory, sexually explicit, hateful, discriminatory or harassing content; impersonate another person or business; harvest, scrape or copy data about other users; reverse-engineer or interfere with the app; use Tavoria to recruit for work that is illegal, unsafe, or that involves minors; or attempt to bypass payment, age, identity or right-to-work checks.",

@@ -23,7 +23,7 @@ type Faq = { q: string; a: string };
 const FAQS: Faq[] = [
   {
     q: "Tavoria è gratis?",
-    a: "Sì. Tavoria è gratis fino al 2027. Dopo, i locali pagano €19 per assunzione. Tavoria Pro è in arrivo.",
+    a: "Sì. Tavoria è gratis fino al 2027. Tavoria Pro è in arrivo.",
   },
   {
     q: "Come funziona il QR?",
@@ -127,6 +127,8 @@ export default function Home() {
             align-items: center;
             justify-content: center;
             gap: 7px;
+            width: 100%;
+            box-sizing: border-box;
             margin-top: 6px;
             padding: 13px 18px;
             border-radius: 999px;
@@ -144,7 +146,7 @@ export default function Home() {
           }
           .landing-status-chip-full { display: none; }
           .landing-status-chip-mobile { display: inline; }
-          a[href*="/signup?role="] {
+          .landing-cta {
             width: 100%;
             box-sizing: border-box;
             justify-content: center;
@@ -384,6 +386,7 @@ export default function Home() {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginBottom: 26 }}>
               <a
                 href={appRoute("/venue-type")}
+                className="landing-cta"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -403,6 +406,7 @@ export default function Home() {
               </a>
               <a
                 href={appRoute("/signup?role=worker")}
+                className="landing-cta"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -436,7 +440,7 @@ export default function Home() {
                 <span style={{ color: "#1F9D6B" }}>✓</span> Gratis per tutti fino al 2027
               </span>
               <span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}>
-                <span style={{ color: "#1F9D6B" }}>✓</span> Poi €19 per assunzione
+                <span style={{ color: "#1F9D6B" }}>✓</span> Tavoria Pro in arrivo
               </span>
               <span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}>
                 <span style={{ color: "#1F9D6B" }}>✓</span> GDPR · server UE
@@ -1906,7 +1910,7 @@ export default function Home() {
                 margin: 0,
               }}
             >
-              Gratis fino al 2027. Poi €19 per assunzione. Tavoria Pro è in arrivo.
+              Gratis fino al 2027. Tavoria Pro è in arrivo.
             </p>
           </div>
           <div
@@ -2062,7 +2066,7 @@ export default function Home() {
                   lineHeight: 1.5,
                 }}
               >
-                Gratis fino al 2027. Poi €19 per assunzione. Tavoria Pro è in arrivo.
+                Gratis fino al 2027. Tavoria Pro è in arrivo.
               </p>
               <div
                 style={{
@@ -2085,7 +2089,7 @@ export default function Home() {
                   <span style={{ color: "#F0531C" }}>✓</span> Identità + diritto al lavoro verificati
                 </div>
                 <div style={{ display: "flex", gap: 10, fontSize: 14.5 }}>
-                  <span style={{ color: "#F0531C" }}>✓</span> Poi €19 per assunzione
+                  <span style={{ color: "#F0531C" }}>✓</span> Tavoria Pro in arrivo
                 </div>
               </div>
               <a
@@ -2495,6 +2499,7 @@ export default function Home() {
           >
             <a
               href={appRoute("/venue-type")}
+              className="landing-cta"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -2513,6 +2518,7 @@ export default function Home() {
             </a>
             <a
               href={appRoute("/signup?role=worker")}
+              className="landing-cta"
               style={{
                 display: "inline-flex",
                 alignItems: "center",

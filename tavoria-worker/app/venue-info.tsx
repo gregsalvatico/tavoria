@@ -1,8 +1,7 @@
 import { Feather } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
 import { Link, useRouter } from "expo-router";
 import { patchVenueProfile, getVenueProfile } from "../lib/venueProfile";
-import { insertVenue, recordVenueTermsAcceptance, uploadVenuePhoto } from "../lib/db";
+import { insertVenue, recordVenueTermsAcceptance } from "../lib/db";
 import { registerPush } from "../lib/pushNotifications";
 import { sendVenueWelcomeEmail } from "../lib/email";
 import { t } from "../lib/i18n";
@@ -11,14 +10,11 @@ import {
   nameToSlug,
   signUpWithUsernamePin,
 } from "../lib/usernameAuth";
-import { pickImageWeb } from "../lib/webMedia";
 import { rememberAccount } from "../lib/savedAccounts";
 import { useEffect, useMemo, useState } from "react";
 
 import {
   ActivityIndicator,
-  Alert,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -36,7 +32,6 @@ export default function VenueInfo() {
   const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [pin, setPin] = useState("");
   const [pin2, setPin2] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -60,51 +55,6 @@ export default function VenueInfo() {
 
   const pinValid = /^\d{4}$/.test(pin);
   const pinsMatch = pinValid && pin === pin2;
-
-  async function pickPhoto(source: "camera" | "library") {
-    // Web: HTML file input — capture hint opens the camera on phones.
-    if (Platform.OS === "web") {
-      const res = await pickImageWeb({
-        camera: source === "camera" ? "environment" : false,
-      });
-      if (res.canceled || !res.assets[0]) return;
-      setPhotoUri(res.assets[0].uri);
-      return;
-    }
-    const perm =
-      source === "camera"
-        ? await ImagePicker.requestCameraPermissionsAsync()
-        : await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert(
-        source === "camera"
-          ? "Camera permission needed"
-          : "Photos permission needed",
-        "Enable access in Settings to continue."
-      );
-      return;
-    }
-    const opts = {
-      mediaTypes: ["images"] as ImagePicker.MediaType[],
-      allowsEditing: true,
-      aspect: [4, 3] as [number, number],
-      quality: 0.7,
-    };
-    const res =
-      source === "camera"
-        ? await ImagePicker.launchCameraAsync(opts)
-        : await ImagePicker.launchImageLibraryAsync(opts);
-    if (res.canceled || !res.assets[0]) return;
-    setPhotoUri(res.assets[0].uri);
-  }
-
-  function openPhotoSheet() {
-    Alert.alert("Add venue photo", "How do you want to add your photo?", [
-      { text: "Take photo", onPress: () => pickPhoto("camera") },
-      { text: "Choose from library", onPress: () => pickPhoto("library") },
-      { text: "Cancel", style: "cancel" },
-    ]);
-  }
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const canContinue =
@@ -165,15 +115,6 @@ export default function VenueInfo() {
         username: finalUsername,
         venueName: trimmedName,
       }).catch((e) => console.warn("[venue-info] welcome email failed:", e));
-      // 4. If a photo was picked, upload it now that we have the venue id
-      if (photoUri) {
-        try {
-          const url = await uploadVenuePhoto(row.id, photoUri);
-          patchVenueProfile({ photoUrl: url });
-        } catch (e) {
-          console.warn("[venue-info] photo upload failed:", e);
-        }
-      }
       router.push("/venue-photo");
     } catch (e: any) {
       setErrorMsg(e?.message || "Could not save. Try again.");
@@ -328,28 +269,6 @@ export default function VenueInfo() {
               />
             </View>
 
-            <Text style={[styles.label, { marginTop: 18 }]}>
-              {t("venue_info.photo_title")}{" "}
-              <Text style={styles.labelOptional}>({t("common.optional")})</Text>
-            </Text>
-            <Pressable style={styles.photoRow} onPress={openPhotoSheet}>
-              {photoUri ? (
-                <Image source={{ uri: photoUri }} style={styles.photoThumb} />
-              ) : (
-                <View style={styles.photoThumbEmpty}>
-                  <Feather name="camera" size={20} color="#F0531C" />
-                </View>
-              )}
-              <View style={{ flex: 1 }}>
-                <Text style={styles.photoTitle}>
-                  {photoUri ? "✓" : "+"}
-                </Text>
-                <Text style={styles.photoSub}>
-                  {photoUri ? t("common.done") : t("venue_info.photo_sub")}
-                </Text>
-              </View>
-              <Feather name="chevron-right" size={20} color="#6B7280" />
-            </Pressable>
           </View>
 
           <Pressable
@@ -493,36 +412,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontFamily: Platform.select({ ios: "Menlo", android: "monospace" }),
   },
-  photoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: "white",
-    borderRadius: 12,
-    borderWidth: 0.5,
-    borderColor: "rgba(0,0,0,0.10)",
-    padding: 10,
-  },
-  photoThumb: {
-    width: 56,
-    height: 56,
-    borderRadius: 10,
-    backgroundColor: "#0E1A24",
-  },
-  photoThumbEmpty: {
-    width: 56,
-    height: 56,
-    borderRadius: 10,
-    backgroundColor: "#FFF4EE",
-    borderWidth: 1,
-    borderColor: "#F0531C",
-    borderStyle: "dashed",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  photoTitle: { fontSize: 14, fontWeight: "700", color: "#0E1A24" },
-  photoSub: { fontSize: 12, color: "#6B7280", marginTop: 1 },
-
   errorTxt: {
     color: "#B91C1C",
     fontSize: 13,
