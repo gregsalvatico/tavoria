@@ -405,6 +405,7 @@ export default {
     confirm_interview_body: "Scegli quando e dove incontrarvi. Dopo l'invio, lavoratore e locale vedranno i contatti condivisi dell'altra parte.",
     confirm_interview_worker: "Entrambe le parti ricevono un'email con data e luogo. Il lavoratore riceve anche una notifica push quando disponibile.",
     confirm_interview_cta: "Richiedi colloquio",
+    request_another_interview: "Richiedi un altro colloquio",
     interview_date: "Data e ora",
     interview_location: "Luogo del colloquio",
     location_venue: "Indirizzo del locale",

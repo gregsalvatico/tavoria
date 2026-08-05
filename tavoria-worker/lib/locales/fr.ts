@@ -405,6 +405,7 @@ export default {
     confirm_interview_body: "Choisissez quand et où vous rencontrer. Après l'envoi, le candidat et le lieu voient les coordonnées partagées de l'autre partie.",
     confirm_interview_worker: "Les deux parties reçoivent un e-mail avec la date et le lieu. Le candidat reçoit aussi un push si disponible.",
     confirm_interview_cta: "Demander l'entretien",
+    request_another_interview: "Demander un autre entretien",
     interview_date: "Date et heure",
     interview_location: "Lieu de l'entretien",
     location_venue: "Adresse du lieu",

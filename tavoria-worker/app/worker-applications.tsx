@@ -2,7 +2,7 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -22,7 +22,7 @@ import AppBottomNav from "../components/AppBottomNav";
 import FilterChips from "../components/FilterChips";
 
 const WORKER_LAST_SEEN_KEY = "gigi.worker.apps_last_seen";
-const WORKER_SEEN_INTERVIEW_IDS_KEY = "gigi.worker.seen_interview_application_ids";
+const WORKER_SEEN_INTERVIEW_UPDATES_KEY = "gigi.worker.seen_interview_application_updates";
 
 type ApplicationRow = {
   id: string;
@@ -96,7 +96,7 @@ export default function WorkerApplications() {
   const [refreshing, setRefreshing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
-  const [seenInterviewIds, setSeenInterviewIds] = useState<Set<string>>(new Set());
+  const [seenInterviewUpdates, setSeenInterviewUpdates] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setErrorMsg(null);
@@ -111,14 +111,23 @@ export default function WorkerApplications() {
     }
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load])
+  );
+
   useEffect(() => {
-    load();
-    AsyncStorage.getItem(WORKER_SEEN_INTERVIEW_IDS_KEY)
+    AsyncStorage.getItem(WORKER_SEEN_INTERVIEW_UPDATES_KEY)
       .then((value) => {
         if (!value) return;
-        const ids = JSON.parse(value);
-        if (Array.isArray(ids)) {
-          setSeenInterviewIds(new Set(ids.filter((id) => typeof id === "string")));
+        const updates = JSON.parse(value);
+        if (updates && typeof updates === "object" && !Array.isArray(updates)) {
+          setSeenInterviewUpdates(
+            Object.fromEntries(
+              Object.entries(updates).filter((entry): entry is [string, string] => typeof entry[1] === "string")
+            )
+          );
         }
       })
       .catch(() => {});
@@ -129,11 +138,12 @@ export default function WorkerApplications() {
     );
   }, [load]);
 
-  const markInterviewSeen = useCallback((applicationId: string) => {
-    setSeenInterviewIds((current) => {
-      if (current.has(applicationId)) return current;
-      const next = new Set(current).add(applicationId);
-      AsyncStorage.setItem(WORKER_SEEN_INTERVIEW_IDS_KEY, JSON.stringify([...next])).catch(() => {});
+  const markInterviewSeen = useCallback((applicationId: string, updatedAt?: string) => {
+    if (!updatedAt) return;
+    setSeenInterviewUpdates((current) => {
+      if (current[applicationId] === updatedAt) return current;
+      const next = { ...current, [applicationId]: updatedAt };
+      AsyncStorage.setItem(WORKER_SEEN_INTERVIEW_UPDATES_KEY, JSON.stringify(next)).catch(() => {});
       return next;
     });
   }, []);
@@ -239,8 +249,8 @@ export default function WorkerApplications() {
               key={a.id}
               a={a}
               router={router}
-              hasUnreadInterview={a.status === "interview_requested" && !seenInterviewIds.has(a.id)}
-              onOpen={() => markInterviewSeen(a.id)}
+              hasUnreadInterview={a.status === "interview_requested" && seenInterviewUpdates[a.id] !== a.updated_at}
+              onOpen={() => markInterviewSeen(a.id, a.updated_at)}
             />
           ))
         )}

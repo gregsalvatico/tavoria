@@ -383,7 +383,7 @@ export default function Home() {
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginBottom: 26 }}>
               <a
-                href={appRoute("/signup?role=venue")}
+                href={appRoute("/venue-type")}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -1245,7 +1245,7 @@ export default function Home() {
               }}
             >
               <a
-                href={appRoute("/signup?role=venue")}
+                href={appRoute("/venue-type")}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -2089,7 +2089,7 @@ export default function Home() {
                 </div>
               </div>
               <a
-                href={appRoute("/signup?role=venue")}
+                href={appRoute("/venue-type")}
                 style={{
                   display: "block",
                   textAlign: "center",
@@ -2494,7 +2494,7 @@ export default function Home() {
             }}
           >
             <a
-              href={appRoute("/signup?role=venue")}
+              href={appRoute("/venue-type")}
               style={{
                 display: "inline-flex",
                 alignItems: "center",

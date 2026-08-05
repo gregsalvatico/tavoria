@@ -33,7 +33,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function VenueInfo() {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [address, setAddress] = useState("Via Brera 12, Milan");
+  const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -293,10 +293,6 @@ export default function VenueInfo() {
                 style={styles.input}
                 returnKeyType="next"
               />
-              <View style={styles.detected}>
-                <Feather name="navigation" size={11} color="#0F6E56" />
-                <Text style={styles.detectedTxt}>auto-detected</Text>
-              </View>
             </View>
 
             <Text style={[styles.label, { marginTop: 18 }]}>{t("signup.email")}</Text>
@@ -497,17 +493,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontFamily: Platform.select({ ios: "Menlo", android: "monospace" }),
   },
-  detected: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#E1F5EE",
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 999,
-  },
-  detectedTxt: { color: "#0F6E56", fontSize: 10, fontWeight: "600" },
-
   photoRow: {
     flexDirection: "row",
     alignItems: "center",

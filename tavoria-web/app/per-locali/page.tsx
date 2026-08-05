@@ -75,7 +75,7 @@ export default function PerLocali() {
         >
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button
-              href="https://app.tavoriapp.com/signup?role=venue"
+              href="https://app.tavoriapp.com/venue-type"
               external
               variant="orange"
               size="lg"
@@ -158,7 +158,7 @@ export default function PerLocali() {
         <Section tone="cream" centered heading="Pronti a provare?">
           <div className="flex flex-col items-center gap-4">
             <Button
-              href="https://app.tavoriapp.com/signup?role=venue"
+              href="https://app.tavoriapp.com/venue-type"
               external
               variant="orange"
               size="lg"

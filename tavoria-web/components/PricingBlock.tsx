@@ -133,7 +133,7 @@ export default function PricingBlock() {
 
         <div className="mt-10">
           <Button
-            href="https://app.tavoriapp.com/signup?role=venue"
+            href="https://app.tavoriapp.com/venue-type"
             external
             variant="orange"
             size="md"

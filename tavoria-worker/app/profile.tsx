@@ -667,10 +667,16 @@ export default function Profile() {
                 </Pressable>
               </>
             ) : appStatus === "hired" || appStatus === "declined" ? (
-              <View style={[styles.finalStatus, appStatus === "hired" ? styles.finalStatusHired : styles.finalStatusDeclined]}>
-                <Feather name={appStatus === "hired" ? "check-circle" : "x-circle"} size={19} color={appStatus === "hired" ? "#3B6D11" : "#993556"} />
-                <Text style={[styles.finalStatusText, { color: appStatus === "hired" ? "#3B6D11" : "#993556" }]}>{t(`candidate_actions.status_${appStatus}`)}</Text>
-              </View>
+              <>
+                <View style={[styles.finalStatus, appStatus === "hired" ? styles.finalStatusHired : styles.finalStatusDeclined]}>
+                  <Feather name={appStatus === "hired" ? "check-circle" : "x-circle"} size={19} color={appStatus === "hired" ? "#3B6D11" : "#993556"} />
+                  <Text style={[styles.finalStatusText, { color: appStatus === "hired" ? "#3B6D11" : "#993556" }]}>{t(`candidate_actions.status_${appStatus}`)}</Text>
+                </View>
+                <Pressable style={[styles.requestInterviewButton, updatingStatus && styles.actionDisabled]} onPress={() => setPendingAction("interview")} disabled={updatingStatus}>
+                  <Feather name="calendar" size={19} color="white" />
+                  <Text style={styles.interviewButtonText}>{t("candidate_actions.request_another_interview")}</Text>
+                </Pressable>
+              </>
             ) : (
               params.applicationId ? <Pressable style={[styles.requestInterviewButton, updatingStatus && styles.actionDisabled]} onPress={() => setPendingAction("interview")} disabled={updatingStatus}>
                 <Feather name="calendar" size={19} color="white" />

@@ -402,6 +402,7 @@ export default {
     confirm_interview_body: "选择见面的日期和地点。发送后，工作者和门店都可以查看对方已共享的联系方式。",
     confirm_interview_worker: "双方都会收到包含日期和地点的电子邮件。工作者还会在可用时收到推送通知。",
     confirm_interview_cta: "请求面试",
+    request_another_interview: "再次请求面试",
     interview_date: "日期和时间",
     interview_location: "面试地点",
     location_venue: "门店地址",

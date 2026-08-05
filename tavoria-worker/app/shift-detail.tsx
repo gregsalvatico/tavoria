@@ -3,8 +3,8 @@
 
 import { Feather } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -123,18 +123,19 @@ export default function ShiftDetail() {
     } catch {}
   };
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!id) {
       setLoading(false);
       return;
     }
-    (async () => {
-      try {
-        const [shiftResult, existingApplication, account] = await Promise.all([
-          supabase
-            .from("shifts")
-            .select(
-              `
+    setLoading(true);
+    setErrorMsg(null);
+    try {
+      const [shiftResult, existingApplication, account] = await Promise.all([
+        supabase
+          .from("shifts")
+          .select(
+            `
               *,
               venue:venues(
                 id, name, type, city, address, email, phone, venue_style, photo_url,
@@ -142,23 +143,31 @@ export default function ShiftDetail() {
                 contact_email_enabled, contact_phone_enabled, contact_in_person_enabled
               )
             `
-            )
-            .eq("id", id)
-            .maybeSingle(),
-          getCurrentWorkerApplicationForShift(id).catch(() => null),
-          getCurrentUserContext().catch(() => ({ hasVenue: false, hasWorker: false })),
-        ]);
-        if (shiftResult.error) throw shiftResult.error;
-        setShift(shiftResult.data);
-        setApplication(existingApplication);
-        setHasAccount(account.hasVenue || account.hasWorker);
-      } catch (e: any) {
-        setErrorMsg(e?.message ?? "Could not load shift.");
-      } finally {
-        setLoading(false);
-      }
-    })();
+          )
+          .eq("id", id)
+          .maybeSingle(),
+        getCurrentWorkerApplicationForShift(id).catch(() => null),
+        getCurrentUserContext().catch(() => ({ hasVenue: false, hasWorker: false })),
+      ]);
+      if (shiftResult.error) throw shiftResult.error;
+      setShift(shiftResult.data);
+      setApplication(existingApplication);
+      setHasAccount(account.hasVenue || account.hasWorker);
+    } catch (e: any) {
+      setErrorMsg(e?.message ?? "Could not load shift.");
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
+
+  // A venue can update an application's status while the worker is elsewhere
+  // in the app. Reload whenever this detail screen regains focus so the
+  // action always reflects the current database status.
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load])
+  );
 
   const onApply = async () => {
     if (!shift) return;
@@ -264,6 +273,20 @@ export default function ShiftDetail() {
   const venuePhone = canContactVenue && v?.contact_phone_enabled !== false ? v?.phone : undefined;
   const visitAddress = canContactVenue && v?.contact_in_person_enabled === true ? v?.address : undefined;
   const hasContactMethod = !!(venueEmail || venuePhone || visitAddress);
+  const applicationStatus = application?.status;
+  const canOpenContact = applicationStatus === "interview_requested" && hasContactMethod;
+  const applicationStateLabel =
+    applicationStatus === "hired"
+      ? t("candidate_actions.status_hired")
+      : applicationStatus === "declined"
+      ? t("candidate_actions.status_declined")
+      : "Application sent — awaiting reply";
+  const applicationIcon =
+    applicationStatus === "hired"
+      ? "check-circle"
+      : applicationStatus === "declined"
+      ? "x-circle"
+      : "clock";
   const applicationLabel = application?.status === "declined"
     ? "This application is closed"
     : "Application sent — awaiting reply";
@@ -442,12 +465,22 @@ export default function ShiftDetail() {
         ) : (
           application ? (
             <Pressable
-              onPress={() => canContactVenue && setContactOpen(true)}
-              disabled={!canContactVenue || !hasContactMethod}
-              style={[styles.applyBtn, canContactVenue ? styles.contactBtn : styles.applicationStatusBtn]}
+              onPress={() => canOpenContact && setContactOpen(true)}
+              disabled={!canOpenContact}
+              style={[styles.applyBtn, canOpenContact ? styles.contactBtn : styles.applicationStatusBtn]}
             >
-              <Text style={styles.applyTxt}>{canContactVenue ? (hasContactMethod ? "Contact venue" : "Contact details unavailable") : applicationLabel}</Text>
-              <Feather name={canContactVenue && hasContactMethod ? "message-circle" : "clock"} size={19} color="#F7F4EE" />
+              <Text style={styles.applyTxt}>
+                {applicationStatus === "interview_requested"
+                  ? hasContactMethod
+                    ? "Contact venue"
+                    : "Contact details unavailable"
+                  : applicationStateLabel}
+              </Text>
+              <Feather
+                name={canOpenContact ? "message-circle" : applicationIcon}
+                size={19}
+                color="#F7F4EE"
+              />
             </Pressable>
           ) : (
             <Pressable

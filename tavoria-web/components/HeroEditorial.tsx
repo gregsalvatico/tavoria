@@ -42,7 +42,7 @@ export default function HeroEditorial() {
 
               <div className="mt-12 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
                 <Button
-                  href="https://app.tavoriapp.com/signup?role=venue"
+                  href="https://app.tavoriapp.com/venue-type"
                   external
                   variant="orange"
                   size="lg"
