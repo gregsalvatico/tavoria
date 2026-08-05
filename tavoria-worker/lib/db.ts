@@ -25,6 +25,7 @@ export type VenueInsert = {
   city?: string;
   email: string;
   phone?: string;
+  website_url?: string;
   terms_accepted_at?: string;
   terms_version?: string;
 };
@@ -51,7 +52,8 @@ export async function updateVenue(
     address?: string;
     city?: string;
     email?: string;
-    phone?: string;
+    phone?: string | null;
+    website_url?: string | null;
     photo_url?: string;
     photo_variant?: number;
     roles?: string[];
@@ -214,6 +216,13 @@ export type ApplicationInsert = {
   message?: string;
 };
 
+export type DirectInterviewRequest = {
+  workerId: string;
+  venueId: string;
+  scheduledAt: string;
+  location: string;
+};
+
 // Worker (signed in via anon session) creates an application
 export async function createApplication(input: ApplicationInsert) {
   const session = await ensureSession();
@@ -251,6 +260,82 @@ export async function createApplication(input: ApplicationInsert) {
   }
   if (error) throw error;
   return data as { id: string };
+}
+
+// A venue can invite a worker before that worker applies to a specific shift.
+// Direct invitations have no shift_id but still use the normal application
+// status, interview details, notifications, and worker inbox.
+export async function requestDirectInterview(input: DirectInterviewRequest) {
+  const session = await ensureSession();
+  const venueUserId = session?.user.id;
+  if (!venueUserId) throw new Error("No auth session");
+
+  const [{ data: venue, error: venueError }, { data: worker, error: workerError }] =
+    await Promise.all([
+      supabase
+        .from("venues")
+        .select("id")
+        .eq("id", input.venueId)
+        .eq("user_id", venueUserId)
+        .maybeSingle(),
+      supabase
+        .from("workers")
+        .select("id, user_id")
+        .eq("id", input.workerId)
+        .maybeSingle(),
+    ]);
+  if (venueError) throw venueError;
+  if (workerError) throw workerError;
+  if (!venue) throw new Error("You can only invite workers from your own venue.");
+  if (!worker?.user_id) throw new Error("This worker cannot receive an interview request yet.");
+
+  const { data: existing, error: existingError } = await supabase
+    .from("applications")
+    .select("id")
+    .eq("venue_id", input.venueId)
+    .eq("worker_id", input.workerId)
+    .is("shift_id", null)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (existingError) throw existingError;
+
+  const values = {
+    status: "interview_requested" as const,
+    interview_scheduled_at: input.scheduledAt,
+    interview_location: input.location,
+  };
+  const { data, error } = existing?.id
+    ? await supabase
+        .from("applications")
+        .update(values)
+        .eq("id", existing.id)
+        .select("id, status")
+        .single()
+    : await supabase
+        .from("applications")
+        .insert({
+          ...values,
+          worker_id: worker.id,
+          worker_user_id: worker.user_id,
+          venue_id: input.venueId,
+          venue_user_id: venueUserId,
+        })
+        .select("id, status")
+        .single();
+  if (error) throw error;
+  if (!data) throw new Error("Could not send the interview request.");
+
+  void supabase.functions
+    .invoke("notify-on-application", {
+      body: { kind: "application_status_changed", applicationId: data.id },
+    })
+    .then(({ error: notificationError }) => {
+      if (notificationError) console.warn("[notifications] direct interview email failed:", notificationError);
+    })
+    .catch((notificationError) => console.warn("[notifications] direct interview email failed:", notificationError));
+
+  return data as { id: string; status: ApplicationStatus };
 }
 
 export async function updateShift(
@@ -393,7 +478,7 @@ export async function getVenueBoard(venueId: string) {
     supabase
       .from("venues")
       .select(
-        `id, name, type, city, address, email, phone, venue_style, photo_url, pay_schedule,
+        `id, name, type, city, address, email, phone, website_url, venue_style, photo_url, pay_schedule,
          contact_email_enabled, contact_phone_enabled, contact_in_person_enabled`
       )
       .eq("id", venueId)

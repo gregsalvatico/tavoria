@@ -228,8 +228,15 @@ export default {
     venue_name: "Venue name",
     address: "Address",
     phone: "Phone",
+    website: "Website",
+    website_placeholder: "yourvenue.com",
+    website_invalid: "Enter a valid website link.",
     photo_title: "Venue photo",
     photo_sub: "Workers see this on your shift card",
+  },
+  venue_card: {
+    directions: "Directions",
+    website: "Website",
   },
   venue_style: {
     title: "Your venue style",
@@ -427,6 +434,7 @@ export default {
     status_starred: "Saved by venue",
     status_starred_detail: "The venue saved your profile. This is not yet an interview or job offer.",
     status_interview_requested: "Interview requested",
+    direct_interview_invitation: "Direct interview invitation",
     status_interview_requested_detail: "The venue wants to interview you. Contact them to arrange the time.",
     status_hired: "Hired",
     status_hired_detail: "The venue selected you. Contact them to confirm pay, schedule and contract details.",

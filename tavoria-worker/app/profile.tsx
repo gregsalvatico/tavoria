@@ -18,8 +18,10 @@ import { t } from "../lib/i18n";
 import {
   type ApplicationStatus,
   getCurrentWorkerFull,
+  getCurrentVenueRow,
   getWorkerById,
   getApplicationById,
+  requestDirectInterview,
   updateApplicationStatus,
 } from "../lib/db";
 import { getWorkerProfile, type InterviewAnswer } from "../lib/workerProfile";
@@ -30,7 +32,6 @@ import ApplicationActionModal, {
   type InterviewSchedule,
 } from "../components/ApplicationActionModal";
 import InterviewOutcomeModal, { type InterviewOutcome } from "../components/InterviewOutcomeModal";
-import ProInvitationModal from "../components/ProInvitationModal";
 import AppBottomNav from "../components/AppBottomNav";
 
 // Years-of-experience numeric → label
@@ -134,7 +135,7 @@ export default function Profile() {
   const [interviewScheduledAt, setInterviewScheduledAt] = useState<string | null>(null);
   const [interviewLocation, setInterviewLocation] = useState("");
   const [outcomeOpen, setOutcomeOpen] = useState(false);
-  const [proInviteOpen, setProInviteOpen] = useState(false);
+  const [directApplicationId, setDirectApplicationId] = useState<string | null>(null);
 
   const explicitVenue = params.mode === "venue";
   const explicitWorker = params.mode === "worker";
@@ -216,6 +217,24 @@ export default function Profile() {
     };
   }, [isOwnerMode, params.applicationId, params.workerId]);
 
+  // Direct invitations use the same venue address and location choices as
+  // applications tied to a shift.
+  useEffect(() => {
+    if (params.applicationId || !params.workerId) return;
+    getCurrentVenueRow()
+      .then((venue) => {
+        if (!venue) return;
+        setVenueAddress(venue.address ?? "");
+        if (
+          Array.isArray(venue.interview_location_options) &&
+          venue.interview_location_options.length
+        ) {
+          setInterviewLocationOptions(venue.interview_location_options);
+        }
+      })
+      .catch(() => {});
+  }, [params.applicationId, params.workerId]);
+
   const onShare = async () => {
     try {
       await Share.share({
@@ -226,14 +245,6 @@ export default function Profile() {
   };
 
   const confirmAction = async (action: ApplicationAction, interview?: InterviewSchedule) => {
-    if (!params.applicationId) {
-      setPendingAction(null);
-      Alert.alert(
-        t("candidate_actions.no_application_title"),
-        t("candidate_actions.no_application_body")
-      );
-      return;
-    }
     const statusMap: Record<ApplicationAction, ApplicationStatus> = {
       decline: "declined",
       star: "starred",
@@ -242,7 +253,23 @@ export default function Profile() {
     };
     setUpdatingStatus(true);
     try {
-      await updateApplicationStatus(params.applicationId, statusMap[action], interview);
+      const applicationId = params.applicationId ?? directApplicationId;
+      if (!applicationId) {
+        if (action !== "interview" || !interview || !params.workerId) {
+          throw new Error("This worker cannot receive an interview request yet.");
+        }
+        const venue = await getCurrentVenueRow();
+        if (!venue?.id) throw new Error("Your venue could not be found. Please sign in again.");
+        const directInvite = await requestDirectInterview({
+          workerId: params.workerId,
+          venueId: venue.id as string,
+          scheduledAt: interview.scheduledAt,
+          location: interview.location,
+        });
+        setDirectApplicationId(directInvite.id);
+      } else {
+        await updateApplicationStatus(applicationId, statusMap[action], interview);
+      }
       setLastAction(action);
       setAppStatus(statusMap[action]);
       if (interview) {
@@ -686,16 +713,12 @@ export default function Profile() {
                 </Pressable>
               </>
             ) : (
-              params.applicationId ? <Pressable style={[styles.requestInterviewButton, updatingStatus && styles.actionDisabled]} onPress={() => setPendingAction("interview")} disabled={updatingStatus}>
+              (params.applicationId || directApplicationId) ? <Pressable style={[styles.requestInterviewButton, updatingStatus && styles.actionDisabled]} onPress={() => setPendingAction("interview")} disabled={updatingStatus}>
                 <Feather name="calendar" size={19} color="white" />
                 <Text style={styles.interviewButtonText}>{t("candidate_actions.confirm_interview_cta")}</Text>
-              </Pressable> : <Pressable style={styles.proInviteButton} onPress={() => setProInviteOpen(true)}>
-                <Feather name="star" size={18} color="#F0531C" />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.proInviteTitle}>Request interview with Pro</Text>
-                  <Text style={styles.proInviteText}>Invite candidates before they apply.</Text>
-                </View>
-                <Feather name="chevron-right" size={18} color="#46505A" />
+              </Pressable> : <Pressable style={[styles.requestInterviewButton, updatingStatus && styles.actionDisabled]} onPress={() => setPendingAction("interview")} disabled={updatingStatus}>
+                <Feather name="calendar" size={19} color="white" />
+                <Text style={styles.interviewButtonText}>{t("candidate_actions.confirm_interview_cta")}</Text>
               </Pressable>
             )}
           </View>
@@ -718,14 +741,6 @@ export default function Profile() {
         loading={updatingStatus}
         onClose={() => setOutcomeOpen(false)}
         onSelect={(outcome: InterviewOutcome) => confirmAction(outcome)}
-      />
-      <ProInvitationModal
-        visible={proInviteOpen}
-        onClose={() => setProInviteOpen(false)}
-        onExplore={() => {
-          setProInviteOpen(false);
-          router.push("/venue-pro");
-        }}
       />
       {!isOwnerMode ? (
         <AppBottomNav

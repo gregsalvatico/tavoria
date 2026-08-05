@@ -230,8 +230,15 @@ export default {
     venue_name: "Nome del locale",
     address: "Indirizzo",
     phone: "Telefono",
+    website: "Sito web",
+    website_placeholder: "iltuolocale.it",
+    website_invalid: "Inserisci un link del sito valido.",
     photo_title: "Foto del locale",
     photo_sub: "I candidati la vedono sull'annuncio del turno",
+  },
+  venue_card: {
+    directions: "Indicazioni",
+    website: "Sito web",
   },
   venue_style: {
     title: "Lo stile del tuo locale",
@@ -429,6 +436,7 @@ export default {
     status_starred: "Salvato dal locale",
     status_starred_detail: "Il locale ha salvato il tuo profilo. Non è ancora un colloquio o un'offerta.",
     status_interview_requested: "Colloquio richiesto",
+    direct_interview_invitation: "Invito diretto al colloquio",
     status_interview_requested_detail: "Il locale vuole incontrarti. Contattalo per concordare l'orario.",
     status_hired: "Assunto",
     status_hired_detail: "Il locale ti ha scelto. Contattalo per confermare paga, orari e contratto.",

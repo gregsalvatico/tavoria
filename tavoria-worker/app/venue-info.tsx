@@ -11,6 +11,7 @@ import {
   signUpWithUsernamePin,
 } from "../lib/usernameAuth";
 import { rememberAccount } from "../lib/savedAccounts";
+import { websiteUrl } from "../lib/contact";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -32,6 +33,7 @@ export default function VenueInfo() {
   const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [website, setWebsite] = useState("");
   const [pin, setPin] = useState("");
   const [pin2, setPin2] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -57,12 +59,15 @@ export default function VenueInfo() {
   const pinsMatch = pinValid && pin === pin2;
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const normalisedWebsite = websiteUrl(website);
+  const websiteValid = !website.trim() || !!normalisedWebsite;
   const canContinue =
     name.trim().length >= 1 &&
     emailValid &&
     pinValid &&
     pinsMatch &&
     username.length > 0 &&
+    websiteValid &&
     acceptedTerms;
 
   const onContinue = async () => {
@@ -89,6 +94,7 @@ export default function VenueInfo() {
         city,
         email: trimmedEmail,
         phone: trimmedPhone || undefined,
+        website_url: normalisedWebsite || undefined,
       });
       patchVenueProfile({
         id: row.id,
@@ -97,6 +103,7 @@ export default function VenueInfo() {
         city,
         email: trimmedEmail,
         phone: trimmedPhone || undefined,
+        websiteUrl: normalisedWebsite || undefined,
       });
       // Record T&C acceptance immediately for audit trail
       try {
@@ -252,6 +259,25 @@ export default function VenueInfo() {
               />
             </View>
 
+            <Text style={[styles.label, { marginTop: 18 }]}>{t("venue_info.website")} <Text style={styles.labelOptional}>({t("common.optional")})</Text></Text>
+            <View style={styles.inputWrap}>
+              <Feather name="globe" size={16} color="#6B7280" />
+              <TextInput
+                value={website}
+                onChangeText={setWebsite}
+                placeholder={t("venue_info.website_placeholder")}
+                placeholderTextColor="#9CA3AF"
+                style={styles.input}
+                keyboardType="url"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="next"
+              />
+            </View>
+            {website.trim() && !websiteValid ? (
+              <Text style={styles.fieldError}>{t("venue_info.website_invalid")}</Text>
+            ) : null}
+
             <Text style={[styles.label, { marginTop: 18 }]}>
               {t("venue_info.phone")}{" "}
               <Text style={styles.labelOptional}>({t("common.optional")})</Text>
@@ -394,6 +420,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0,0,0,0.10)",
   },
   input: { flex: 1, fontSize: 16, color: "#0E1A24", padding: 0 },
+  fieldError: { color: "#B91C1C", fontSize: 12, marginTop: 6 },
 
   // Username preview under the venue name field
   usernameHint: {

@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getCurrentVenueRow, updateVenue } from "../lib/db";
 import { getVenueProfile, patchVenueProfile } from "../lib/venueProfile";
+import { websiteUrl } from "../lib/contact";
 
 type InterviewLocationOption = "venue" | "phone" | "video" | "other";
 const DEFAULT_INTERVIEW_OPTIONS: InterviewLocationOption[] = ["venue", "phone", "video"];
@@ -27,6 +28,7 @@ export default function VenueEdit() {
   const [address, setAddress] = useState(getVenueProfile()?.address ?? "");
   const [email, setEmail] = useState(getVenueProfile()?.email ?? "");
   const [phone, setPhone] = useState(getVenueProfile()?.phone ?? "");
+  const [website, setWebsite] = useState(getVenueProfile()?.websiteUrl ?? "");
   const [shareEmail, setShareEmail] = useState(getVenueProfile()?.contactEmailEnabled ?? true);
   const [sharePhone, setSharePhone] = useState(getVenueProfile()?.contactPhoneEnabled ?? true);
   const [allowInPerson, setAllowInPerson] = useState(getVenueProfile()?.contactInPersonEnabled ?? false);
@@ -46,6 +48,7 @@ export default function VenueEdit() {
         setAddress((venue.address as string | null) ?? "");
         setEmail((venue.email as string | null) ?? "");
         setPhone((venue.phone as string | null) ?? "");
+        setWebsite((venue.website_url as string | null) ?? "");
         setShareEmail(venue.contact_email_enabled !== false);
         setSharePhone(venue.contact_phone_enabled !== false);
         setAllowInPerson(venue.contact_in_person_enabled === true);
@@ -68,6 +71,11 @@ export default function VenueEdit() {
       return;
     }
     const nextAddress = address.trim();
+    const nextWebsite = websiteUrl(website);
+    if (website.trim() && !nextWebsite) {
+      Alert.alert("Invalid website", "Enter a valid website link, for example yourvenue.com.");
+      return;
+    }
     const city = nextAddress.split(",").pop()?.trim() || "Milan";
     setSaving(true);
     try {
@@ -76,7 +84,10 @@ export default function VenueEdit() {
         address: nextAddress,
         city,
         email: email.trim(),
-        phone: phone.trim() || undefined,
+        // Send null, rather than undefined, so Supabase clears an existing
+        // optional value instead of omitting it from the update payload.
+        phone: phone.trim() || null,
+        website_url: nextWebsite || null,
         contact_email_enabled: shareEmail,
         contact_phone_enabled: sharePhone,
         contact_in_person_enabled: allowInPerson && !!nextAddress,
@@ -89,6 +100,7 @@ export default function VenueEdit() {
         city,
         email: email.trim(),
         phone: phone.trim() || undefined,
+        websiteUrl: nextWebsite || undefined,
         contactEmailEnabled: shareEmail,
         contactPhoneEnabled: sharePhone,
         contactInPersonEnabled: allowInPerson && !!nextAddress,
@@ -121,6 +133,7 @@ export default function VenueEdit() {
             <Field label="Address" icon="map-pin" value={address} onChangeText={setAddress} autoCapitalize="words" />
             <Field label="Email" icon="mail" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
             <Field label="Phone" icon="phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+            <Field label="Website" icon="globe" value={website} onChangeText={setWebsite} keyboardType="url" autoCapitalize="none" />
             <View style={styles.contactSettings}>
               <Text style={styles.contactTitle}>Contact options after an interview</Text>
               <Text style={styles.contactSub}>Only workers you invite to interview or hire can see these details.</Text>
@@ -174,7 +187,7 @@ function toggleInterviewOption(
   setOptions((options) => options.includes(option) ? options.filter((item) => item !== option) : [...options, option]);
 }
 
-function Field(props: { label: string; icon: keyof typeof Feather.glyphMap; value: string; onChangeText: (value: string) => void; autoCapitalize?: "none" | "words"; keyboardType?: "default" | "email-address" | "phone-pad" }) {
+function Field(props: { label: string; icon: keyof typeof Feather.glyphMap; value: string; onChangeText: (value: string) => void; autoCapitalize?: "none" | "words"; keyboardType?: "default" | "email-address" | "phone-pad" | "url" }) {
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{props.label}</Text>

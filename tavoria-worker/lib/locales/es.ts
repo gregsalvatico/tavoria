@@ -231,8 +231,15 @@ export default {
     venue_name: "Nombre del local",
     address: "Dirección",
     phone: "Teléfono",
+    website: "Sitio web",
+    website_placeholder: "tulocal.com",
+    website_invalid: "Introduce un enlace web válido.",
     photo_title: "Foto del local",
     photo_sub: "Los trabajadores la ven en tu tarjeta de turno",
+  },
+  venue_card: {
+    directions: "Indicaciones",
+    website: "Sitio web",
   },
   venue_style: {
     title: "El estilo de tu local",
@@ -430,6 +437,7 @@ export default {
     status_starred: "Guardado por el local",
     status_starred_detail: "El local guardó tu perfil. Aún no es una entrevista ni una oferta.",
     status_interview_requested: "Entrevista solicitada",
+    direct_interview_invitation: "Invitación directa a una entrevista",
     status_interview_requested_detail: "El local quiere entrevistarte. Contáctalo para acordar la hora.",
     status_hired: "Contratado",
     status_hired_detail: "El local te eligió. Contáctalo para confirmar pago, horario y contrato.",

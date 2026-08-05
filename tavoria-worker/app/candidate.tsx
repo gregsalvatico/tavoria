@@ -5,8 +5,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ApplicationStatus,
   getApplicationById,
+  getCurrentVenueRow,
   getCurrentWorkerFull,
   getWorkerById,
+  requestDirectInterview,
   updateApplicationStatus,
 } from "../lib/db";
 import {
@@ -43,7 +45,6 @@ import ApplicationActionModal, {
 import InterviewOutcomeModal, {
   type InterviewOutcome,
 } from "../components/InterviewOutcomeModal";
-import ProInvitationModal from "../components/ProInvitationModal";
 import ContactPersonModal from "../components/ContactPersonModal";
 
 function yearsShort(n: number): string {
@@ -91,9 +92,9 @@ export default function Candidate() {
   const [interviewScheduledAt, setInterviewScheduledAt] = useState<string | null>(null);
   const [interviewLocation, setInterviewLocation] = useState<string>("");
   const [outcomeOpen, setOutcomeOpen] = useState(false);
-  const [proInviteOpen, setProInviteOpen] = useState(false);
   const [contactApplicantOpen, setContactApplicantOpen] = useState(false);
-  const applicationId = incomingAppId ?? null;
+  const [directApplicationId, setDirectApplicationId] = useState<string | null>(null);
+  const applicationId = incomingAppId ?? directApplicationId;
   // If navigated with applicationId, fetch that specific applicant from Supabase
   const [remoteWorker, setRemoteWorker] = useState<any | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<boolean>(false);
@@ -138,16 +139,27 @@ export default function Candidate() {
     })();
   }, [incomingAppId, incomingWorkerId]);
 
+  // A direct invitation still uses the venue's normal interview defaults.
+  // Load them before opening the scheduling modal instead of falling back to
+  // a generic "at the venue" label.
+  useEffect(() => {
+    if (incomingAppId || !incomingWorkerId) return;
+    getCurrentVenueRow()
+      .then((venue) => {
+        if (!venue) return;
+        setVenueAddress(venue.address ?? "");
+        if (
+          Array.isArray(venue.interview_location_options) &&
+          venue.interview_location_options.length
+        ) {
+          setInterviewLocationOptions(venue.interview_location_options);
+        }
+      })
+      .catch(() => {});
+  }, [incomingAppId, incomingWorkerId]);
+
   // Map UI action → DB status; update Supabase, then show toast
   async function handleAction(action: ApplicationAction, interview?: InterviewSchedule) {
-    if (!applicationId) {
-      setPendingAction(null);
-      Alert.alert(
-        t("candidate_actions.no_application_title"),
-        t("candidate_actions.no_application_body")
-      );
-      return;
-    }
     const statusMap: Record<ApplicationAction, ApplicationStatus> = {
       decline: "declined",
       star: "starred",
@@ -156,7 +168,25 @@ export default function Candidate() {
     };
     setUpdatingStatus(true);
     try {
-      await updateApplicationStatus(applicationId, statusMap[action], interview);
+      let nextApplicationId = applicationId;
+      if (!nextApplicationId) {
+        const workerId = remoteWorker?.id ?? incomingWorkerId;
+        if (action !== "interview" || !interview || !workerId) {
+          throw new Error("This worker cannot receive an interview request yet.");
+        }
+        const venue = await getCurrentVenueRow();
+        if (!venue?.id) throw new Error("Your venue could not be found. Please sign in again.");
+        const directInvite = await requestDirectInterview({
+          workerId,
+          venueId: venue.id as string,
+          scheduledAt: interview.scheduledAt,
+          location: interview.location,
+        });
+        nextApplicationId = directInvite.id;
+        setDirectApplicationId(directInvite.id);
+      } else {
+        await updateApplicationStatus(nextApplicationId, statusMap[action], interview);
+      }
       setLastAction(action);
       setAppStatus(statusMap[action]);
       if (interview) {
@@ -680,15 +710,12 @@ export default function Candidate() {
                   <Feather name="calendar" size={19} color="white" />
                   <Text style={styles.primaryActionText}>{t("candidate_actions.confirm_interview_cta")}</Text>
                 </Pressable> : <Pressable
-                  style={styles.proInviteButton}
-                  onPress={() => setProInviteOpen(true)}
+                  style={[styles.requestInterviewButton, updatingStatus && styles.actionDisabled]}
+                  onPress={() => setPendingAction("interview")}
+                  disabled={updatingStatus}
                 >
-                  <Feather name="star" size={18} color="#F0531C" />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.proInviteTitle}>{t("venue_pro.cta")}</Text>
-                    <Text style={styles.proInviteText}>{t("venue_pro.sub")}</Text>
-                  </View>
-                  <Feather name="chevron-right" size={18} color="#46505A" />
+                  <Feather name="calendar" size={19} color="white" />
+                  <Text style={styles.primaryActionText}>{t("candidate_actions.confirm_interview_cta")}</Text>
                 </Pressable>
               )}
             </View>
@@ -724,14 +751,6 @@ export default function Candidate() {
         loading={updatingStatus}
         onClose={() => setOutcomeOpen(false)}
         onSelect={(outcome: InterviewOutcome) => handleAction(outcome)}
-      />
-      <ProInvitationModal
-        visible={proInviteOpen}
-        onClose={() => setProInviteOpen(false)}
-        onExplore={() => {
-          setProInviteOpen(false);
-          router.push("/venue-pro");
-        }}
       />
       <ContactPersonModal
         visible={contactApplicantOpen}

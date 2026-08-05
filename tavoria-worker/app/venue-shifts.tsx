@@ -20,6 +20,8 @@ import { t } from "../lib/i18n";
 import { getVenueProfile, patchVenueProfile } from "../lib/venueProfile";
 import { localizeRoles } from "../lib/positions";
 import AppBottomNav from "../components/AppBottomNav";
+import { mapsUrl, websiteLabel, websiteUrl } from "../lib/contact";
+import { openExternalLink } from "../lib/externalLinks";
 
 const VENUE_TYPE_PHOTOS: Record<string, any> = {
   cafe: require("../assets/venue-cafe.png"),
@@ -66,6 +68,7 @@ type VenueRow = {
   type?: string;
   city?: string;
   address?: string;
+  website_url?: string;
   photo_url?: string;
 };
 
@@ -84,6 +87,7 @@ export default function VenueShifts() {
           type: cached.type,
           city: cached.city,
           address: cached.address,
+          website_url: cached.websiteUrl,
           photo_url: cached.photoUrl,
         }
       : null;
@@ -101,6 +105,7 @@ export default function VenueShifts() {
           type: remoteVenue.type as string | undefined,
           city: remoteVenue.city as string | undefined,
           address: remoteVenue.address as string | undefined,
+          website_url: remoteVenue.website_url as string | undefined,
           photo_url: remoteVenue.photo_url as string | undefined,
         };
         setVenue(nextVenue);
@@ -110,6 +115,7 @@ export default function VenueShifts() {
           type: nextVenue.type,
           city: nextVenue.city ?? "",
           address: nextVenue.address ?? "",
+          websiteUrl: nextVenue.website_url,
           photoUrl: nextVenue.photo_url,
         });
       }
@@ -191,6 +197,8 @@ function VenueSummary({ venue, onEdit }: { venue: VenueRow; onEdit: () => void }
   const image = venue.photo_url
     ? { uri: venue.photo_url }
     : VENUE_TYPE_PHOTOS[(venue.type || "cafe").toLowerCase()] ?? VENUE_TYPE_PHOTOS.cafe;
+  const venueWebsite = websiteUrl(venue.website_url);
+  const venueWebsiteLabel = websiteLabel(venue.website_url);
 
   return (
     <>
@@ -211,6 +219,30 @@ function VenueSummary({ venue, onEdit }: { venue: VenueRow; onEdit: () => void }
         </View>
       </View>
     </View>
+      {(venue.address || venueWebsite) ? (
+        <View style={styles.venueLinksCard}>
+          {venue.address ? (
+            <Pressable style={styles.venueLinkRow} onPress={() => void openExternalLink(mapsUrl(venue.address!), t("external_link.maps"))}>
+              <View style={styles.venueLinkIcon}><Feather name="map-pin" size={16} color="#F0531C" /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.venueLinkLabel}>{t("venue_card.directions")}</Text>
+                <Text style={styles.venueLinkText} numberOfLines={1}>{venue.address}</Text>
+              </View>
+              <Feather name="arrow-up-right" size={17} color="#F0531C" />
+            </Pressable>
+          ) : null}
+          {venueWebsite ? (
+            <Pressable style={[styles.venueLinkRow, venue.address && styles.venueLinkDivider]} onPress={() => void openExternalLink(venueWebsite, t("venue_card.website"))}>
+              <View style={styles.venueLinkIcon}><Feather name="globe" size={16} color="#F0531C" /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.venueLinkLabel}>{t("venue_card.website")}</Text>
+                <Text style={styles.venueLinkText} numberOfLines={1}>{venueWebsiteLabel}</Text>
+              </View>
+              <Feather name="arrow-up-right" size={17} color="#F0531C" />
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
       <Pressable style={styles.editVenueButton} onPress={onEdit}>
         <Feather name="edit-2" size={15} color="#0E1A24" />
         <Text style={styles.editVenueText}>Edit profile</Text>
@@ -300,6 +332,12 @@ const styles = StyleSheet.create({
   heroMetaRow: { alignItems: "center", flexDirection: "row", gap: 6, marginTop: 4 },
   heroMeta: { color: "rgba(255,255,255,0.9)", fontSize: 13 },
   heroMetaDot: { color: "rgba(255,255,255,0.7)", fontSize: 13 },
+  venueLinksCard: { backgroundColor: "white", borderColor: "rgba(0,0,0,0.08)", borderRadius: 14, borderWidth: 0.5, marginBottom: 12, overflow: "hidden" },
+  venueLinkRow: { alignItems: "center", flexDirection: "row", gap: 10, padding: 12 },
+  venueLinkDivider: { borderTopColor: "rgba(0,0,0,0.08)", borderTopWidth: 1 },
+  venueLinkIcon: { alignItems: "center", backgroundColor: "#FFF4EE", borderRadius: 9, height: 34, justifyContent: "center", width: 34 },
+  venueLinkLabel: { color: "#6B7280", fontSize: 10, fontWeight: "800", letterSpacing: 0.7, textTransform: "uppercase" },
+  venueLinkText: { color: "#0E1A24", fontSize: 13, fontWeight: "700", marginTop: 2 },
   editVenueButton: { alignItems: "center", backgroundColor: "white", borderColor: "rgba(14,26,36,0.14)", borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, justifyContent: "center", marginBottom: 12, minHeight: 46, paddingHorizontal: 16 },
   editVenueText: { color: "#0E1A24", fontSize: 13, fontWeight: "800" },
   postShiftCard: { alignItems: "center", backgroundColor: "#FFF8F4", borderColor: "#F0531C", borderRadius: 14, borderStyle: "dashed", borderWidth: 1.5, flexDirection: "row", gap: 11, marginBottom: 18, padding: 12 },

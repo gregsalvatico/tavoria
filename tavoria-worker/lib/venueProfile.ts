@@ -10,6 +10,7 @@ export type VenueProfile = {
   type?: string; // "Café" | "Bar" | "Restaurant" | …
   email?: string;
   phone?: string;
+  websiteUrl?: string;
   contactEmailEnabled?: boolean;
   contactPhoneEnabled?: boolean;
   contactInPersonEnabled?: boolean;

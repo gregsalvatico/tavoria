@@ -19,6 +19,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { getCurrentUserContext, getCurrentWorkerContactAccessForVenue, getVenueBoard } from "../lib/db";
 import { localizeRoles } from "../lib/positions";
 import ContactPersonModal from "../components/ContactPersonModal";
+import { t } from "../lib/i18n";
+import { mapsUrl, websiteLabel, websiteUrl } from "../lib/contact";
+import { openExternalLink } from "../lib/externalLinks";
 
 const VENUE_TYPE_PHOTOS: Record<string, any> = {
   cafe: require("../assets/venue-cafe.png"),
@@ -50,6 +53,7 @@ type Venue = {
   pay_schedule?: string;
   email?: string;
   phone?: string;
+  website_url?: string;
   contact_email_enabled?: boolean;
   contact_phone_enabled?: boolean;
   contact_in_person_enabled?: boolean;
@@ -134,6 +138,8 @@ export default function VenueBoard() {
   const contactPhone = contactsUnlocked && venue?.contact_phone_enabled !== false ? venue?.phone : undefined;
   const visitAddress = contactsUnlocked && venue?.contact_in_person_enabled === true ? venue?.address : undefined;
   const hasContactMethod = !!(contactEmail || contactPhone || visitAddress);
+  const venueWebsite = websiteUrl(venue?.website_url);
+  const venueWebsiteLabel = websiteLabel(venue?.website_url);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -198,6 +204,37 @@ export default function VenueBoard() {
                 </View>
               </View>
             </View>
+
+            {(venue?.address || venueWebsite) ? (
+              <View style={styles.venueLinksCard}>
+                {venue?.address ? (
+                  <Pressable
+                    style={styles.venueLinkRow}
+                    onPress={() => void openExternalLink(mapsUrl(venue.address!), t("external_link.maps"))}
+                  >
+                    <View style={styles.venueLinkIcon}><Feather name="map-pin" size={16} color="#F0531C" /></View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.venueLinkLabel}>{t("venue_card.directions")}</Text>
+                      <Text style={styles.venueLinkText} numberOfLines={1}>{venue.address}</Text>
+                    </View>
+                    <Feather name="arrow-up-right" size={17} color="#F0531C" />
+                  </Pressable>
+                ) : null}
+                {venueWebsite ? (
+                  <Pressable
+                    style={[styles.venueLinkRow, venue?.address && styles.venueLinkDivider]}
+                    onPress={() => void openExternalLink(venueWebsite, t("venue_card.website"))}
+                  >
+                    <View style={styles.venueLinkIcon}><Feather name="globe" size={16} color="#F0531C" /></View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.venueLinkLabel}>{t("venue_card.website")}</Text>
+                      <Text style={styles.venueLinkText} numberOfLines={1}>{venueWebsiteLabel}</Text>
+                    </View>
+                    <Feather name="arrow-up-right" size={17} color="#F0531C" />
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
 
             <Pressable
               style={[styles.contactCard, contactsUnlocked ? styles.contactCardOpen : styles.contactCardLocked]}
@@ -357,6 +394,19 @@ const styles = StyleSheet.create({
   },
   heroMeta: { color: "rgba(255,255,255,0.9)", fontSize: 13 },
   heroMetaDot: { color: "rgba(255,255,255,0.7)", fontSize: 13 },
+  venueLinksCard: {
+    backgroundColor: "white",
+    borderColor: "rgba(0,0,0,0.08)",
+    borderRadius: 14,
+    borderWidth: 0.5,
+    marginBottom: 12,
+    overflow: "hidden",
+  },
+  venueLinkRow: { alignItems: "center", flexDirection: "row", gap: 10, padding: 12 },
+  venueLinkDivider: { borderTopColor: "rgba(0,0,0,0.08)", borderTopWidth: 1 },
+  venueLinkIcon: { alignItems: "center", backgroundColor: "#FFF4EE", borderRadius: 9, height: 34, justifyContent: "center", width: 34 },
+  venueLinkLabel: { color: "#6B7280", fontSize: 10, fontWeight: "800", letterSpacing: 0.7, textTransform: "uppercase" },
+  venueLinkText: { color: "#0E1A24", fontSize: 13, fontWeight: "700", marginTop: 2 },
 
   contactCard: { alignItems: "center", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 10, marginBottom: 16, padding: 12 },
   contactCardOpen: { backgroundColor: "#FFF4EE", borderColor: "#F7C7AB" },

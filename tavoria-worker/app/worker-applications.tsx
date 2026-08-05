@@ -294,7 +294,9 @@ function ApplicationCard({
     s?.pay_amount && s?.pay_unit
       ? `€${s.pay_amount}/${shortUnit(s.pay_unit)}`
       : null;
-  const roleStr = localizeRoles(s?.roles ?? []).slice(0, 2).join(" · ") || "Shift";
+  const roleStr = s
+    ? localizeRoles(s.roles ?? []).slice(0, 2).join(" · ") || "Shift"
+    : t("candidate_actions.direct_interview_invitation");
 
   return (
     <View style={styles.rowWrap}>
@@ -303,6 +305,11 @@ function ApplicationCard({
           onOpen();
           if (s?.id) {
             router.push({ pathname: "/shift-detail", params: { id: s.id } });
+          } else {
+            const venueId = v?.id ?? a.venue_id;
+            if (venueId) {
+              router.push({ pathname: "/venue-board", params: { venueId } });
+            }
           }
         }}
         style={[styles.row, hasUnreadInterview && styles.rowInterviewUpdate]}

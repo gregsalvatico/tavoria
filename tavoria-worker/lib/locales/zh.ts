@@ -227,8 +227,15 @@ export default {
     venue_name: "门店名称",
     address: "地址",
     phone: "电话",
+    website: "网站",
+    website_placeholder: "你的门店网站.com",
+    website_invalid: "请输入有效的网站链接。",
     photo_title: "门店照片",
     photo_sub: "员工会在你的班次卡片上看到这张照片",
+  },
+  venue_card: {
+    directions: "路线",
+    website: "网站",
   },
   venue_style: {
     title: "你的门店风格",
@@ -426,6 +433,7 @@ export default {
     status_starred: "已被门店收藏",
     status_starred_detail: "门店已保存你的资料。这还不是面试或录用通知。",
     status_interview_requested: "已请求面试",
+    direct_interview_invitation: "直接面试邀请",
     status_interview_requested_detail: "门店希望面试你。请联系对方确定时间。",
     status_hired: "已录用",
     status_hired_detail: "门店已选中你。请联系对方确认薪酬、时间和合同。",

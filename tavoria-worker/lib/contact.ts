@@ -46,3 +46,28 @@ export function mapsUrl(address: string): string {
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(clean)}`
     : "";
 }
+
+/** Normalises a venue website so it can be opened reliably on mobile. */
+export function websiteUrl(raw: string | null | undefined): string {
+  const clean = (raw ?? "").trim();
+  if (!clean) return "";
+  const candidate = /^https?:\/\//i.test(clean) ? clean : `https://${clean}`;
+  try {
+    const parsed = new URL(candidate);
+    return parsed.protocol === "https:" || parsed.protocol === "http:"
+      ? parsed.toString()
+      : "";
+  } catch {
+    return "";
+  }
+}
+
+export function websiteLabel(raw: string | null | undefined): string {
+  const url = websiteUrl(raw);
+  if (!url) return "";
+  try {
+    return new URL(url).hostname.replace(/^www\./i, "");
+  } catch {
+    return url;
+  }
+}

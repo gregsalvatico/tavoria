@@ -230,8 +230,15 @@ export default {
     venue_name: "Nom de l'établissement",
     address: "Adresse",
     phone: "Téléphone",
+    website: "Site web",
+    website_placeholder: "votre-etablissement.fr",
+    website_invalid: "Saisissez un lien web valide.",
     photo_title: "Photo de l'établissement",
     photo_sub: "Les travailleurs la voient sur votre annonce",
+  },
+  venue_card: {
+    directions: "Itinéraire",
+    website: "Site web",
   },
   venue_style: {
     title: "Le style de votre établissement",
@@ -429,6 +436,7 @@ export default {
     status_starred: "Enregistré par le lieu",
     status_starred_detail: "Le lieu a enregistré votre profil. Ce n'est pas encore un entretien ni une offre.",
     status_interview_requested: "Entretien demandé",
+    direct_interview_invitation: "Invitation directe à un entretien",
     status_interview_requested_detail: "Le lieu souhaite vous rencontrer. Contactez-le pour fixer l'heure.",
     status_hired: "Embauché",
     status_hired_detail: "Le lieu vous a choisi. Contactez-le pour confirmer salaire, horaires et contrat.",
