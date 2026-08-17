@@ -48,12 +48,14 @@ export default function WorkerExperience() {
   const router = useRouter();
   // Apply-flow params come from /worker-positions (which got them from
   // /record). We use them to land back on /applied with the venue name.
-  const { next, venueName, mode } = useLocalSearchParams<{
+  const { next, venueId, venueName, mode } = useLocalSearchParams<{
     next?: string;
+    venueId?: string;
     venueName?: string;
     mode?: string;
   }>();
   const isApplyFlow = next === "apply";
+  const isVenueBoardFlow = next === "venue-board" && !!venueId;
   const isEditMode = mode === "edit";
   const existing = getWorkerProfile();
   const knownLanguageCodes = new Set(LANGUAGES.map((language) => language.code));
@@ -134,6 +136,11 @@ export default function WorkerExperience() {
         router.replace({
           pathname: "/applied",
           params: { venueName: venueName ?? "" },
+        });
+      } else if (isVenueBoardFlow) {
+        router.replace({
+          pathname: "/venue-board",
+          params: { venueId },
         });
       } else if (isEditMode) {
         router.replace("/candidate");

@@ -224,8 +224,8 @@ export default function Record() {
         } else if (isVenueBoardFlow) {
           // Came from a QR scan — drop them on the venue's shifts list
           router.replace({
-            pathname: "/venue-board",
-            params: { venueId },
+            pathname: "/worker-positions",
+            params: { next: "venue-board", venueId: venueId ?? "" },
           });
         } else if (isProfileFlow) {
           router.replace("/worker-positions");

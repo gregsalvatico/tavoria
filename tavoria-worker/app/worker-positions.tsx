@@ -51,6 +51,7 @@ export default function WorkerPositions() {
     mode?: string;
   }>();
   const isApplyFlow = next === "apply";
+  const isVenueBoardFlow = next === "venue-board" && !!venueId;
   const isEditMode = mode === "edit";
   const existing = getWorkerProfile();
 
@@ -184,6 +185,11 @@ export default function WorkerPositions() {
                   venueId: venueId ?? "",
                   venueName: venueName ?? "",
                 },
+              });
+            } else if (isVenueBoardFlow) {
+              router.push({
+                pathname: "/worker-experience",
+                params: { next: "venue-board", venueId },
               });
             } else {
               router.push(isEditMode ? "/worker-experience?mode=edit" : "/worker-experience");
