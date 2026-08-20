@@ -114,6 +114,7 @@ export default function SignedInHome({
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
   const [rows, setRows] = useState<ShiftRow[]>([]);
   const [candidateRows, setCandidateRows] = useState<WorkerRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -436,11 +437,10 @@ export default function SignedInHome({
                 />
                 <DrawerAction
                   icon="mail"
-                  label="Contact Tavoria team"
-                  detail="hello@tavoriapp.com"
+                  label={t("team_contact.title")}
                   onPress={() => {
                     setDrawerOpen(false);
-                    void openExternalLink("mailto:hello@tavoriapp.com", t("external_link.email"));
+                    setContactOpen(true);
                   }}
                 />
                 <DrawerAction icon="log-out" label={t("common.sign_out")} danger onPress={() => { setDrawerOpen(false); void onSignOut(); }} />
@@ -478,6 +478,56 @@ export default function SignedInHome({
             </Pressable>
           ))}
         </View>
+      </Modal>
+
+      <Modal
+        visible={contactOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setContactOpen(false)}
+      >
+        <Pressable style={styles.contactBackdrop} onPress={() => setContactOpen(false)}>
+          <Pressable style={styles.contactSheet} onPress={(event) => event.stopPropagation()}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.contactTitle}>{t("team_contact.title")}</Text>
+            <Text style={styles.contactSub}>{t("team_contact.subtitle")}</Text>
+            <Pressable
+              style={styles.contactOption}
+              onPress={() => {
+                setContactOpen(false);
+                void openExternalLink("mailto:hello@tavoriapp.com", t("external_link.email"));
+              }}
+            >
+              <View style={styles.contactOptionIcon}>
+                <Feather name="mail" size={19} color="#0E1A24" />
+              </View>
+              <View style={styles.contactOptionText}>
+                <Text style={styles.contactOptionTitle}>{t("team_contact.email")}</Text>
+                <Text style={styles.contactOptionDetail}>{t("team_contact.email_detail")}</Text>
+              </View>
+              <Feather name="chevron-right" size={18} color="#6B7280" />
+            </Pressable>
+            <Pressable
+              style={styles.contactOption}
+              onPress={() => {
+                setContactOpen(false);
+                void openExternalLink("https://www.instagram.com/tavoriapp/", t("team_contact.instagram"));
+              }}
+            >
+              <View style={styles.contactOptionIcon}>
+                <Feather name="instagram" size={19} color="#0E1A24" />
+              </View>
+              <View style={styles.contactOptionText}>
+                <Text style={styles.contactOptionTitle}>{t("team_contact.instagram")}</Text>
+                <Text style={styles.contactOptionDetail}>{t("team_contact.instagram_detail")}</Text>
+              </View>
+              <Feather name="chevron-right" size={18} color="#6B7280" />
+            </Pressable>
+            <Pressable onPress={() => setContactOpen(false)} style={styles.cancelContactBtn}>
+              <Text style={styles.cancelContactText}>{t("team_contact.cancel")}</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
       </Modal>
     </SafeAreaView>
   );
@@ -783,4 +833,15 @@ const styles = StyleSheet.create({
   languageFlag: { fontSize: 22, textAlign: "center", width: 26 },
   languageLabel: { color: "#0E1A24", flex: 1, fontSize: 16, fontWeight: "700" },
   languageCheck: { alignItems: "center", justifyContent: "center", width: 20 },
+  contactBackdrop: { backgroundColor: "rgba(14,26,36,0.46)", flex: 1, justifyContent: "flex-end" },
+  contactSheet: { backgroundColor: "white", borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: 28, paddingHorizontal: 20, paddingTop: 12 },
+  contactTitle: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 24, marginBottom: 5 },
+  contactSub: { color: "#6B7280", fontSize: 13, lineHeight: 19, marginBottom: 14 },
+  contactOption: { alignItems: "center", backgroundColor: "#F7F4EE", borderRadius: 16, flexDirection: "row", gap: 12, marginBottom: 8, paddingHorizontal: 14, paddingVertical: 13 },
+  contactOptionIcon: { alignItems: "center", backgroundColor: "#FFF1E8", borderRadius: 11, height: 38, justifyContent: "center", width: 38 },
+  contactOptionText: { flex: 1 },
+  contactOptionTitle: { color: "#0E1A24", fontSize: 15, fontWeight: "700" },
+  contactOptionDetail: { color: "#6B7280", fontSize: 12, marginTop: 2 },
+  cancelContactBtn: { alignItems: "center", marginTop: 8, paddingVertical: 10 },
+  cancelContactText: { color: "#6B7280", fontSize: 14, fontWeight: "700" },
 });

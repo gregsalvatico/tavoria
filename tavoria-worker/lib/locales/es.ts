@@ -514,6 +514,15 @@ export default {
     visit: "Visitar en persona",
     no_contact: "Este {{recipient}} aun no ha compartido sus datos de contacto.",
   },
+  team_contact: {
+    title: "Contacta con el equipo de Tavoria",
+    subtitle: "Elige cómo quieres contactarnos.",
+    email: "Email",
+    email_detail: "hello@tavoriapp.com",
+    instagram: "Instagram",
+    instagram_detail: "@tavoriapp",
+    cancel: "Cancelar",
+  },
   external_link: {
     unavailable_title: "No se pudo abrir el enlace",
     unavailable_body: "No pudimos abrir {{target}} en este dispositivo. Comprueba que tengas una app instalada e intentalo de nuevo.",

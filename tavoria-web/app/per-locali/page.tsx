@@ -51,8 +51,8 @@ const BENEFITS = [
     body: "I nostri locali pilota assumono in media entro 24 ore dalla prima candidatura.",
   },
   {
-    title: "WhatsApp diretto",
-    body: "Quando assumi, parli direttamente con il candidato su WhatsApp. Nessun intermediario.",
+    title: "Contatto diretto",
+    body: "Quando assumi, parli direttamente con il candidato. Nessun intermediario.",
   },
 ];
 

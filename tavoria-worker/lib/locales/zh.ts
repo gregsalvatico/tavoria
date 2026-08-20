@@ -510,6 +510,15 @@ export default {
     visit: "到店联系",
     no_contact: "该{{recipient}}尚未提供联系方式。",
   },
+  team_contact: {
+    title: "联系 Tavoria 团队",
+    subtitle: "选择你想通过哪种方式联系我们。",
+    email: "电子邮件",
+    email_detail: "hello@tavoriapp.com",
+    instagram: "Instagram",
+    instagram_detail: "@tavoriapp",
+    cancel: "取消",
+  },
   external_link: {
     unavailable_title: "无法打开链接",
     unavailable_body: "无法在此设备上打开{{target}}。请确认已安装相应应用后重试。",

@@ -16,7 +16,7 @@ const VENUE_INCLUDED = [
   "Candidature illimitate",
   "Video di tutti i candidati",
   "Verifica identità e diritto al lavoro",
-  "Contatto WhatsApp diretto con gli assunti",
+  "Contatto diretto con gli assunti",
 ];
 
 const STAFF_INCLUDED = [

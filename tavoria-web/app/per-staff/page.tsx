@@ -25,7 +25,7 @@ const STEPS = [
   {
     n: "03",
     title: "Assunto oggi stesso",
-    body: "Se ti scelgono, ti chiamano su WhatsApp. Inizi il turno la stessa giornata o quella dopo.",
+    body: "Se ti scelgono, ricevi una notifica nell'app e via email. Inizi il turno la stessa giornata o quella dopo.",
   },
 ];
 
@@ -43,7 +43,7 @@ const PERKS = [
     body: "Vedi turni nel tuo quartiere. Niente trasferte assurde. Niente tempo perso in metro.",
   },
   {
-    title: "WhatsApp diretto",
+    title: "Contatto diretto",
     body: "Quando ti scelgono, il locale ti chiama direttamente. Niente intermediari, niente attese.",
   },
   {

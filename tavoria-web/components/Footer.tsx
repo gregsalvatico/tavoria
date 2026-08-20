@@ -139,12 +139,12 @@ export default function Footer() {
               </li>
               <li>
                 <a
-                  href="https://wa.me/393331234567"
+                  href="https://www.instagram.com/tavoriapp/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="link-underline transition-colors hover:text-brass"
                 >
-                  WhatsApp
+                  Instagram
                 </a>
               </li>
             </ul>

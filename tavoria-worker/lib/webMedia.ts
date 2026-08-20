@@ -9,7 +9,13 @@
 
 export type WebPickResult = {
   canceled: boolean;
-  assets: Array<{ uri: string; duration?: number }>;
+  assets: Array<{
+    uri: string;
+    duration?: number;
+    name?: string;
+    mimeType?: string;
+    size?: number;
+  }>;
 };
 
 type PickOpts = {
@@ -20,6 +26,10 @@ type PickOpts = {
 
 export function pickImageWeb(opts: PickOpts = {}): Promise<WebPickResult> {
   return openPickerWeb("image/*", opts);
+}
+
+export function pickDocumentImageWeb(opts: PickOpts = {}): Promise<WebPickResult> {
+  return openPickerWeb("image/jpeg,image/png,image/heic,image/heif", opts);
 }
 
 export function pickVideoWeb(opts: PickOpts = {}): Promise<WebPickResult> {
@@ -66,7 +76,12 @@ function openPickerWeb(
       if (accept.startsWith("video/")) {
         // Videos: hand back the raw file. Probe for duration.
         const uri = URL.createObjectURL(file);
-        const asset: { uri: string; duration?: number } = { uri };
+        const asset: WebPickResult["assets"][number] = {
+          uri,
+          name: file.name,
+          mimeType: file.type || undefined,
+          size: file.size,
+        };
         const v = document.createElement("video");
         v.preload = "metadata";
         let resolved = false;
@@ -112,14 +127,30 @@ function openPickerWeb(
         if (!blob) throw new Error("canvas.toBlob returned null");
         const uri = URL.createObjectURL(blob);
         cleanup();
-        resolve({ canceled: false, assets: [{ uri }] });
+        resolve({
+          canceled: false,
+          assets: [{
+            uri,
+            name: file.name,
+            mimeType: outType,
+            size: blob.size,
+          }],
+        });
       } catch (err) {
         // Fallback: just hand back the raw file URI. Display may be
         // rotated on older browsers, but at least the upload succeeds.
         console.warn("[webMedia] EXIF orientation fix failed:", err);
         const uri = URL.createObjectURL(file);
         cleanup();
-        resolve({ canceled: false, assets: [{ uri }] });
+        resolve({
+          canceled: false,
+          assets: [{
+            uri,
+            name: file.name,
+            mimeType: file.type || undefined,
+            size: file.size,
+          }],
+        });
       }
     };
 

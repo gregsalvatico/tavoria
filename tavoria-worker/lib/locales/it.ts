@@ -513,6 +513,15 @@ export default {
     visit: "Vai di persona",
     no_contact: "Questo {{recipient}} non ha ancora condiviso i contatti.",
   },
+  team_contact: {
+    title: "Contatta il team Tavoria",
+    subtitle: "Scegli dove vuoi contattarci.",
+    email: "Email",
+    email_detail: "hello@tavoriapp.com",
+    instagram: "Instagram",
+    instagram_detail: "@tavoriapp",
+    cancel: "Annulla",
+  },
   external_link: {
     unavailable_title: "Impossibile aprire il link",
     unavailable_body: "Non riusciamo ad aprire {{target}} su questo dispositivo. Verifica che l'app sia installata e riprova.",

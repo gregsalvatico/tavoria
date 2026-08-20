@@ -899,6 +899,14 @@ function LegalFooter() {
         >
           <Text style={styles.legalLink}>hello@tavoriapp.com</Text>
         </Pressable>
+        <Text style={styles.legalDot}>  ·  </Text>
+        <Pressable
+          onPress={() => void openExternalLink("https://www.instagram.com/tavoriapp/", "Instagram")}
+          hitSlop={8}
+          accessibilityLabel="Instagram"
+        >
+          <Text style={styles.legalLink}>Instagram</Text>
+        </Pressable>
       </View>
     </View>
   );

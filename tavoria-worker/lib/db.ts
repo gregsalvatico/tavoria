@@ -853,6 +853,23 @@ export async function getCurrentWorkerFull() {
   return data;
 }
 
+// Document types already uploaded by the current worker. CVs live in a
+// private bucket, so only the owner can read this metadata.
+export async function getCurrentWorkerDocumentTypes(): Promise<string[]> {
+  const session = await ensureSession();
+  const userId = session?.user.id;
+  if (!userId) return [];
+
+  const { data, error } = await supabase
+    .from("worker_documents")
+    .select("document_type")
+    .eq("user_id", userId);
+  if (error) throw error;
+  return (data ?? [])
+    .map((row) => row.document_type)
+    .filter((type): type is string => typeof type === "string");
+}
+
 // All applications submitted by the current worker user.
 // Each row joins the venue + shift so we can show "you applied to Bar X for Barista on Friday".
 export async function getApplicationsForCurrentWorker() {
@@ -1007,4 +1024,90 @@ export async function uploadWorkerMedia(
   if (upsertErr) throw upsertErr;
 
   return publicUrl;
+}
+
+export type WorkerDocumentType = "cv" | "ref" | "id";
+
+// Upload a private worker document. Documents are deliberately stored
+// separately from public profile media and only the owner can access them.
+export async function uploadWorkerDocument(input: {
+  documentType: WorkerDocumentType;
+  uri: string;
+  originalName?: string;
+  mimeType?: string;
+  fileSize?: number;
+}): Promise<void> {
+  const session = await ensureSession();
+  const userId = session?.user.id;
+  if (!userId) throw new Error("No auth session");
+
+  const originalName = input.originalName?.trim() ||
+    `${input.documentType}.${input.mimeType?.toLowerCase().includes("pdf") ? "pdf" : "jpg"}`;
+  const lowerName = originalName.toLowerCase();
+  const rawSuppliedMime = input.mimeType?.toLowerCase().split(";")[0];
+  const suppliedMime = rawSuppliedMime === "image/jpg" ? "image/jpeg" : rawSuppliedMime;
+  const inferredMime = lowerName.endsWith(".pdf")
+    ? "application/pdf"
+    : lowerName.endsWith(".png")
+    ? "image/png"
+    : lowerName.endsWith(".heic")
+    ? "image/heic"
+    : lowerName.endsWith(".heif")
+    ? "image/heif"
+    : lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg")
+    ? "image/jpeg"
+    : undefined;
+  const contentType = suppliedMime === "application/pdf" ||
+    ["image/jpeg", "image/png", "image/heic", "image/heif"].includes(suppliedMime ?? "")
+    ? suppliedMime
+    : suppliedMime && suppliedMime !== "application/octet-stream"
+    ? undefined
+    : inferredMime;
+  if (!contentType || (contentType !== "application/pdf" && !contentType.startsWith("image/"))) {
+    throw new Error("Please select a PDF or image file.");
+  }
+  if (typeof input.fileSize === "number" && input.fileSize > 10 * 1024 * 1024) {
+    throw new Error("The file must be smaller than 10 MB.");
+  }
+
+  const response = await fetch(input.uri);
+  if (!response.ok) throw new Error("Could not read the selected document.");
+  const arrayBuffer = await response.arrayBuffer();
+  if (arrayBuffer.byteLength > 10 * 1024 * 1024) {
+    throw new Error("The file must be smaller than 10 MB.");
+  }
+  const extension = contentType === "application/pdf"
+    ? "pdf"
+    : contentType === "image/png"
+    ? "png"
+    : contentType === "image/heic"
+    ? "heic"
+    : contentType === "image/heif"
+    ? "heif"
+    : "jpg";
+  const path = `${userId}/${input.documentType}.${extension}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("worker-documents")
+    .upload(path, arrayBuffer, {
+      contentType,
+      upsert: true,
+    });
+  if (uploadError) throw uploadError;
+
+  const { error: metadataError } = await supabase
+    .from("worker_documents")
+    .upsert(
+      {
+        user_id: userId,
+        document_type: input.documentType,
+        storage_path: path,
+        original_name: originalName,
+        mime_type: contentType,
+        file_size: input.fileSize ?? arrayBuffer.byteLength,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,document_type" }
+    );
+  if (metadataError) throw metadataError;
 }

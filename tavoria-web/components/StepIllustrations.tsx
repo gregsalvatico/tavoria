@@ -439,7 +439,7 @@ export function RecordVideoIllustration() {
   );
 }
 
-/** Worker-side, Step 3 — hired confirmation / WhatsApp ping */
+/** Worker-side, Step 3 — hired confirmation / notification */
 export function HiredIllustration() {
   return (
     <svg
@@ -483,10 +483,10 @@ export function HiredIllustration() {
           <text x="40" y="38" fontFamily="'Inter Tight', sans-serif" fontSize="10" fill={CREAM}>€12 · 19–24 · sala</text>
         </g>
 
-        {/* WhatsApp CTA */}
+        {/* Contact CTA */}
         <g transform="translate(20 224)">
           <rect width="180" height="40" rx="20" fill="#25D366" />
-          <text x="90" y="26" fontFamily="'Inter Tight', sans-serif" fontSize="11" fill="white" textAnchor="middle" fontWeight="600">Apri WhatsApp →</text>
+        <text x="90" y="26" fontFamily="'Inter Tight', sans-serif" fontSize="11" fill="white" textAnchor="middle" fontWeight="600">Apri il contatto →</text>
         </g>
 
         <text x="110" y="284" fontFamily="'Playfair Display', Georgia, serif" fontSize="10" fontStyle="italic" fill={NAVY} opacity="0.55" textAnchor="middle">

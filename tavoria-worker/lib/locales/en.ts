@@ -511,6 +511,15 @@ export default {
     visit: "Visit in person",
     no_contact: "This {{recipient}} has not shared contact details yet.",
   },
+  team_contact: {
+    title: "Contact Tavoria team",
+    subtitle: "Choose where you would like to reach us.",
+    email: "Email",
+    email_detail: "hello@tavoriapp.com",
+    instagram: "Instagram",
+    instagram_detail: "@tavoriapp",
+    cancel: "Cancel",
+  },
   external_link: {
     unavailable_title: "Couldn't open link",
     unavailable_body: "We couldn't open {{target}} on this device. Check that an app is installed, then try again.",

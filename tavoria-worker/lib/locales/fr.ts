@@ -513,6 +513,15 @@ export default {
     visit: "Venir sur place",
     no_contact: "Cet {{recipient}} n'a pas encore partage ses coordonnees.",
   },
+  team_contact: {
+    title: "Contacter l'équipe Tavoria",
+    subtitle: "Choisissez comment nous contacter.",
+    email: "E-mail",
+    email_detail: "hello@tavoriapp.com",
+    instagram: "Instagram",
+    instagram_detail: "@tavoriapp",
+    cancel: "Annuler",
+  },
   external_link: {
     unavailable_title: "Impossible d'ouvrir le lien",
     unavailable_body: "Nous n'avons pas pu ouvrir {{target}} sur cet appareil. Verifiez qu'une application est installee, puis reessayez.",

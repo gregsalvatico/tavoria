@@ -82,6 +82,15 @@ export default function FounderBlock() {
             <span className="font-medium">hello@tavoriapp.com</span>
           </a>
           <span className="hidden text-brass/50 sm:inline">·</span>
+          <a
+            href="https://www.instagram.com/tavoriapp/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="link-underline inline-flex items-center text-navy"
+          >
+            <span className="font-medium">Instagram</span>
+          </a>
+          <span className="hidden text-brass/50 sm:inline">·</span>
           <span className="text-mute/80 tnum">
             K3Y Solutions S.r.l. · Milano
           </span>

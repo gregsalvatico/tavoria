@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -17,11 +18,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   createApplication,
   getCurrentWorkerFull,
+  getCurrentWorkerDocumentTypes,
+  uploadWorkerDocument,
   uploadWorkerMedia,
+  type WorkerDocumentType,
 } from "../lib/db";
 import { t } from "../lib/i18n";
 import { getWorkerProfile, patchWorkerProfile } from "../lib/workerProfile";
-import { pickImageWeb } from "../lib/webMedia";
+import { pickDocumentImageWeb, pickImageWeb } from "../lib/webMedia";
 
 type DocRow = {
   id: string;
@@ -33,7 +37,7 @@ type DocRow = {
 
 // Doc rows — display labels are localized at render via t(),
 // see DOCS variable inside WorkerPhotos().
-type DocRowDef = { id: string; icon: keyof typeof Feather.glyphMap };
+type DocRowDef = { id: WorkerDocumentType; icon: keyof typeof Feather.glyphMap };
 const DOC_DEFS: DocRowDef[] = [
   { id: "cv", icon: "file-text" },
   { id: "ref", icon: "award" },
@@ -84,9 +88,97 @@ export default function WorkerPhotos() {
   }, []);
   const [docs, setDocs] = useState<Record<string, boolean>>({});
   const [uploadingPhoto, setUploadingPhoto] = useState<number | null>(null);
-  const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+  const [uploadingDoc, setUploadingDoc] = useState<WorkerDocumentType | null>(null);
   const [checking, setChecking] = useState<number | null>(null);
   const [rejectedSlot, setRejectedSlot] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const types = await getCurrentWorkerDocumentTypes();
+        if (cancelled) return;
+        setDocs(Object.fromEntries(types.map((type) => [type, true])));
+      } catch (e) {
+        console.warn("[worker-photos] document hydration failed:", e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleDocumentPick = async (
+    documentType: WorkerDocumentType,
+    source: "file" | "camera"
+  ) => {
+    setUploadingDoc(null);
+
+    try {
+      let asset: {
+        uri: string;
+        name?: string;
+        mimeType?: string;
+        size?: number;
+      } | null = null;
+
+      if (source === "file") {
+        const result = await DocumentPicker.getDocumentAsync({
+          type: ["application/pdf", "image/*"],
+          copyToCacheDirectory: true,
+          multiple: false,
+        });
+        asset = result.canceled
+          ? null
+          : {
+              uri: result.assets[0].uri,
+              name: result.assets[0].name ?? undefined,
+              mimeType: result.assets[0].mimeType ?? undefined,
+              size: result.assets[0].size ?? undefined,
+        };
+      } else if (Platform.OS === "web") {
+        const result = await pickDocumentImageWeb({ camera: "environment" });
+        asset = result.canceled ? null : result.assets[0];
+      } else {
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+          Alert.alert(
+            "Camera permission needed",
+            "Please enable camera access in Settings to continue."
+          );
+          return;
+        }
+        const result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ["images"],
+          quality: 0.85,
+          cameraType: ImagePicker.CameraType.back,
+        });
+        asset = result.canceled
+          ? null
+          : {
+              uri: result.assets[0].uri,
+              name: result.assets[0].fileName ?? undefined,
+              mimeType: result.assets[0].mimeType ?? "image/jpeg",
+              size: result.assets[0].fileSize ?? undefined,
+            };
+      }
+      if (!asset) return;
+
+      setChecking(0);
+      await uploadWorkerDocument({
+        documentType,
+        uri: asset.uri,
+        originalName: asset.name,
+        mimeType: asset.mimeType,
+        fileSize: asset.size,
+      });
+      setDocs((cur) => ({ ...cur, [documentType]: true }));
+      setChecking(null);
+    } catch (e: any) {
+      setChecking(null);
+      Alert.alert("Upload failed", e?.message ?? "Please try again.");
+    }
+  };
 
   // Capture from camera or library, upload to Supabase (slot 0 only), then mark slot
   const handleCaptureOrPick = async (
@@ -472,22 +564,18 @@ export default function WorkerPhotos() {
             <UploadOpt
               icon="file-text"
               label={t("docs.pick_pdf")}
-              onPress={() => {
-                if (uploadingDoc) {
-                  setDocs((cur) => ({ ...cur, [uploadingDoc]: true }));
-                }
-                setUploadingDoc(null);
-              }}
+              onPress={() =>
+                uploadingDoc &&
+                handleDocumentPick(uploadingDoc, "file")
+              }
             />
             <UploadOpt
               icon="camera"
               label={t("docs.scan_cam")}
-              onPress={() => {
-                if (uploadingDoc) {
-                  setDocs((cur) => ({ ...cur, [uploadingDoc]: true }));
-                }
-                setUploadingDoc(null);
-              }}
+              onPress={() =>
+                uploadingDoc &&
+                handleDocumentPick(uploadingDoc, "camera")
+              }
             />
           </View>
           <Pressable

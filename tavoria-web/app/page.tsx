@@ -51,6 +51,7 @@ export default function Home() {
   const [audience, setAudience] = useState<Audience>("venue");
   const [openFaq, setOpenFaq] = useState<number>(0);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
   const appRoute = (path = "") => `${APP_ROUTE}${path}`;
 
   const isVenue = audience === "venue";
@@ -1556,7 +1557,7 @@ export default function Home() {
                         color: "#1F9D6B",
                       }}
                     >
-                      WhatsApp →
+                      NOTIFICA →
                     </span>
                   </div>
                 </div>
@@ -1575,8 +1576,8 @@ export default function Home() {
                   Assunto in giornata
                 </h3>
                 <p style={{ fontSize: 15, lineHeight: 1.55, color: "#5C6670", margin: 0 }}>
-                  Se ti scelgono, ti scrivono direttamente su WhatsApp. Inizi il
-                  turno la stessa giornata o quella dopo.
+                  Se ti scelgono, ricevi una notifica nell&apos;app e via email. Inizi
+                  il turno la stessa giornata o quella dopo.
                 </p>
               </div>
             </div>
@@ -2639,17 +2640,28 @@ export default function Home() {
                     fontSize: 14.5,
                   }}
                 >
-                  <a
-                    href="mailto:hello@tavoriapp.com"
-                    style={{ color: "rgba(247,244,238,0.72)", textDecoration: "none" }}
+                  <button
+                    type="button"
+                    onClick={() => setContactOpen(true)}
+                    style={{
+                      background: "none",
+                      border: 0,
+                      color: "rgba(247,244,238,0.72)",
+                      cursor: "pointer",
+                      font: "inherit",
+                      padding: 0,
+                      textAlign: "left",
+                    }}
                   >
                     hello@tavoriapp.com
-                  </a>
+                  </button>
                   <a
-                    href="https://wa.me/393331234567"
+                    href="https://www.instagram.com/tavoriapp/"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     style={{ color: "rgba(247,244,238,0.72)", textDecoration: "none" }}
                   >
-                    WhatsApp
+                    Instagram
                   </a>
                   <a
                     href={appRoute()}
@@ -2686,6 +2698,151 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {contactOpen && (
+        <div
+          role="presentation"
+          onClick={() => setContactOpen(false)}
+          style={contactStyles.backdrop}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="contact-modal-title"
+            onClick={(event) => event.stopPropagation()}
+            style={contactStyles.dialog}
+          >
+            <button
+              type="button"
+              aria-label="Chiudi le opzioni di contatto"
+              onClick={() => setContactOpen(false)}
+              style={contactStyles.close}
+            >
+              ×
+            </button>
+            <div style={contactStyles.kicker}>CONTATTI TAVORIA</div>
+            <h2 id="contact-modal-title" style={contactStyles.title}>Scegli come contattarci</h2>
+            <p style={contactStyles.subtitle}>Puoi scriverci via email o Instagram.</p>
+            <div style={contactStyles.options}>
+              <a href="mailto:hello@tavoriapp.com" style={contactStyles.option}>
+                <span style={contactStyles.optionIcon}>@</span>
+                <span style={contactStyles.optionCopy}>
+                  <strong style={contactStyles.optionTitle}>Email</strong>
+                  <span style={contactStyles.optionDetail}>hello@tavoriapp.com</span>
+                </span>
+                <span style={contactStyles.arrow}>↗</span>
+              </a>
+              <a
+                href="https://www.instagram.com/tavoriapp/"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={contactStyles.option}
+              >
+                <span style={contactStyles.optionIcon}>◎</span>
+                <span style={contactStyles.optionCopy}>
+                  <strong style={contactStyles.optionTitle}>Instagram</strong>
+                  <span style={contactStyles.optionDetail}>@tavoriapp</span>
+                </span>
+                <span style={contactStyles.arrow}>↗</span>
+              </a>
+            </div>
+            <button type="button" onClick={() => setContactOpen(false)} style={contactStyles.cancel}>
+              Chiudi
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const contactStyles: Record<string, CSSProperties> = {
+  backdrop: {
+    alignItems: "center",
+    background: "rgba(14,26,36,0.58)",
+    display: "flex",
+    inset: 0,
+    justifyContent: "center",
+    padding: 20,
+    position: "fixed",
+    zIndex: 100,
+  },
+  dialog: {
+    background: "#F7F4EE",
+    border: "1px solid rgba(14,26,36,0.12)",
+    borderRadius: 24,
+    boxShadow: "0 24px 70px rgba(14,26,36,0.28)",
+    maxWidth: 460,
+    padding: "30px 28px 24px",
+    position: "relative",
+    width: "100%",
+  },
+  close: {
+    background: "transparent",
+    border: 0,
+    color: "#6B7280",
+    cursor: "pointer",
+    fontSize: 26,
+    lineHeight: 1,
+    padding: 4,
+    position: "absolute",
+    right: 18,
+    top: 16,
+  },
+  kicker: {
+    color: "#F0531C",
+    fontFamily: FONT_MONO,
+    fontSize: 11,
+    letterSpacing: ".16em",
+    textTransform: "uppercase",
+  },
+  title: {
+    color: "#0E1A24",
+    fontFamily: FONT_SERIF,
+    fontSize: 30,
+    fontWeight: 400,
+    lineHeight: 1.08,
+    margin: "10px 32px 7px 0",
+  },
+  subtitle: { color: "#46505A", fontSize: 14, lineHeight: 1.5, margin: 0 },
+  options: { display: "flex", flexDirection: "column", gap: 10, marginTop: 22 },
+  option: {
+    alignItems: "center",
+    background: "#FFFFFF",
+    border: "1px solid rgba(14,26,36,0.09)",
+    borderRadius: 16,
+    color: "#0E1A24",
+    display: "flex",
+    gap: 12,
+    padding: "13px 14px",
+    textDecoration: "none",
+  },
+  optionIcon: {
+    alignItems: "center",
+    background: "#FFF0E7",
+    borderRadius: 11,
+    color: "#F0531C",
+    display: "flex",
+    fontFamily: FONT_MONO,
+    fontSize: 18,
+    height: 38,
+    justifyContent: "center",
+    width: 38,
+  },
+  optionCopy: { display: "flex", flex: 1, flexDirection: "column" },
+  optionTitle: { color: "#0E1A24", fontSize: 15 },
+  optionDetail: { color: "#6B7280", fontSize: 12, marginTop: 2 },
+  arrow: { color: "#F0531C", fontSize: 18 },
+  cancel: {
+    background: "transparent",
+    border: 0,
+    color: "#6B7280",
+    cursor: "pointer",
+    display: "block",
+    font: "inherit",
+    fontSize: 14,
+    fontWeight: 600,
+    margin: "14px auto 0",
+    padding: 6,
+  },
+};

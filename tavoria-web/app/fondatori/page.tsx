@@ -66,12 +66,12 @@ export default function Fondatori() {
                   hello@tavoriapp.com
                 </a>
                 <a
-                  href="https://wa.me/393331234567"
+                  href="https://www.instagram.com/tavoriapp/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="rounded-full border border-ink/15 px-4 py-2 font-medium text-ink transition-colors hover:border-orange hover:text-orange"
                 >
-                  WhatsApp
+                  Instagram
                 </a>
               </div>
             </div>
