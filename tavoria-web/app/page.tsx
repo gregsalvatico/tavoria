@@ -208,7 +208,7 @@ export default function Home() {
             </div>
             <a
               className="landing-nav-app"
-              href={appRoute()}
+              href={appRoute("/signin")}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -222,7 +222,7 @@ export default function Home() {
                 textDecoration: "none",
               }}
             >
-              Apri l&apos;app
+              Sign in
               <svg
                 aria-hidden="true"
                 viewBox="0 0 16 16"
@@ -276,8 +276,8 @@ export default function Home() {
             <a href="#staff" onClick={() => setMobileNavOpen(false)}>Per lo staff</a>
             <a href="#pricing" onClick={() => setMobileNavOpen(false)}>Tavoria Pro</a>
             <a href="#faq" onClick={() => setMobileNavOpen(false)}>FAQ</a>
-            <a className="mobile-nav-app" href={appRoute()}>
-              Apri l&apos;app
+            <a className="mobile-nav-app" href={appRoute("/signin")}>
+              Sign in
               <svg
                 aria-hidden="true"
                 viewBox="0 0 16 16"
@@ -2664,10 +2664,10 @@ export default function Home() {
                     Instagram
                   </a>
                   <a
-                    href={appRoute()}
+                    href={appRoute("/signin")}
                     style={{ color: "rgba(247,244,238,0.72)", textDecoration: "none" }}
                   >
-                    Apri l&apos;app ↗
+                    Sign in ↗
                   </a>
                 </div>
               </div>
