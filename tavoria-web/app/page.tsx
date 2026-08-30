@@ -30,10 +30,6 @@ const FAQS: Faq[] = [
     a: "Stampi il poster con il QR del tuo locale dall'app e lo metti sulla porta. I passanti lo scansionano col telefono, si candidano in trenta secondi con un video, e tu vedi i video nell'app.",
   },
   {
-    q: "I candidati sono verificati?",
-    a: "Verifichiamo l'identità, il diritto al lavoro in Italia e l'esperienza dichiarata nel video. Vedi tutto prima di decidere.",
-  },
-  {
     q: "I miei dati sono al sicuro?",
     a: "Tutto su server in UE, conformi al GDPR. Puoi cancellare il tuo account in un clic. Dettagli completi nei nostri Termini.",
   },
@@ -1749,38 +1745,6 @@ export default function Home() {
                 Tutto quello che ti serve per assumere è incluso fino al 2027.
               </p>
             </div>
-            <div
-              style={{
-                border: "1px solid rgba(247,244,238,0.14)",
-                borderRadius: 20,
-                padding: 26,
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: FONT_SERIF,
-                  fontSize: 38,
-                  color: "#F0531C",
-                  marginBottom: 14,
-                }}
-              >
-                ⛨
-              </div>
-              <h3 style={{ fontSize: 19, fontWeight: 600, margin: "0 0 8px" }}>
-                Verificati, ogni volta
-              </h3>
-              <p
-                style={{
-                  fontSize: 15,
-                  lineHeight: 1.55,
-                  color: "rgba(247,244,238,0.7)",
-                  margin: 0,
-                }}
-              >
-                Identità e diritto al lavoro controllati prima di decidere. Vedi
-                tutto in chiaro.
-              </p>
-            </div>
           </div>
         </div>
       </section>
@@ -2087,9 +2051,6 @@ export default function Home() {
                   <span style={{ color: "#F0531C" }}>✓</span> Video da ogni candidato
                 </div>
                 <div style={{ display: "flex", gap: 10, fontSize: 14.5 }}>
-                  <span style={{ color: "#F0531C" }}>✓</span> Identità + diritto al lavoro verificati
-                </div>
-                <div style={{ display: "flex", gap: 10, fontSize: 14.5 }}>
                   <span style={{ color: "#F0531C" }}>✓</span> Tavoria Pro in arrivo
                 </div>
               </div>
@@ -2200,7 +2161,7 @@ export default function Home() {
               <div>
                 <div style={{ fontWeight: 600, fontSize: 15 }}>Greg Salvatico</div>
                 <div style={{ fontSize: 13.5, color: "#5C6670" }}>
-                  Fondatore · K3Y Solutions S.r.l. · Milano
+                  Fondatore · K3Y Solutions S.r.l.
                 </div>
               </div>
             </div>
@@ -2236,31 +2197,6 @@ export default function Home() {
                 </div>
                 <div style={{ fontSize: 13.5, color: "#5C6670", lineHeight: 1.5 }}>
                   Tutti i dati su server UE.
-                </div>
-              </div>
-              <div
-                style={{
-                  background: "#FFFFFF",
-                  border: "1px solid rgba(14,26,36,0.09)",
-                  borderRadius: 18,
-                  padding: 22,
-                }}
-              >
-                <div
-                  style={{
-                    fontFamily: FONT_SERIF,
-                    fontSize: 30,
-                    color: "#1F9D6B",
-                    marginBottom: 8,
-                  }}
-                >
-                  ✓
-                </div>
-                <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>
-                  Identità verificata
-                </div>
-                <div style={{ fontSize: 13.5, color: "#5C6670", lineHeight: 1.5 }}>
-                  Identità e diritto al lavoro controllati.
                 </div>
               </div>
               <div
