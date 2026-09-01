@@ -8,11 +8,13 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -73,6 +75,8 @@ type ShiftRow = {
 
 export default function VenueBoard() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && width >= 1024;
   const { venueId } = useLocalSearchParams<{ venueId?: string }>();
   const [venue, setVenue] = useState<Venue | null>(null);
   const [shifts, setShifts] = useState<ShiftRow[]>([]);
@@ -156,7 +160,7 @@ export default function VenueBoard() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -168,11 +172,11 @@ export default function VenueBoard() {
         }
       >
         {loading ? (
-          <View style={styles.loadingWrap}>
+          <View style={[styles.loadingWrap, isDesktop && styles.fullWidthState]}>
             <ActivityIndicator color="#F0531C" size="large" />
           </View>
         ) : errorMsg ? (
-          <View style={styles.emptyWrap}>
+          <View style={[styles.emptyWrap, isDesktop && styles.fullWidthState]}>
             <Feather name="alert-circle" size={32} color="#993556" />
             <Text style={styles.emptyTxt}>{errorMsg}</Text>
           </View>
@@ -272,9 +276,11 @@ export default function VenueBoard() {
                 </Text>
               </View>
             ) : (
-              shifts.map((s) => (
-                <ShiftRowItem key={s.id} row={s} router={router} />
-              ))
+              <View style={isDesktop && styles.desktopGrid}>
+                {shifts.map((s) => (
+                  <ShiftRowItem key={s.id} row={s} router={router} isDesktop={isDesktop} />
+                ))}
+              </View>
             )}
           </>
         )}
@@ -295,9 +301,11 @@ export default function VenueBoard() {
 function ShiftRowItem({
   row,
   router,
+  isDesktop,
 }: {
   row: ShiftRow;
   router: ReturnType<typeof useRouter>;
+  isDesktop: boolean;
 }) {
   const isUrgent = row.start_when === "now" || row.start_when === "asap";
   const roleStr = localizeRoles(row.roles ?? []).slice(0, 2).join(" · ") || "Shift";
@@ -323,7 +331,7 @@ function ShiftRowItem({
       onPress={() =>
         router.push({ pathname: "/shift-detail", params: { id: row.id } })
       }
-      style={styles.row}
+      style={[styles.row, isDesktop && styles.rowDesktop]}
     >
       {isUrgent && (
         <View style={styles.urgentDot}>
@@ -356,8 +364,11 @@ const styles = StyleSheet.create({
   iconBtn: { padding: 4, width: 32, alignItems: "center" },
 
   scroll: { paddingHorizontal: 14, paddingBottom: 20 },
+  scrollDesktop: { paddingHorizontal: 24 },
+  desktopGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
 
   loadingWrap: { paddingVertical: 60, alignItems: "center" },
+  fullWidthState: { width: "100%" },
   emptyWrap: {
     paddingVertical: 40,
     alignItems: "center",
@@ -440,6 +451,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0,0,0,0.08)",
     position: "relative",
   },
+  rowDesktop: { marginBottom: 0, width: "48.8%" },
   urgentDot: {
     width: 22,
     height: 22,

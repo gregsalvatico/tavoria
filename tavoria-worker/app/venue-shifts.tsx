@@ -7,11 +7,13 @@ import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -74,6 +76,8 @@ type VenueRow = {
 
 export default function VenueShifts() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && width >= 1024;
   const [shifts, setShifts] = useState<ShiftRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -139,7 +143,7 @@ export default function VenueShifts() {
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -151,11 +155,11 @@ export default function VenueShifts() {
         }
       >
         {loading ? (
-          <View style={styles.loadingWrap}>
+          <View style={[styles.loadingWrap, isDesktop && styles.fullWidthState]}>
             <ActivityIndicator color="#F0531C" size="large" />
           </View>
         ) : errorMsg ? (
-          <View style={styles.emptyWrap}>
+          <View style={[styles.emptyWrap, isDesktop && styles.fullWidthState]}>
             <Feather name="alert-circle" size={32} color="#993556" />
             <Text style={styles.emptyTxt}>{errorMsg}</Text>
           </View>
@@ -183,7 +187,9 @@ export default function VenueShifts() {
                 <Text style={styles.emptyInlineTitle}>{t("venue_shifts.empty_title")}</Text>
               </View>
             ) : (
-              shifts.map((s) => <ShiftRowItem key={s.id} row={s} router={router} />)
+              <View style={isDesktop && styles.desktopGrid}>
+                {shifts.map((s) => <ShiftRowItem key={s.id} row={s} router={router} isDesktop={isDesktop} />)}
+              </View>
             )}
           </>
         )}
@@ -254,9 +260,11 @@ function VenueSummary({ venue, onEdit }: { venue: VenueRow; onEdit: () => void }
 function ShiftRowItem({
   row,
   router,
+  isDesktop,
 }: {
   row: ShiftRow;
   router: ReturnType<typeof useRouter>;
+  isDesktop: boolean;
 }) {
   const photo = row.venue?.photo_url
     ? { uri: row.venue.photo_url }
@@ -293,7 +301,7 @@ function ShiftRowItem({
       onPress={() =>
         router.push({ pathname: "/shift-detail", params: { id: row.id } })
       }
-      style={styles.row}
+      style={[styles.row, isDesktop && styles.rowDesktop]}
     >
       <Image source={photo} style={styles.thumb} resizeMode="cover" />
       {isUrgent && (
@@ -320,8 +328,11 @@ function ShiftRowItem({
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F1EFE8" },
   scroll: { paddingBottom: 20, paddingHorizontal: 14, paddingTop: 10 },
+  scrollDesktop: { paddingHorizontal: 24 },
+  desktopGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
 
   loadingWrap: { paddingVertical: 60, alignItems: "center" },
+  fullWidthState: { width: "100%" },
   emptyWrap: { alignItems: "center", gap: 8, paddingHorizontal: 24, paddingVertical: 60 },
   emptyTxt: { color: "#6B7280", fontSize: 13, textAlign: "center" },
   hero: { backgroundColor: "#0E1A24", borderRadius: 18, height: 180, marginBottom: 14, overflow: "hidden", position: "relative" },
@@ -359,6 +370,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0,0,0,0.08)",
     position: "relative",
   },
+  rowDesktop: { marginBottom: 0, width: "48.8%" },
   thumb: { width: 60, height: 60, borderRadius: 12 },
   urgentDot: {
     position: "absolute",

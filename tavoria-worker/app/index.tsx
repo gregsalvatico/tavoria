@@ -7,10 +7,12 @@ import { clearWorkerProfile } from "../lib/workerProfile";
 import {
   Alert,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -26,6 +28,7 @@ import { initProEligibility, isProEligible } from "../lib/proEligibility";
 import { getVenueProfile } from "../lib/venueProfile";
 import { openExternalLink } from "../lib/externalLinks";
 import SignedInHome from "../components/SignedInHome";
+import DesktopLanding from "../components/DesktopLanding";
 import ShareTavoriaModal from "../components/ShareTavoriaModal";
 import {
   getCachedHomeContext,
@@ -42,6 +45,8 @@ const EMPTY_HOME_CONTEXT: HomeContext = { hasVenue: false, hasWorker: false };
 
 export default function Welcome() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && width >= 1024;
   // Bump on language change to force re-render
   const [lang, setLang] = useState<Language>("en");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -195,6 +200,15 @@ export default function Welcome() {
   // Signed-out home is a clean flex layout (no ScrollView) so iOS doesn't
   // auto-adjust content insets and shove the top off-screen.
   if (!signedIn) {
+    if (isDesktop) {
+      return (
+        <DesktopLanding
+          currentLanguage={lang}
+          onLanguageChange={setLang}
+        />
+      );
+    }
+
     return (
       <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
         <View style={styles.signedOutRoot}>

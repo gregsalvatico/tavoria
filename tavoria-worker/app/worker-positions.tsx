@@ -2,7 +2,6 @@ import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
-  Dimensions,
   Image,
   Pressable,
   ScrollView,
@@ -11,8 +10,6 @@ import {
   View,
 } from "react-native";
 
-const SCREEN_W = Dimensions.get("window").width;
-const ROLE_TILE_SIZE = (SCREEN_W - 20 * 2 - 8 * 2) / 3;
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
 import { localizeRole } from "../lib/positions";
@@ -258,13 +255,13 @@ const styles = StyleSheet.create({
     marginTop: 18,
   },
   roleTile: {
-    width: ROLE_TILE_SIZE,
-    height: ROLE_TILE_SIZE,
+    aspectRatio: 1,
     borderRadius: 14,
     overflow: "hidden",
     borderWidth: 2,
     borderColor: "transparent",
     position: "relative",
+    width: "31.5%",
   },
   roleTileOn: { borderColor: "#0E1A24" },
   roleTilePrimary: { borderColor: "#F0531C" },

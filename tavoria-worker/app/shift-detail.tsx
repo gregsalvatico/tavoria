@@ -9,11 +9,13 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   Share,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -70,6 +72,8 @@ function payScheduleLabel(schedule: string): string {
 export default function ShiftDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && width >= 1024;
   const [shift, setShift] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
@@ -346,13 +350,14 @@ export default function ShiftDetail() {
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
       >
+        <View style={isDesktop && styles.detailGrid}>
         {/* Hero */}
-        <View style={styles.hero}>
-          <Image source={photo} style={styles.heroImg} />
+        <View style={[styles.hero, isDesktop && styles.heroDesktop]}>
+          <Image source={photo} style={[styles.heroImg, isDesktop && styles.heroImgDesktop]} />
           {isUrgent && (
             <View style={styles.urgentBanner}>
               <Feather name="zap" size={14} color="white" />
@@ -365,7 +370,7 @@ export default function ShiftDetail() {
           )}
         </View>
 
-        <View style={styles.card}>
+        <View style={[styles.card, isDesktop && styles.cardDesktop]}>
           <Pressable
             disabled={!shift.venue_id}
             onPress={() => router.push({ pathname: "/venue-board", params: { venueId: shift.venue_id } })}
@@ -441,6 +446,7 @@ export default function ShiftDetail() {
             phone={venuePhone}
             visitAddress={visitAddress}
           />
+        </View>
         </View>
       </ScrollView>
 
@@ -636,6 +642,8 @@ const styles = StyleSheet.create({
   iconBtn: { padding: 4, width: 32 },
 
   scroll: { paddingHorizontal: 14, paddingBottom: 20 },
+  scrollDesktop: { paddingHorizontal: 24, paddingBottom: 20 },
+  detailGrid: { alignItems: "flex-start", flexDirection: "row", gap: 18 },
 
   loadingWrap: { flex: 1, justifyContent: "center", alignItems: "center" },
   errorWrap: {
@@ -668,6 +676,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     position: "relative",
   },
+  heroDesktop: { flex: 1, height: 360, marginBottom: 0, minWidth: 0 },
+  heroImgDesktop: { height: "100%" },
   heroImg: { width: "100%", height: 220 },
   urgentBanner: {
     position: "absolute",
@@ -696,6 +706,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: "rgba(0,0,0,0.08)",
   },
+  cardDesktop: { flex: 1, minWidth: 0 },
   venueName: {
     fontSize: 24,
     fontWeight: "800",

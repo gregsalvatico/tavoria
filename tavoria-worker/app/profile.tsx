@@ -6,11 +6,13 @@ import {
   Alert,
   Image,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   Share,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -121,6 +123,8 @@ function fromLocal(p: any): WorkerView {
 
 export default function Profile() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && width >= 1024;
   const params = useLocalSearchParams<{
     mode?: string;
     workerId?: string;
@@ -314,34 +318,36 @@ export default function Profile() {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <View style={styles.header}>
-        <Pressable
-          onPress={() => {
-            // router.back() is a no-op on web when there's no history
-            // (page refresh, deep link, etc.). Fall back to the screen
-            // we'd logically be coming from.
-            if (router.canGoBack()) {
-              router.back();
-              return;
-            }
-            if (params.applicationId) {
-              router.replace({
-                pathname: "/candidate",
-                params: { applicationId: params.applicationId },
-              });
-            } else if (params.workerId) {
-              router.replace({
-                pathname: "/candidate",
-                params: { workerId: params.workerId },
-              });
-            } else {
-              router.replace("/");
-            }
-          }}
-          style={styles.backBtn}
-          hitSlop={12}
-        >
-          <Feather name="chevron-left" size={28} color="#0E1A24" />
-        </Pressable>
+        {isDesktop ? <View style={styles.desktopHeaderSpacer} /> : (
+          <Pressable
+            onPress={() => {
+              // router.back() is a no-op on web when there's no history
+              // (page refresh, deep link, etc.). Fall back to the screen
+              // we'd logically be coming from.
+              if (router.canGoBack()) {
+                router.back();
+                return;
+              }
+              if (params.applicationId) {
+                router.replace({
+                  pathname: "/candidate",
+                  params: { applicationId: params.applicationId },
+                });
+              } else if (params.workerId) {
+                router.replace({
+                  pathname: "/candidate",
+                  params: { workerId: params.workerId },
+                });
+              } else {
+                router.replace("/");
+              }
+            }}
+            style={styles.backBtn}
+            hitSlop={12}
+          >
+            <Feather name="chevron-left" size={28} color="#0E1A24" />
+          </Pressable>
+        )}
         <Text style={styles.headerTitle}>{t("profile.title")}</Text>
         <View style={{ width: 36 }} />
       </View>
@@ -777,6 +783,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   backBtn: { width: 36, paddingVertical: 2 },
+  desktopHeaderSpacer: { width: 36 },
   headerTitle: {
     fontFamily: "InstrumentSerif_400Regular", fontSize: 15, fontWeight: "400", color: "#0E1A24" },
   scroll: { flex: 1 },

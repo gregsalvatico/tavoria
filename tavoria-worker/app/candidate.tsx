@@ -27,11 +27,13 @@ import {
   Animated,
   Image,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   Share,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -63,6 +65,8 @@ function yearsLongLabel(n: number): string {
 
 export default function Candidate() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && width >= 1024;
   const params = useLocalSearchParams<{
     applicationId?: string;
     workerId?: string;
@@ -321,16 +325,18 @@ export default function Candidate() {
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <ScrollView
         style={styles.scrollWrap}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
           <View style={styles.headerSide}>
-            <Link href="/" asChild>
-              <Pressable style={styles.backBtn} hitSlop={12}>
-                <Feather name="chevron-left" size={28} color="#0E1A24" />
-              </Pressable>
-            </Link>
+            {isDesktop ? <View style={styles.desktopHeaderSpacer} /> : (
+              <Link href="/" asChild>
+                <Pressable style={styles.backBtn} hitSlop={12}>
+                  <Feather name="chevron-left" size={28} color="#0E1A24" />
+                </Pressable>
+              </Link>
+            )}
             {/* "14 left" counter removed — felt gimmicky / Tinder-like. */}
           </View>
           <Link
@@ -350,8 +356,8 @@ export default function Candidate() {
           </Link>
         </View>
 
-        <View style={styles.card}>
-          <View style={styles.photoWrap}>
+        <View style={[styles.card, isDesktop && styles.cardDesktop]}>
+          <View style={[styles.photoWrap, isDesktop && styles.photoWrapDesktop]}>
             {view.photoUrl ? (
               <Image
                 source={{ uri: view.photoUrl }}
@@ -380,7 +386,8 @@ export default function Candidate() {
                 Re-enable once we wire a real presence signal. */}
           </View>
 
-          <View style={styles.cardBody}>
+          <View style={[styles.detailsColumn, isDesktop && styles.detailsColumnDesktop]}>
+          <View style={[styles.cardBody, isDesktop && styles.cardBodyDesktop]}>
             <Text style={styles.profileKicker}>WORKER PROFILE</Text>
             <View style={styles.nameRow}>
               <Text style={[styles.sideTxt, styles.sideLeft]}>
@@ -720,6 +727,7 @@ export default function Candidate() {
               )}
             </View>
           )}
+          </View>
         </View>
 
         {lastAction && (
@@ -798,6 +806,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F1EFE8" },
   scrollWrap: { flex: 1 },
   scroll: { padding: 12, paddingBottom: 32 },
+  scrollDesktop: { paddingHorizontal: 24, paddingBottom: 32 },
 
   header: {
     flexDirection: "row",
@@ -806,6 +815,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   headerSide: { flexDirection: "row", alignItems: "center", gap: 4 },
+  desktopHeaderSpacer: { width: 32 },
   backBtn: { paddingVertical: 2, paddingRight: 4 },
   counter: { fontSize: 13, color: "#6B7280" },
   fullProfileTopLink: {
@@ -829,6 +839,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: "rgba(0,0,0,0.08)",
   },
+  cardDesktop: { flexDirection: "row" },
   // Square photo container so portrait selfies show the full face
   // (forehead → chin) instead of being cropped to a horizontal band.
   photoWrap: {
@@ -837,6 +848,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#0E1A24",
     position: "relative",
   },
+  photoWrapDesktop: { maxWidth: 430, width: "42%" },
   photo: { width: "100%", height: "100%" },
   photoPlaceholder: {
     justifyContent: "center",
@@ -894,7 +906,10 @@ const styles = StyleSheet.create({
   },
   badgeVideoTxt: { color: "white", fontSize: 12, fontWeight: "600" },
 
+  detailsColumn: { minWidth: 0 },
+  detailsColumnDesktop: { flex: 1 },
   cardBody: { padding: 16 },
+  cardBodyDesktop: { padding: 28 },
   profileKicker: { color: "#F0531C", fontFamily: "DMMono_500Medium", fontSize: 10, letterSpacing: 1.1, marginBottom: 4, textAlign: "center" },
   nameRow: {
     flexDirection: "row",

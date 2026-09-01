@@ -27,6 +27,7 @@ import {
 } from "@expo-google-fonts/dm-mono";
 import { Text, TextInput, View } from "react-native";
 import { supabase } from "../lib/supabase";
+import AppShell from "../components/AppShell";
 
 // Screens in this list read or change an existing user's private account
 // data. Public discovery, QR and onboarding routes intentionally stay open.
@@ -146,7 +147,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <AppShell currentRoute={currentRoute} isSignedIn={isSignedIn}>
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
@@ -164,6 +165,6 @@ export default function RootLayout() {
           }}
         />
       ) : null}
-    </>
+    </AppShell>
   );
 }

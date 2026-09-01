@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { t } from "../lib/i18n";
 import VenueQrFab from "./VenueQrFab";
 
@@ -13,6 +13,8 @@ type Props =
 
 export default function AppBottomNav(props: Props) {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && width >= 1024;
   const items = props.role === "worker"
     ? [
         { id: "home", icon: "home", label: t("home_in.home"), route: "/" },
@@ -24,6 +26,8 @@ export default function AppBottomNav(props: Props) {
         { id: "inbox", icon: "inbox", label: t("home_in.inbox"), route: "/venue-inbox", badge: props.badge },
         { id: "shifts", icon: "briefcase", label: t("home_in.my_shifts"), route: "/venue-shifts" },
       ];
+
+  if (isDesktop) return null;
 
   return (
     <View style={styles.root}>

@@ -5,11 +5,13 @@ import {
   ActivityIndicator,
   Image,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -112,6 +114,8 @@ export default function SignedInHome({
   onSignOut,
 }: Props) {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && width >= 1024;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
@@ -216,13 +220,15 @@ export default function SignedInHome({
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <View style={styles.header}>
-        <Pressable
-          onPress={() => setDrawerOpen(true)}
-          hitSlop={8}
-          accessibilityLabel="Open account menu"
-        >
-          {avatar}
-        </Pressable>
+        {isDesktop ? <View style={{ width: 44 }} /> : (
+          <Pressable
+            onPress={() => setDrawerOpen(true)}
+            hitSlop={8}
+            accessibilityLabel="Open account menu"
+          >
+            {avatar}
+          </Pressable>
+        )}
         <Text style={styles.wordmark}>
           <Text style={styles.accent}>T</Text>avoria<Text style={styles.accent}>.</Text>
         </Text>
@@ -276,7 +282,7 @@ export default function SignedInHome({
 
       <ScrollView
         style={styles.feed}
-        contentContainerStyle={styles.feedContent}
+        contentContainerStyle={[styles.feedContent, isDesktop && styles.feedContentDesktop]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -329,31 +335,37 @@ export default function SignedInHome({
             </Text>
           </View>
         ) : venueMode ? (
-          visibleCandidateRows.map((worker) => (
-            <HomeCandidateRow
-              key={worker.id}
-              worker={worker}
-              onOpen={() =>
-                router.push({ pathname: "/candidate", params: { workerId: worker.id } })
-              }
-            />
-          ))
-        ) : (
-          visibleRows.map((row) => (
-            <HomeShiftRow
-              key={row.id}
-              row={row}
-              venueMode={venueMode}
-              onOpen={() => {
-                router.push({ pathname: "/shift-detail", params: { id: row.id } });
-              }}
-              onOpenVenue={() => {
-                if (row.venue?.id) {
-                  router.push({ pathname: "/venue-board", params: { venueId: row.venue.id } });
+          <View style={isDesktop && styles.desktopGrid}>
+            {visibleCandidateRows.map((worker) => (
+              <HomeCandidateRow
+                key={worker.id}
+                worker={worker}
+                onOpen={() =>
+                  router.push({ pathname: "/candidate", params: { workerId: worker.id } })
                 }
-              }}
-            />
-          ))
+                isDesktop={isDesktop}
+              />
+            ))}
+          </View>
+        ) : (
+          <View style={isDesktop && styles.desktopGrid}>
+            {visibleRows.map((row) => (
+              <HomeShiftRow
+                key={row.id}
+                row={row}
+                venueMode={venueMode}
+                onOpen={() => {
+                  router.push({ pathname: "/shift-detail", params: { id: row.id } });
+                }}
+                onOpenVenue={() => {
+                  if (row.venue?.id) {
+                    router.push({ pathname: "/venue-board", params: { venueId: row.venue.id } });
+                  }
+                }}
+                isDesktop={isDesktop}
+              />
+            ))}
+          </View>
         )}
       </ScrollView>
 
@@ -597,9 +609,11 @@ function DrawerAction({
 function HomeCandidateRow({
   worker,
   onOpen,
+  isDesktop,
 }: {
   worker: WorkerRow;
   onOpen: () => void;
+  isDesktop: boolean;
 }) {
   const name = [worker.first_name, worker.last_name].filter(Boolean).join(" ") || "Candidate";
   const roles = localizeRoles((worker.positions ?? []).slice(0, 2)).join(" · ") || "Hospitality";
@@ -608,7 +622,7 @@ function HomeCandidateRow({
     .join(" · ");
 
   return (
-    <Pressable style={styles.candidateCard} onPress={onOpen}>
+    <Pressable style={[styles.candidateCard, isDesktop && styles.candidateCardDesktop]} onPress={onOpen}>
       {worker.photo_url ? (
         <Image source={{ uri: worker.photo_url }} style={styles.candidateAvatar} resizeMode="cover" />
       ) : (
@@ -634,11 +648,13 @@ function HomeShiftRow({
   venueMode,
   onOpen,
   onOpenVenue,
+  isDesktop,
 }: {
   row: ShiftRow;
   venueMode: boolean;
   onOpen: () => void;
   onOpenVenue: () => void;
+  isDesktop: boolean;
 }) {
   const photo = row.venue?.photo_url
     ? { uri: row.venue.photo_url }
@@ -651,7 +667,7 @@ function HomeShiftRow({
     : "Pay discussed later";
 
   return (
-    <Pressable style={styles.shiftCard} onPress={onOpen}>
+    <Pressable style={[styles.shiftCard, isDesktop && styles.shiftCardDesktop]} onPress={onOpen}>
       <Image source={photo} style={styles.shiftImage} resizeMode="cover" />
       <View style={styles.shiftBody}>
         <View style={styles.shiftTopLine}>
@@ -764,6 +780,8 @@ const styles = StyleSheet.create({
   refreshBtn: { alignItems: "center", backgroundColor: "white", borderRadius: 999, height: 38, justifyContent: "center", width: 38 },
   feed: { flex: 1 },
   feedContent: { gap: 10, paddingBottom: 28, paddingHorizontal: 16 },
+  feedContentDesktop: { paddingHorizontal: 24 },
+  desktopGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   quickFilters: { flexDirection: "row", flexWrap: "wrap", gap: 7, paddingBottom: 10, paddingHorizontal: 16 },
   quickFilter: { alignItems: "center", backgroundColor: "white", borderColor: "rgba(14,26,36,0.12)", borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 },
   quickFilterActive: { backgroundColor: "#F0531C", borderColor: "#F0531C" },
@@ -774,6 +792,7 @@ const styles = StyleSheet.create({
   stateTitle: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 23, marginTop: 12, textAlign: "center" },
   stateText: { color: "#6B7280", fontSize: 14, lineHeight: 20, marginTop: 6, textAlign: "center" },
   shiftCard: { alignItems: "center", backgroundColor: "white", borderColor: "rgba(14,26,36,0.08)", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 12, padding: 12 },
+  shiftCardDesktop: { width: "48.8%" },
   shiftImage: { borderRadius: 12, height: 60, width: 60 },
   shiftBody: { flex: 1, minWidth: 0 },
   shiftTopLine: { alignItems: "center", flexDirection: "row", gap: 8 },
@@ -789,6 +808,7 @@ const styles = StyleSheet.create({
   urgentBadge: { alignItems: "center", backgroundColor: "#FDECEC", borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 7, paddingVertical: 4 },
   urgentText: { color: "#B91C1C", fontSize: 9, fontWeight: "800" },
   candidateCard: { alignItems: "center", backgroundColor: "white", borderColor: "rgba(14,26,36,0.08)", borderRadius: 18, borderWidth: 1, flexDirection: "row", gap: 12, padding: 11 },
+  candidateCardDesktop: { width: "48.8%" },
   candidateAvatar: { borderRadius: 14, height: 64, width: 64 },
   candidateAvatarEmpty: { alignItems: "center", backgroundColor: "#FFE9DB", justifyContent: "center" },
   candidateInitial: { color: "#F0531C", fontFamily: "InstrumentSerif_400Regular", fontSize: 27 },

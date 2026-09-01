@@ -4,7 +4,6 @@ import { useState } from "react";
 import { t } from "../lib/i18n";
 import { patchVenueProfile } from "../lib/venueProfile";
 import {
-  Dimensions,
   Image,
   Pressable,
   ScrollView,
@@ -13,8 +12,6 @@ import {
   View,
 } from "react-native";
 
-const SCREEN_W = Dimensions.get("window").width;
-const TILE_SIZE = (SCREEN_W - 20 * 2 - 10) / 2;
 import { SafeAreaView } from "react-native-safe-area-context";
 
 type VenueType = {
@@ -239,13 +236,13 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   tile: {
-    width: TILE_SIZE,
-    height: TILE_SIZE,
+    aspectRatio: 1,
     borderRadius: 16,
     borderWidth: 2,
     borderColor: "transparent",
     position: "relative",
     overflow: "hidden",
+    width: "48.8%",
   },
   tileActive: { borderColor: "#F0531C" },
   tileImg: {

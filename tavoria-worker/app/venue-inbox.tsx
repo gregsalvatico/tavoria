@@ -7,11 +7,13 @@ import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -73,6 +75,8 @@ const STATUS_TO_FILTER: Record<string, Filter> = {
 
 export default function VenueInbox() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && width >= 1024;
   const venueProfile = getVenueProfile();
   const [apps, setApps] = useState<ApplicationRow[]>([]);
   const [venueAnswers, setVenueAnswers] = useState<
@@ -126,16 +130,18 @@ export default function VenueInbox() {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <View style={styles.header}>
-        <Pressable
-          onPress={() => {
-            if (router.canGoBack()) { router.back(); return; }
-            router.replace("/");
-          }}
-          hitSlop={12}
-          style={styles.iconBtn}
-        >
-          <Feather name="chevron-left" size={26} color="#0E1A24" />
-        </Pressable>
+        {isDesktop ? <View style={styles.iconBtn} /> : (
+          <Pressable
+            onPress={() => {
+              if (router.canGoBack()) { router.back(); return; }
+              router.replace("/");
+            }}
+            hitSlop={12}
+            style={styles.iconBtn}
+          >
+            <Feather name="chevron-left" size={26} color="#0E1A24" />
+          </Pressable>
+        )}
         <Text style={styles.h1}>
           <Text style={{ color: "#F0531C" }}>A</Text>pplicants
         </Text>
@@ -152,7 +158,7 @@ export default function VenueInbox() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -164,16 +170,16 @@ export default function VenueInbox() {
         }
       >
         {loading ? (
-          <View style={styles.loadingWrap}>
+          <View style={[styles.loadingWrap, isDesktop && styles.fullWidthState]}>
             <ActivityIndicator color="#F0531C" size="large" />
           </View>
         ) : errorMsg ? (
-          <View style={styles.emptyWrap}>
+          <View style={[styles.emptyWrap, isDesktop && styles.fullWidthState]}>
             <Feather name="alert-circle" size={32} color="#993556" />
             <Text style={styles.emptyTxt}>{errorMsg}</Text>
           </View>
         ) : filtered.length === 0 ? (
-          <View style={styles.emptyWrap}>
+          <View style={[styles.emptyWrap, isDesktop && styles.fullWidthState]}>
             <Feather name="inbox" size={40} color="#9CA3AF" />
             <Text style={styles.emptyTitle}>No applicants yet</Text>
             <Text style={styles.emptyTxt}>
@@ -185,7 +191,8 @@ export default function VenueInbox() {
             </Text>
           </View>
         ) : (
-          filtered.map((a) => (
+          <View style={isDesktop && styles.desktopGrid}>
+            {filtered.map((a) => (
             <Pressable
               key={a.id}
               onPress={() =>
@@ -194,7 +201,7 @@ export default function VenueInbox() {
                   params: { applicationId: a.id },
                 })
               }
-              style={styles.row}
+              style={[styles.row, isDesktop && styles.rowDesktop]}
             >
               {a.worker?.photo_url ? (
                 <Image
@@ -256,7 +263,8 @@ export default function VenueInbox() {
                 </View>
               </View>
             </Pressable>
-          ))
+            ))}
+          </View>
         )}
       </ScrollView>
       <AppBottomNav role="venue" active="inbox" />
@@ -329,8 +337,11 @@ const styles = StyleSheet.create({
   },
 
   scroll: { paddingHorizontal: 14, paddingBottom: 20 },
+  scrollDesktop: { paddingHorizontal: 24 },
+  desktopGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
 
   loadingWrap: { paddingVertical: 60, alignItems: "center" },
+  fullWidthState: { width: "100%" },
   emptyWrap: {
     paddingVertical: 60,
     alignItems: "center",
@@ -352,6 +363,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: "rgba(0,0,0,0.08)",
   },
+  rowDesktop: { marginBottom: 0, width: "48.8%" },
   avatar: {
     width: 52,
     height: 52,

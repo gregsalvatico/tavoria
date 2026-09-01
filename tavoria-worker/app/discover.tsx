@@ -8,11 +8,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -65,6 +67,8 @@ const VENUE_TYPE_PHOTOS: Record<string, number> = {
 
 export default function Discover() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isDesktop = Platform.OS === "web" && width >= 1024;
   const [rows, setRows] = useState<ShiftRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -126,16 +130,18 @@ export default function Discover() {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <View style={styles.header}>
-        <Pressable
-          onPress={() => {
-            if (router.canGoBack()) { router.back(); return; }
-            router.replace("/");
-          }}
-          hitSlop={12}
-          style={styles.iconBtn}
-        >
-          <Feather name="chevron-left" size={26} color="#0E1A24" />
-        </Pressable>
+        {isDesktop ? <View style={styles.iconBtn} /> : (
+          <Pressable
+            onPress={() => {
+              if (router.canGoBack()) { router.back(); return; }
+              router.replace("/");
+            }}
+            hitSlop={12}
+            style={styles.iconBtn}
+          >
+            <Feather name="chevron-left" size={26} color="#0E1A24" />
+          </Pressable>
+        )}
         <Text style={styles.h1}>
           <Text style={{ color: "#F0531C" }}>S</Text>hifts nearby
         </Text>
@@ -159,7 +165,7 @@ export default function Discover() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -171,16 +177,16 @@ export default function Discover() {
         }
       >
         {loading ? (
-          <View style={styles.loadingWrap}>
+          <View style={[styles.loadingWrap, isDesktop && styles.fullWidthState]}>
             <ActivityIndicator color="#F0531C" size="large" />
           </View>
         ) : errorMsg ? (
-          <View style={styles.emptyWrap}>
+          <View style={[styles.emptyWrap, isDesktop && styles.fullWidthState]}>
             <Feather name="alert-circle" size={32} color="#993556" />
             <Text style={styles.emptyTxt}>{errorMsg}</Text>
           </View>
         ) : filtered.length === 0 ? (
-          <View style={styles.emptyWrap}>
+          <View style={[styles.emptyWrap, isDesktop && styles.fullWidthState]}>
             <Feather name="search" size={40} color="#9CA3AF" />
             <Text style={styles.emptyTitle}>No shifts right now</Text>
             <Text style={styles.emptyTxt}>
@@ -188,7 +194,9 @@ export default function Discover() {
             </Text>
           </View>
         ) : (
-          filtered.map((r) => <ShiftRowItem key={r.id} row={r} router={router} showPay={hasAccount} />)
+          <View style={isDesktop && styles.desktopGrid}>
+            {filtered.map((r) => <ShiftRowItem key={r.id} row={r} router={router} showPay={hasAccount} isDesktop={isDesktop} />)}
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -199,10 +207,12 @@ function ShiftRowItem({
   row,
   router,
   showPay,
+  isDesktop,
 }: {
   row: ShiftRow;
   router: ReturnType<typeof useRouter>;
   showPay: boolean;
+  isDesktop: boolean;
 }) {
   const v = row.venue;
   // Normalise venue type to match our key set (lowercase, strip "club"/" club" variants)
@@ -237,7 +247,7 @@ function ShiftRowItem({
           params: { id: row.id },
         })
       }
-      style={styles.row}
+      style={[styles.row, isDesktop && styles.rowDesktop]}
     >
       <Image source={photo} style={styles.thumb} resizeMode="cover" />
       {isUrgent && (
@@ -431,7 +441,10 @@ const styles = StyleSheet.create({
   toggleChipTxtOn: { color: "white" },
 
   scroll: { paddingHorizontal: 14, paddingBottom: 20 },
+  scrollDesktop: { paddingHorizontal: 24 },
+  desktopGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   loadingWrap: { paddingVertical: 60, alignItems: "center" },
+  fullWidthState: { width: "100%" },
   emptyWrap: {
     paddingVertical: 60,
     alignItems: "center",
@@ -454,6 +467,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0,0,0,0.08)",
     position: "relative",
   },
+  rowDesktop: { marginBottom: 0, width: "48.8%" },
   thumb: {
     width: 60,
     height: 60,

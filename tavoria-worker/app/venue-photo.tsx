@@ -3,7 +3,6 @@ import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Dimensions,
   Image,
   Modal,
   Pressable,
@@ -14,8 +13,6 @@ import {
   View,
 } from "react-native";
 
-const SCREEN_W = Dimensions.get("window").width;
-const ROLE_TILE_SIZE = (SCREEN_W - 20 * 2 - 8 * 2) / 3; // 3 per row, 8px gap, 20px horizontal padding
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   PayScheduleId,
@@ -810,13 +807,13 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   roleTile: {
-    width: ROLE_TILE_SIZE,
-    height: ROLE_TILE_SIZE,
+    aspectRatio: 1,
     borderRadius: 14,
     overflow: "hidden",
     borderWidth: 2,
     borderColor: "transparent",
     position: "relative",
+    width: "31.5%",
   },
   roleTileOn: { borderColor: "#F0531C" },
   roleTileImg: { width: "100%", height: "100%" },
