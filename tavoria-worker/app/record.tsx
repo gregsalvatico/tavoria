@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { createApplication, uploadWorkerMedia } from "../lib/db";
 import { t } from "../lib/i18n";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import { patchWorkerProfile } from "../lib/workerProfile";
 import { pickImageWeb, pickVideoWeb } from "../lib/webMedia";
 
@@ -31,6 +32,7 @@ type Phase =
 
 export default function Record() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const { next, shiftId, venueId, venueName } = useLocalSearchParams<{
     next?: string;
     shiftId?: string;
@@ -416,7 +418,7 @@ export default function Record() {
       <View style={styles.bottom}>
         {phase === "intro" && (
           <View style={styles.bottomCol}>
-            <Pressable style={styles.primaryBtn} onPress={takePhoto}>
+            <Pressable style={[styles.primaryBtn, isDesktop && desktopButtonStyle]} onPress={takePhoto}>
               <Feather name="camera" size={18} color="#F7F4EE" />
               <Text style={styles.primaryBtnTxt}>
                 {t("record_screen.take_photo")}
@@ -457,7 +459,7 @@ export default function Record() {
 
         {phase === "video-intro" && (
           <View style={styles.bottomCol}>
-            <Pressable style={styles.primaryBtn} onPress={recordVideo}>
+            <Pressable style={[styles.primaryBtn, isDesktop && desktopButtonStyle]} onPress={recordVideo}>
               <View style={styles.recDotSmall} />
               <Text style={styles.primaryBtnTxt}>
                 {t("record_screen.record_video")}
@@ -690,6 +692,7 @@ const styles = StyleSheet.create({
   },
   bottomCol: { width: "100%", gap: 10 },
   primaryBtn: {
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -697,6 +700,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0531C",
     paddingVertical: 16,
     borderRadius: 999,
+    width: "100%",
   },
   primaryBtnTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
   ghostBtn: {

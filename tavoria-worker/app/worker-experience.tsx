@@ -24,6 +24,7 @@ import {
 import { getWorkerProfile, patchWorkerProfile } from "../lib/workerProfile";
 import { updateCurrentWorker, upsertWorker } from "../lib/db";
 import { t } from "../lib/i18n";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 
 const EXPERIENCE = [
   { id: 0, labelKey: "worker_experience.exp_new" },
@@ -46,6 +47,7 @@ const LANGUAGES = [
 
 export default function WorkerExperience() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   // Apply-flow params come from /worker-positions (which got them from
   // /record). We use them to land back on /applied with the venue name.
   const { next, venueId, venueName, mode } = useLocalSearchParams<{
@@ -426,7 +428,7 @@ export default function WorkerExperience() {
           <Pressable
             disabled={!canContinue || busy}
             onPress={onContinue}
-            style={[styles.cta, (!canContinue || busy) && styles.ctaDisabled]}
+            style={[styles.cta, isDesktop && desktopButtonStyle, (!canContinue || busy) && styles.ctaDisabled]}
           >
             {busy ? (
               <ActivityIndicator color="#F7F4EE" />
@@ -715,6 +717,7 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(0,0,0,0.08)",
   },
   cta: {
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -722,6 +725,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0531C",
     borderRadius: 999,
     paddingVertical: 18,
+    width: "100%",
   },
   ctaDisabled: { backgroundColor: "rgba(11,15,26,0.15)" },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },

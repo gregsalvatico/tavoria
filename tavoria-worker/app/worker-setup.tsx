@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { patchWorkerProfile } from "../lib/workerProfile";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 
 const POSITIONS = [
   "Barista",
@@ -50,6 +51,7 @@ const AGE_RANGES = ["18–20", "21–25", "26–30", "31–40", "41–50", "50+"
 
 export default function WorkerSetup() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
 
   const [ageRange, setAgeRange] = useState<string | null>(null);
   const [city, setCity] = useState("Milan");
@@ -239,7 +241,7 @@ export default function WorkerSetup() {
               });
               router.replace("/worker-done");
             }}
-            style={[styles.cta, !canContinue && styles.ctaDisabled]}
+            style={[styles.cta, isDesktop && desktopButtonStyle, !canContinue && styles.ctaDisabled]}
           >
             <Text style={styles.ctaTxt}>Save and go live</Text>
             <Feather name="arrow-right" size={20} color="#F7F4EE" />
@@ -371,6 +373,7 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(0,0,0,0.08)",
   },
   cta: {
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -378,6 +381,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0531C",
     borderRadius: 999,
     paddingVertical: 18,
+    width: "100%",
   },
   ctaDisabled: { backgroundColor: "rgba(11,15,26,0.15)" },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },

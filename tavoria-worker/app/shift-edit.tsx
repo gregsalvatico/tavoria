@@ -104,7 +104,12 @@ export default function ShiftEdit() {
       {loading ? (
         <View style={styles.loading}><ActivityIndicator color="#F0531C" size="large" /></View>
       ) : (
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
+        >
           <Text style={styles.intro}>{t("shift_edit.intro")}</Text>
 
           <Text style={styles.label}>{t("shift_edit.contract")}</Text>
@@ -194,7 +199,11 @@ function TimeField({ label, value, onChange }: { label: string; value: string; o
               <Text style={styles.sheetTitle}>{label}</Text>
               <Pressable onPress={() => setOpen(false)} hitSlop={12}><Feather name="x" size={22} color="#0E1A24" /></Pressable>
             </View>
-            <ScrollView contentContainerStyle={styles.timeOptions}>
+            <ScrollView
+              contentContainerStyle={styles.timeOptions}
+              showsVerticalScrollIndicator={false}
+              showsHorizontalScrollIndicator={false}
+            >
               {TIME_OPTIONS.map((time) => (
                 <Choice
                   key={time}

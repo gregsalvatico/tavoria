@@ -147,7 +147,7 @@ export default function VenueBoard() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <View style={styles.header}>
+      <View style={[styles.header, isDesktop && styles.headerDesktop]}>
         <Pressable
           onPress={() => router.replace("/")}
           hitSlop={12}
@@ -161,6 +161,8 @@ export default function VenueBoard() {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -361,6 +363,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
+  headerDesktop: { paddingHorizontal: 24 },
   iconBtn: { padding: 4, width: 32, alignItems: "center" },
 
   scroll: { paddingHorizontal: 14, paddingBottom: 20 },

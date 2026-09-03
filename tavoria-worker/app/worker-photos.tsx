@@ -24,6 +24,7 @@ import {
   type WorkerDocumentType,
 } from "../lib/db";
 import { t } from "../lib/i18n";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import { getWorkerProfile, patchWorkerProfile } from "../lib/workerProfile";
 import { pickDocumentImageWeb, pickImageWeb } from "../lib/webMedia";
 
@@ -46,6 +47,7 @@ const DOC_DEFS: DocRowDef[] = [
 
 export default function WorkerPhotos() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   // Seed slot 0 (profile photo) from the worker's existing photoUrl so a photo
   // already uploaded during signup shows here as a filled tile, not "Add photo".
   const initialProfile = getWorkerProfile()?.photoUrl ?? null;
@@ -420,7 +422,7 @@ export default function WorkerPhotos() {
 
       <View style={styles.bottom}>
         <Pressable
-          style={styles.cta}
+          style={[styles.cta, isDesktop && desktopButtonStyle]}
           onPress={async () => {
             try {
               const profile = getWorkerProfile();
@@ -822,6 +824,7 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(0,0,0,0.08)",
   },
   cta: {
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -829,6 +832,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0531C",
     borderRadius: 999,
     paddingVertical: 18,
+    width: "100%",
   },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
   skipBtn: { alignItems: "center", paddingVertical: 4 },

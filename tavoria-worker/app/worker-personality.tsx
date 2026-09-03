@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { updateCurrentWorker } from "../lib/db";
 import { t } from "../lib/i18n";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import { getWorkerProfile, patchWorkerProfile } from "../lib/workerProfile";
 
 type Option = {
@@ -193,6 +194,7 @@ function buildQuestions(): Q[] {
 
 export default function WorkerPersonality() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const existingProfile = getWorkerProfile();
   const existingTraits = [
     ...(existingProfile?.personality ?? []),
@@ -453,7 +455,7 @@ export default function WorkerPersonality() {
 
       {done && (
         <View style={styles.bottom}>
-          <Pressable onPress={onSave} style={styles.cta}>
+          <Pressable onPress={onSave} style={[styles.cta, isDesktop && desktopButtonStyle]}>
             <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
             <Feather name="arrow-right" size={20} color="#F7F4EE" />
           </Pressable>
@@ -687,6 +689,7 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(0,0,0,0.08)",
   },
   cta: {
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -694,6 +697,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0531C",
     borderRadius: 999,
     paddingVertical: 18,
+    width: "100%",
   },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
 });

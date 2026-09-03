@@ -20,6 +20,7 @@ import { signInWithUsernamePin } from "../lib/usernameAuth";
 import { t } from "../lib/i18n";
 import { getCurrentUserContext } from "../lib/db";
 import { setCachedHomeContext } from "../lib/homeContextCache";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import {
   forgetAccount,
   getSavedAccounts,
@@ -29,6 +30,7 @@ import {
 
 export default function SignIn() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const { next, shiftId, venueId, venueName } = useLocalSearchParams<{
     next?: string;
     shiftId?: string;
@@ -144,6 +146,8 @@ export default function SignIn() {
           style={{ flex: 1 }}
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
         >
           <Text style={styles.h1}>
             <Text style={{ color: "#F0531C" }}>
@@ -296,7 +300,7 @@ export default function SignIn() {
           <Pressable
             disabled={busy || !canSubmit}
             onPress={onSignIn}
-            style={[styles.cta, (!canSubmit || busy) && styles.ctaDisabled]}
+            style={[styles.cta, isDesktop && desktopButtonStyle, (!canSubmit || busy) && styles.ctaDisabled]}
           >
             {busy ? (
               <ActivityIndicator color="#F7F4EE" />
@@ -443,6 +447,7 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(0,0,0,0.08)",
   },
   cta: {
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -450,6 +455,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0531C",
     borderRadius: 999,
     paddingVertical: 18,
+    width: "100%",
   },
   ctaDisabled: { backgroundColor: "rgba(11,15,26,0.15)" },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },

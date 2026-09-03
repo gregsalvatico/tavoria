@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import {
   generateUsername,
   signUpWithUsernamePin,
@@ -31,6 +32,7 @@ import { rememberAccount } from "../lib/savedAccounts";
 
 export default function Signup() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const { next, shiftId, venueId, venueName } = useLocalSearchParams<{
     next?: string;
     shiftId?: string;
@@ -187,6 +189,8 @@ export default function Signup() {
           style={{ flex: 1 }}
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
         >
           <View style={styles.breadcrumb}>
             {isApplyFlow ? (
@@ -391,7 +395,7 @@ export default function Signup() {
           <Pressable
             disabled={!canContinue || busy}
             onPress={onContinue}
-            style={[styles.cta, (!canContinue || busy) && styles.ctaDisabled]}
+            style={[styles.cta, isDesktop && desktopButtonStyle, (!canContinue || busy) && styles.ctaDisabled]}
           >
             {busy ? (
               <ActivityIndicator color="#F7F4EE" />
@@ -538,6 +542,7 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(0,0,0,0.08)",
   },
   cta: {
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -545,6 +550,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0531C",
     borderRadius: 999,
     paddingVertical: 18,
+    width: "100%",
   },
   ctaDisabled: { backgroundColor: "rgba(11,15,26,0.15)" },
   authSwitch: { alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 18, paddingVertical: 8 },

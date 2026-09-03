@@ -6,9 +6,11 @@ import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 
 export default function VenuePro() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -69,7 +71,7 @@ export default function VenuePro() {
       <View style={styles.bottom}>
         <Text style={styles.price}>{t("venue_pro.price")}</Text>
         <Text style={styles.comingSoon}>{t("common.coming_soon")}</Text>
-        <Pressable style={[styles.cta, styles.ctaDisabled]} disabled>
+        <Pressable style={[styles.cta, isDesktop && desktopButtonStyle, styles.ctaDisabled]} disabled>
           <Text style={styles.ctaTxt}>{t("venue_pro.cta")}</Text>
           <Feather name="lock" size={18} color="#6B7280" />
         </Pressable>
@@ -214,6 +216,7 @@ const styles = StyleSheet.create({
   },
   comingSoon: { color: "rgba(255,255,255,0.55)", fontSize: 12, marginTop: -5, textAlign: "center" },
   cta: {
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -221,6 +224,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F7F4EE",
     borderRadius: 999,
     paddingVertical: 18,
+    width: "100%",
   },
   ctaDisabled: { backgroundColor: "#D9D7D1" },
   ctaTxt: { color: "#0E1A24", fontSize: 16, fontWeight: "800" },

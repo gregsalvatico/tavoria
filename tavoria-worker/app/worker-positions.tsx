@@ -12,6 +12,7 @@ import {
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import { localizeRole } from "../lib/positions";
 import { getWorkerProfile, patchWorkerProfile } from "../lib/workerProfile";
 
@@ -38,6 +39,7 @@ const AGE_RANGES = ["18-20", "21-25", "26-30", "31-40", "41-50", "50+"];
 
 export default function WorkerPositions() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   // Apply-flow params come from /record when the worker is mid-apply. We
   // thread them to /worker-experience so the chain lands on /applied.
   const { next, shiftId, venueId, venueName, mode } = useLocalSearchParams<{
@@ -192,7 +194,7 @@ export default function WorkerPositions() {
               router.push(isEditMode ? "/worker-experience?mode=edit" : "/worker-experience");
             }
           }}
-          style={[styles.cta, !canContinue && styles.ctaDisabled]}
+          style={[styles.cta, isDesktop && desktopButtonStyle, !canContinue && styles.ctaDisabled]}
         >
           <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
           <Feather name="arrow-right" size={20} color="#F7F4EE" />
@@ -353,6 +355,7 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(0,0,0,0.08)",
   },
   cta: {
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -360,6 +363,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0531C",
     borderRadius: 999,
     paddingVertical: 18,
+    width: "100%",
   },
   ctaDisabled: { backgroundColor: "rgba(11,15,26,0.15)" },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },

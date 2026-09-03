@@ -127,7 +127,12 @@ export default function VenueEdit() {
         {loading ? (
           <View style={styles.loading}><ActivityIndicator size="large" color="#F0531C" /></View>
         ) : (
-          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            showsHorizontalScrollIndicator={false}
+          >
             <Text style={styles.lede}>Keep the details workers use to recognise and contact your venue up to date.</Text>
             <Field label="Venue name" icon="bookmark" value={name} onChangeText={setName} autoCapitalize="words" />
             <Field label="Address" icon="map-pin" value={address} onChangeText={setAddress} autoCapitalize="words" />

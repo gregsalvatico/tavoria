@@ -48,6 +48,7 @@ import InterviewOutcomeModal, {
   type InterviewOutcome,
 } from "../components/InterviewOutcomeModal";
 import ContactPersonModal from "../components/ContactPersonModal";
+import { desktopButtonStyle } from "../lib/responsive";
 
 function yearsShort(n: number): string {
   const key = `worker_experience.years_short_${n}`;
@@ -328,7 +329,7 @@ export default function Candidate() {
         contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
+        <View style={[styles.header, isDesktop && styles.headerDesktop]}>
           <View style={styles.headerSide}>
             {isDesktop ? <View style={styles.desktopHeaderSpacer} /> : (
               <Link href="/" asChild>
@@ -655,14 +656,14 @@ export default function Candidate() {
           {isOwnerMode ? (
             <View style={styles.ownerButtons}>
               <Pressable
-                style={[styles.ownerButton, styles.ownerButtonPrimary]}
+                style={[styles.ownerButton, styles.ownerButtonPrimary, isDesktop && desktopButtonStyle]}
                 onPress={() => router.push("/worker-bonus?mode=edit")}
               >
                 <Feather name="edit-2" size={18} color="white" />
                 <Text style={styles.ownerButtonText}>{t("candidate_actions.edit")}</Text>
               </Pressable>
               <Pressable
-                style={[styles.ownerButton, styles.ownerButtonSecondary]}
+                style={[styles.ownerButton, styles.ownerButtonSecondary, isDesktop && desktopButtonStyle]}
                 onPress={onShare}
               >
                 <Feather name="share-2" size={18} color="white" />
@@ -683,7 +684,7 @@ export default function Candidate() {
                     </Text>
                   </View>
                   <Pressable
-                    style={styles.outcomeButton}
+                    style={[styles.outcomeButton, isDesktop && desktopButtonStyle]}
                     onPress={() => setOutcomeOpen(true)}
                     disabled={updatingStatus}
                   >
@@ -700,7 +701,7 @@ export default function Candidate() {
                     </Text>
                   </View>
                   <Pressable
-                    style={[styles.requestInterviewButton, updatingStatus && styles.actionDisabled]}
+                    style={[styles.requestInterviewButton, isDesktop && desktopButtonStyle, updatingStatus && styles.actionDisabled]}
                     onPress={() => setPendingAction("interview")}
                     disabled={updatingStatus}
                   >
@@ -710,14 +711,14 @@ export default function Candidate() {
                 </>
               ) : (
                 applicationId ? <Pressable
-                  style={[styles.requestInterviewButton, updatingStatus && styles.actionDisabled]}
+                  style={[styles.requestInterviewButton, isDesktop && desktopButtonStyle, updatingStatus && styles.actionDisabled]}
                   onPress={() => setPendingAction("interview")}
                   disabled={updatingStatus}
                 >
                   <Feather name="calendar" size={19} color="white" />
                   <Text style={styles.primaryActionText}>{t("candidate_actions.confirm_interview_cta")}</Text>
                 </Pressable> : <Pressable
-                  style={[styles.requestInterviewButton, updatingStatus && styles.actionDisabled]}
+                  style={[styles.requestInterviewButton, isDesktop && desktopButtonStyle, updatingStatus && styles.actionDisabled]}
                   onPress={() => setPendingAction("interview")}
                   disabled={updatingStatus}
                 >
@@ -814,6 +815,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 8,
   },
+  headerDesktop: { paddingHorizontal: 24 },
   headerSide: { flexDirection: "row", alignItems: "center", gap: 4 },
   desktopHeaderSpacer: { width: 32 },
   backBtn: { paddingVertical: 2, paddingRight: 4 },
@@ -1254,8 +1256,8 @@ const styles = StyleSheet.create({
   contactApplicantBtnTxt: { color: "#0E1A24", fontSize: 12, fontWeight: "800" },
   videoAbsentText: { color: "rgba(255,255,255,0.55)", fontSize: 11, fontWeight: "700", marginTop: 8 },
   interviewActions: { borderTopColor: "rgba(0,0,0,0.08)", borderTopWidth: 0.5, gap: 9, padding: 12 },
-  requestInterviewButton: { alignItems: "center", backgroundColor: "#F0531C", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 54, paddingHorizontal: 18 },
-  outcomeButton: { alignItems: "center", backgroundColor: "#0E1A24", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 54, paddingHorizontal: 18 },
+  requestInterviewButton: { alignItems: "center", alignSelf: "center", backgroundColor: "#F0531C", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 54, paddingHorizontal: 18, width: "100%" },
+  outcomeButton: { alignItems: "center", alignSelf: "center", backgroundColor: "#0E1A24", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 54, paddingHorizontal: 18, width: "100%" },
   primaryActionText: { color: "white", fontSize: 15, fontWeight: "700" },
   interviewSummary: { alignItems: "flex-start", backgroundColor: "#E6F1FB", borderRadius: 13, flexDirection: "row", gap: 8, padding: 12 },
   interviewSummaryText: { color: "#185FA5", flex: 1, fontSize: 12, fontWeight: "700", lineHeight: 17 },
@@ -1264,7 +1266,7 @@ const styles = StyleSheet.create({
   finalStatusDeclined: { backgroundColor: "#FCEBEB" },
   finalStatusText: { fontSize: 15, fontWeight: "800" },
   ownerButtons: { borderTopColor: "rgba(0,0,0,0.08)", borderTopWidth: 0.5, gap: 10, padding: 12 },
-  ownerButton: { alignItems: "center", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 54, paddingHorizontal: 18, paddingVertical: 15, width: "100%" },
+  ownerButton: { alignItems: "center", alignSelf: "center", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 54, paddingHorizontal: 18, paddingVertical: 15, width: "100%" },
   ownerButtonPrimary: { backgroundColor: "#F0531C" },
   ownerButtonSecondary: { backgroundColor: "#0E1A24" },
   ownerButtonText: { color: "white", fontSize: 15, fontWeight: "700" },

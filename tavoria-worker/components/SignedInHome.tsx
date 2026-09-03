@@ -218,8 +218,8 @@ export default function SignedInHome({
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.safe, isDesktop && styles.safeDesktop]} edges={["top", "bottom"]}>
+      <View style={[styles.header, isDesktop && styles.headerDesktop]}>
         {isDesktop ? <View style={{ width: 44 }} /> : (
           <Pressable
             onPress={() => setDrawerOpen(true)}
@@ -235,7 +235,7 @@ export default function SignedInHome({
         <View style={{ width: 44 }} />
       </View>
 
-      <View style={styles.feedHeading}>
+      <View style={[styles.feedHeading, isDesktop && styles.feedHeadingDesktop]}>
         <View>
           <Text style={styles.feedKicker}>
             {venueMode ? t("auth_pin.role_venue") : t("auth_pin.role_worker")}
@@ -271,12 +271,14 @@ export default function SignedInHome({
           options={candidateFilterOptions}
           value={candidateFilter}
           onChange={setCandidateFilter}
+          desktop={isDesktop}
         />
       ) : (
         <FilterChips
           options={getShiftTimeFilters()}
           value={timeFilter}
           onChange={setTimeFilter}
+          desktop={isDesktop}
         />
       )}
 
@@ -743,6 +745,7 @@ function formatWhen(row: ShiftRow) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F7F4EE" },
+  safeDesktop: { backgroundColor: "#F1EFE8" },
   header: {
     alignItems: "center",
     flexDirection: "row",
@@ -750,6 +753,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
   },
+  headerDesktop: { paddingHorizontal: 24 },
   avatar: {
     alignItems: "center",
     backgroundColor: "#FFE9DB",
@@ -773,6 +777,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
   },
+  feedHeadingDesktop: { paddingHorizontal: 24 },
   feedHeadingFiltered: { paddingBottom: 4 },
   feedKicker: { color: "#F0531C", fontSize: 10, fontWeight: "800", letterSpacing: 1.1, textTransform: "uppercase" },
   feedTitle: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 31, lineHeight: 35, marginTop: 2 },

@@ -21,6 +21,7 @@ import {
 } from "../lib/venueProfile";
 import { updateVenue } from "../lib/db";
 import { t } from "../lib/i18n";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import { localizeRole } from "../lib/positions";
 
 type Schedule = {
@@ -126,6 +127,7 @@ const VENUE_STYLES: VenueStyleOpt[] = [
 
 export default function VenuePhoto() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const scrollRef = useRef<ScrollView>(null);
   const [setupStep, setSetupStep] = useState<0 | 1>(0);
   const [picked, setPicked] = useState<string | null>("v1");
@@ -507,7 +509,7 @@ export default function VenuePhoto() {
         <Pressable
           disabled={busy}
           onPress={onPrimaryAction}
-          style={[styles.cta, busy && styles.ctaDisabled]}
+          style={[styles.cta, isDesktop && desktopButtonStyle, busy && styles.ctaDisabled]}
         >
           {busy ? (
             <ActivityIndicator color="#F7F4EE" />
@@ -890,6 +892,7 @@ const styles = StyleSheet.create({
 
   bottom: { paddingBottom: 24, paddingHorizontal: 20, paddingTop: 20 },
   cta: {
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -897,6 +900,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0531C",
     borderRadius: 999,
     paddingVertical: 18,
+    width: "100%",
   },
   ctaDisabled: { backgroundColor: "rgba(11,15,26,0.15)" },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },

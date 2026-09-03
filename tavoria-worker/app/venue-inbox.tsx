@@ -129,7 +129,7 @@ export default function VenueInbox() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <View style={styles.header}>
+      <View style={[styles.header, isDesktop && styles.headerDesktop]}>
         {isDesktop ? <View style={styles.iconBtn} /> : (
           <Pressable
             onPress={() => {
@@ -154,11 +154,14 @@ export default function VenueInbox() {
         options={filters.map((item) => ({ ...item, count: counts[item.id] }))}
         value={filter}
         onChange={setFilter}
+        desktop={isDesktop}
       />
 
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -327,6 +330,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
+  headerDesktop: { paddingHorizontal: 24 },
   iconBtn: { padding: 4, width: 32 },
   h1: {
     fontFamily: "InstrumentSerif_400Regular",

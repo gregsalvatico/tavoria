@@ -35,6 +35,7 @@ import ApplicationActionModal, {
 } from "../components/ApplicationActionModal";
 import InterviewOutcomeModal, { type InterviewOutcome } from "../components/InterviewOutcomeModal";
 import AppBottomNav from "../components/AppBottomNav";
+import { desktopButtonStyle } from "../lib/responsive";
 
 // Years-of-experience numeric → label
 const YEARS_LABEL: Record<number, string> = {
@@ -668,14 +669,14 @@ export default function Profile() {
       {isOwnerMode ? (
         <View style={styles.ownerActionBar}>
           <Pressable
-            style={[styles.ownerButton, styles.ownerEdit]}
+            style={[styles.ownerButton, styles.ownerEdit, isDesktop && desktopButtonStyle]}
             onPress={() => router.push("/worker-bonus?mode=edit")}
           >
             <Feather name="edit-2" size={18} color="white" />
             <Text style={styles.ownerButtonText}>{t("profile.edit")}</Text>
           </Pressable>
           <Pressable
-            style={[styles.ownerButton, styles.ownerShare]}
+            style={[styles.ownerButton, styles.ownerShare, isDesktop && desktopButtonStyle]}
             onPress={onShare}
           >
             <Feather name="share-2" size={18} color="white" />
@@ -702,7 +703,7 @@ export default function Profile() {
                     {interviewLocation ? ` · ${interviewLocation}` : ""}
                   </Text>
                 </View>
-                <Pressable style={styles.outcomeButton} onPress={() => setOutcomeOpen(true)} disabled={updatingStatus}>
+                <Pressable style={[styles.outcomeButton, isDesktop && desktopButtonStyle]} onPress={() => setOutcomeOpen(true)} disabled={updatingStatus}>
                   <Feather name="clipboard" size={19} color="white" />
                   <Text style={styles.interviewButtonText}>{t("candidate_actions.update_outcome")}</Text>
                 </Pressable>
@@ -713,16 +714,16 @@ export default function Profile() {
                   <Feather name={appStatus === "hired" ? "check-circle" : "x-circle"} size={19} color={appStatus === "hired" ? "#3B6D11" : "#993556"} />
                   <Text style={[styles.finalStatusText, { color: appStatus === "hired" ? "#3B6D11" : "#993556" }]}>{t(`candidate_actions.status_${appStatus}`)}</Text>
                 </View>
-                <Pressable style={[styles.requestInterviewButton, updatingStatus && styles.actionDisabled]} onPress={() => setPendingAction("interview")} disabled={updatingStatus}>
+                <Pressable style={[styles.requestInterviewButton, isDesktop && desktopButtonStyle, updatingStatus && styles.actionDisabled]} onPress={() => setPendingAction("interview")} disabled={updatingStatus}>
                   <Feather name="calendar" size={19} color="white" />
                   <Text style={styles.interviewButtonText}>{t("candidate_actions.request_another_interview")}</Text>
                 </Pressable>
               </>
             ) : (
-              (params.applicationId || directApplicationId) ? <Pressable style={[styles.requestInterviewButton, updatingStatus && styles.actionDisabled]} onPress={() => setPendingAction("interview")} disabled={updatingStatus}>
+              (params.applicationId || directApplicationId) ? <Pressable style={[styles.requestInterviewButton, isDesktop && desktopButtonStyle, updatingStatus && styles.actionDisabled]} onPress={() => setPendingAction("interview")} disabled={updatingStatus}>
                 <Feather name="calendar" size={19} color="white" />
                 <Text style={styles.interviewButtonText}>{t("candidate_actions.confirm_interview_cta")}</Text>
-              </Pressable> : <Pressable style={[styles.requestInterviewButton, updatingStatus && styles.actionDisabled]} onPress={() => setPendingAction("interview")} disabled={updatingStatus}>
+              </Pressable> : <Pressable style={[styles.requestInterviewButton, isDesktop && desktopButtonStyle, updatingStatus && styles.actionDisabled]} onPress={() => setPendingAction("interview")} disabled={updatingStatus}>
                 <Feather name="calendar" size={19} color="white" />
                 <Text style={styles.interviewButtonText}>{t("candidate_actions.confirm_interview_cta")}</Text>
               </Pressable>
@@ -1074,8 +1075,8 @@ const styles = StyleSheet.create({
   proInviteTitle: { color: "#0E1A24", fontSize: 13, fontWeight: "800" },
   proInviteText: { color: "#6B7280", fontSize: 11, lineHeight: 15, marginTop: 2 },
   actionDisabled: { opacity: 0.6 },
-  requestInterviewButton: { alignItems: "center", backgroundColor: "#F0531C", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 54, paddingHorizontal: 18 },
-  outcomeButton: { alignItems: "center", backgroundColor: "#0E1A24", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 54, paddingHorizontal: 18 },
+  requestInterviewButton: { alignItems: "center", alignSelf: "center", backgroundColor: "#F0531C", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 54, paddingHorizontal: 18, width: "100%" },
+  outcomeButton: { alignItems: "center", alignSelf: "center", backgroundColor: "#0E1A24", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 54, paddingHorizontal: 18, width: "100%" },
   interviewButtonText: { color: "white", fontSize: 15, fontWeight: "700" },
   interviewSummary: { alignItems: "flex-start", backgroundColor: "#E6F1FB", borderRadius: 13, flexDirection: "row", gap: 8, padding: 12 },
   interviewSummaryText: { color: "#185FA5", flex: 1, fontSize: 12, fontWeight: "700", lineHeight: 17 },
@@ -1094,7 +1095,7 @@ const styles = StyleSheet.create({
   },
   actionResultText: { color: "#3B6D11", fontSize: 12, fontWeight: "600" },
   ownerActionBar: { backgroundColor: "white", borderTopColor: "rgba(0,0,0,0.08)", borderTopWidth: 0.5, gap: 10, paddingBottom: 24, paddingHorizontal: 12, paddingTop: 12 },
-  ownerButton: { alignItems: "center", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 54, paddingHorizontal: 18, paddingVertical: 15, width: "100%" },
+  ownerButton: { alignItems: "center", alignSelf: "center", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 54, paddingHorizontal: 18, paddingVertical: 15, width: "100%" },
   ownerButtonText: { color: "white", fontSize: 15, fontWeight: "700" },
   actionBtn: {
     flex: 1,

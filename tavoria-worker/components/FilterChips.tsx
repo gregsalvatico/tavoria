@@ -10,16 +10,18 @@ export default function FilterChips<T extends string>({
   options,
   value,
   onChange,
+  desktop = false,
 }: {
   options: FilterChipOption<T>[];
   value: T;
   onChange: (value: T) => void;
+  desktop?: boolean;
 }) {
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.row}
+      contentContainerStyle={[styles.row, desktop && styles.rowDesktop]}
       style={styles.scroll}
     >
       {options.map((option) => {
@@ -48,6 +50,7 @@ export default function FilterChips<T extends string>({
 const styles = StyleSheet.create({
   scroll: { flexGrow: 0, maxHeight: 52 },
   row: { gap: 8, paddingBottom: 8, paddingHorizontal: 16, paddingTop: 6 },
+  rowDesktop: { paddingHorizontal: 24 },
   chip: {
     alignItems: "center",
     backgroundColor: "white",

@@ -25,7 +25,7 @@ import {
   DMMono_400Regular,
   DMMono_500Medium,
 } from "@expo-google-fonts/dm-mono";
-import { Text, TextInput, View } from "react-native";
+import { ActivityIndicator, AppState, Platform, Text, TextInput, View } from "react-native";
 import { supabase } from "../lib/supabase";
 import AppShell from "../components/AppShell";
 
@@ -70,6 +70,47 @@ function applyDefaultFont(family: string) {
   defaultsApplied = true;
 }
 
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timeoutId = setTimeout(
+          () => reject(new Error("Authentication check timed out")),
+          timeoutMs
+        );
+      }),
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
+function LoadingScreen() {
+  return (
+    <View
+      style={{
+        alignItems: "center",
+        backgroundColor: "#F7F4EE",
+        flex: 1,
+        justifyContent: "center",
+      }}
+    >
+      <Text
+        style={{
+          color: "#0E1A24",
+          fontFamily: "InstrumentSerif_400Regular",
+          fontSize: 34,
+        }}
+      >
+        Tavoria<Text style={{ color: "#F0531C" }}>.</Text>
+      </Text>
+      <ActivityIndicator color="#F0531C" size="small" style={{ marginTop: 18 }} />
+    </View>
+  );
+}
+
 export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
@@ -99,18 +140,30 @@ export default function RootLayout() {
 
   useEffect(() => {
     let active = true;
+    let authCheckInFlight = false;
 
     const refreshAuth = async () => {
+      if (authCheckInFlight) return;
+      authCheckInFlight = true;
       // getUser() confirms that the locally cached session still belongs to
       // an active Supabase account. getSession() alone can be stale after an
       // account is deleted or credentials change on another device.
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
-      if (!active) return;
-      setIsSignedIn(!error && isSignedInTavoriaUser(user));
-      setAuthReady(true);
+      try {
+        const {
+          data: { user },
+          error,
+        } = await withTimeout(supabase.auth.getUser(), 8000);
+        if (!active) return;
+        setIsSignedIn(!error && isSignedInTavoriaUser(user));
+      } catch {
+        // A suspended tab or a temporary network failure must not leave the
+        // full-screen auth gate up forever. Fail closed and let the guard send
+        // protected routes back to the public home screen.
+        if (active) setIsSignedIn(false);
+      } finally {
+        authCheckInFlight = false;
+        if (active) setAuthReady(true);
+      }
     };
 
     void refreshAuth();
@@ -120,9 +173,25 @@ export default function RootLayout() {
       setAuthReady(true);
     });
 
+    const appStateSubscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") void refreshAuth();
+    });
+
+    let onVisibilityChange: (() => void) | undefined;
+    if (Platform.OS === "web" && typeof document !== "undefined") {
+      onVisibilityChange = () => {
+        if (document.visibilityState === "visible") void refreshAuth();
+      };
+      document.addEventListener("visibilitychange", onVisibilityChange);
+    }
+
     return () => {
       active = false;
       data.subscription.unsubscribe();
+      appStateSubscription.remove();
+      if (onVisibilityChange && typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+      }
     };
   }, []);
 
@@ -143,7 +212,7 @@ export default function RootLayout() {
   if (!fontsLoaded || !i18nReady) {
     // Splash background matches the new paper colour so the load-flash blends
     // into the first screen instead of going stark white.
-    return <View style={{ flex: 1, backgroundColor: "#F7F4EE" }} />;
+    return <LoadingScreen />;
   }
 
   return (
@@ -159,11 +228,15 @@ export default function RootLayout() {
         <View
           pointerEvents="auto"
           style={{
+            bottom: 0,
+            left: 0,
             position: "absolute",
-            inset: 0,
-            backgroundColor: "#F7F4EE",
+            right: 0,
+            top: 0,
           }}
-        />
+        >
+          <LoadingScreen />
+        </View>
       ) : null}
     </AppShell>
   );

@@ -4,9 +4,11 @@ import { useEffect, useRef } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 
 export default function Applied() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const { venueName } = useLocalSearchParams<{ venueName?: string }>();
   const venueLbl = (venueName || "The venue").trim();
   const scale = useRef(new Animated.Value(0.4)).current;
@@ -77,7 +79,7 @@ export default function Applied() {
 
         <View style={styles.bottom}>
           <Pressable
-            style={styles.primaryBtn}
+            style={[styles.primaryBtn, isDesktop && desktopButtonStyle]}
             onPress={() => router.replace("/")}
           >
             <Feather name="check" size={20} color="#F7F4EE" />
@@ -200,6 +202,7 @@ const styles = StyleSheet.create({
   bottom: { gap: 14, paddingTop: 8, paddingBottom: 24, alignItems: "center" },
   primaryBtn: {
     width: "100%",
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

@@ -129,7 +129,7 @@ export default function Discover() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <View style={styles.header}>
+      <View style={[styles.header, isDesktop && styles.headerDesktop]}>
         {isDesktop ? <View style={styles.iconBtn} /> : (
           <Pressable
             onPress={() => {
@@ -161,11 +161,13 @@ export default function Discover() {
         </View>
       </View>
 
-      <FilterChips options={getShiftTimeFilters()} value={filter} onChange={setFilter} />
+      <FilterChips options={getShiftTimeFilters()} value={filter} onChange={setFilter} desktop={isDesktop} />
 
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -403,6 +405,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
+  headerDesktop: { paddingHorizontal: 24 },
   iconBtn: { padding: 4, width: 32 },
   h1: {
     flexShrink: 1,

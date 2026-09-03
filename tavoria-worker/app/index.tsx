@@ -6,6 +6,8 @@ import { clearVenueProfile } from "../lib/venueProfile";
 import { clearWorkerProfile } from "../lib/workerProfile";
 import {
   Alert,
+  ActivityIndicator,
+  AppState,
   Modal,
   Platform,
   Pressable,
@@ -92,6 +94,46 @@ export default function Welcome() {
       setCtx(next);
       setContextReady(true);
     });
+  }, []);
+
+  // A browser tab can become visible again without changing the Expo Router
+  // focus state. Refresh the cached account context explicitly so the home
+  // screen cannot remain on its transitional gate after tab restore.
+  useEffect(() => {
+    let active = true;
+
+    const refreshHomeContext = async () => {
+      try {
+        const next = await getCurrentUserContext();
+        if (active) setCachedHomeContext(next);
+      } catch {
+        // If there is no context yet, show the public home instead of leaving
+        // an empty loading screen on a transient session failure.
+        if (active && getCachedHomeContext() === null) {
+          setCachedHomeContext(EMPTY_HOME_CONTEXT);
+        }
+      }
+    };
+
+    const appStateSubscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") void refreshHomeContext();
+    });
+
+    let onVisibilityChange: (() => void) | undefined;
+    if (Platform.OS === "web" && typeof document !== "undefined") {
+      onVisibilityChange = () => {
+        if (document.visibilityState === "visible") void refreshHomeContext();
+      };
+      document.addEventListener("visibilitychange", onVisibilityChange);
+    }
+
+    return () => {
+      active = false;
+      appStateSubscription.remove();
+      if (onVisibilityChange && typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+      }
+    };
   }, []);
 
   // Supabase emits SIGNED_IN before navigation. Hide any previously rendered
@@ -194,7 +236,14 @@ export default function Welcome() {
   // still being resolved. Returning from a top-level tab uses the cache above,
   // so this gate is normally only visible on a cold start.
   if (!contextReady) {
-    return <View style={styles.authGate} />;
+    return (
+      <View style={styles.authGate}>
+        <Text style={styles.authGateBrand}>
+          Tavoria<Text style={styles.accentLetter}>.</Text>
+        </Text>
+        <ActivityIndicator color="#F0531C" size="small" style={styles.authGateSpinner} />
+      </View>
+    );
   }
 
   // Signed-out home is a clean flex layout (no ScrollView) so iOS doesn't
@@ -945,7 +994,9 @@ function WhatsAppFAB() {
 }
 
 const styles = StyleSheet.create({
-  authGate: { backgroundColor: "#F7F4EE", flex: 1 },
+  authGate: { alignItems: "center", backgroundColor: "#F7F4EE", flex: 1, justifyContent: "center" },
+  authGateBrand: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 34 },
+  authGateSpinner: { marginTop: 18 },
   safe: { flex: 1, backgroundColor: "#F7F4EE" },
   kicker: { color: "#6B7280", fontSize: 11, fontWeight: "700", letterSpacing: 1.2 },
 
@@ -1030,30 +1081,36 @@ const styles = StyleSheet.create({
   actions: { width: "100%", gap: 6, marginTop: 2 },
   primaryBtn: {
     backgroundColor: "#0E1A24",
+    alignSelf: "center",
     paddingVertical: 18,
     borderRadius: 999,
     alignItems: "center",
+    width: "100%",
   },
   primaryBtnText: { color: "#F7F4EE", fontSize: 17, fontWeight: "700" },
   secondaryBtn: {
     backgroundColor: "transparent",
+    alignSelf: "center",
     paddingVertical: 14,
     borderRadius: 999,
     alignItems: "center",
     borderWidth: 1,
     borderColor: "rgba(11,15,26,0.15)",
+    width: "100%",
   },
   secondaryBtnText: { color: "#0E1A24", fontSize: 14, fontWeight: "600" },
 
   // Signed-out entry points mirror the landing page hierarchy.
   landingVenueBtn: {
     alignItems: "center",
+    alignSelf: "center",
     backgroundColor: "#F0531C",
     borderRadius: 999,
     flexDirection: "row",
     gap: 9,
     justifyContent: "center",
     paddingVertical: 17,
+    width: "100%",
     shadowColor: "#F0531C",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.24,
@@ -1062,6 +1119,7 @@ const styles = StyleSheet.create({
   landingVenueBtnText: { color: "#F7F4EE", fontSize: 17, fontWeight: "700" },
   landingWorkerBtn: {
     alignItems: "center",
+    alignSelf: "center",
     backgroundColor: "transparent",
     borderColor: "rgba(14,26,36,0.2)",
     borderRadius: 999,
@@ -1070,6 +1128,7 @@ const styles = StyleSheet.create({
     gap: 9,
     justifyContent: "center",
     paddingVertical: 17,
+    width: "100%",
   },
   landingWorkerBtnText: { color: "#0E1A24", fontSize: 17, fontWeight: "700" },
   landingBrowseBtn: {

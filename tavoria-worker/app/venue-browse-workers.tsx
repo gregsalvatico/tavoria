@@ -199,6 +199,8 @@ export default function VenueBrowseWorkers() {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

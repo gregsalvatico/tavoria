@@ -14,9 +14,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
 import { changeUsernamePin } from "../lib/usernameAuth";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 
 export default function ChangePin() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const [currentPin, setCurrentPin] = useState("");
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
@@ -79,7 +81,7 @@ export default function ChangePin() {
           {currentPin.length === 4 && newPin.length === 4 && currentPin === newPin ? <Text style={styles.error}>{t("change_pin.same_pin")}</Text> : null}
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <Pressable style={[styles.submit, !canSubmit && styles.submitDisabled]} onPress={() => void submit()} disabled={!canSubmit || saving}>
+          <Pressable style={[styles.submit, isDesktop && desktopButtonStyle, !canSubmit && styles.submitDisabled]} onPress={() => void submit()} disabled={!canSubmit || saving}>
             {saving ? <ActivityIndicator color="white" /> : <Text style={styles.submitText}>{t("change_pin.save")}</Text>}
           </Pressable>
           <View style={styles.note}>
@@ -127,7 +129,7 @@ const styles = StyleSheet.create({
   successCopy: { flex: 1 },
   successTitle: { color: "#135C3C", fontSize: 13, fontWeight: "800", lineHeight: 18 },
   successText: { color: "#256747", fontSize: 12, lineHeight: 17, marginTop: 2 },
-  submit: { alignItems: "center", backgroundColor: "#F0531C", borderRadius: 999, justifyContent: "center", marginTop: 8, minHeight: 54 },
+  submit: { alignItems: "center", alignSelf: "center", backgroundColor: "#F0531C", borderRadius: 999, justifyContent: "center", marginTop: 8, minHeight: 54, width: "100%" },
   submitDisabled: { opacity: 0.42 },
   submitText: { color: "white", fontSize: 15, fontWeight: "800" },
   note: { alignItems: "flex-start", flexDirection: "row", gap: 8, marginTop: 18, paddingHorizontal: 4 },

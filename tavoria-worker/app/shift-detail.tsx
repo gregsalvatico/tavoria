@@ -31,6 +31,7 @@ import { t } from "../lib/i18n";
 import { localizeContractType } from "../lib/contractTypes";
 import { localizeRole, localizeRoles } from "../lib/positions";
 import ContactPersonModal from "../components/ContactPersonModal";
+import { desktopButtonStyle } from "../lib/responsive";
 
 const VENUE_CAFE = require("../assets/venue-cafe.png");
 const VENUE_TYPE_PHOTOS: Record<string, number> = {
@@ -242,7 +243,7 @@ export default function ShiftDetail() {
               if (router.canGoBack()) { router.back(); return; }
               router.replace("/");
             }}
-            style={styles.backPrimaryBtn}
+            style={[styles.backPrimaryBtn, isDesktop && desktopButtonStyle]}
           >
             <Text style={styles.backPrimaryTxt}>Back to shifts</Text>
           </Pressable>
@@ -297,7 +298,7 @@ export default function ShiftDetail() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <View style={styles.header}>
+      <View style={[styles.header, isDesktop && styles.headerDesktop]}>
         <Pressable
           onPress={() => {
             if (router.canGoBack()) { router.back(); return; }
@@ -639,6 +640,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
+  headerDesktop: { paddingHorizontal: 24 },
   iconBtn: { padding: 4, width: 32 },
 
   scroll: { paddingHorizontal: 14, paddingBottom: 20 },
@@ -661,11 +663,13 @@ const styles = StyleSheet.create({
   },
   errorSub: { color: "#6B7280", fontSize: 13, textAlign: "center" },
   backPrimaryBtn: {
+    alignSelf: "center",
     marginTop: 16,
     backgroundColor: "#F0531C",
     paddingVertical: 14,
     paddingHorizontal: 28,
     borderRadius: 999,
+    width: "100%",
   },
   backPrimaryTxt: { color: "white", fontWeight: "800", fontSize: 15 },
 

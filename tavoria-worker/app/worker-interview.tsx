@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import {
   InterviewQuestion,
   getQuestionsByIds,
@@ -31,6 +32,7 @@ import {
 
 export default function WorkerInterview() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const profile = getWorkerProfile();
   const positions = profile?.positions ?? [];
   const savedAnswers = profile?.interviewAnswers ?? [];
@@ -131,7 +133,7 @@ export default function WorkerInterview() {
         </View>
 
         <View style={styles.bottom}>
-          <Pressable style={styles.cta} onPress={onSaveAndContinue}>
+          <Pressable style={[styles.cta, isDesktop && desktopButtonStyle]} onPress={onSaveAndContinue}>
             <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
             <Feather name="arrow-right" size={20} color="#F7F4EE" />
           </Pressable>
@@ -348,6 +350,7 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(0,0,0,0.08)",
   },
   cta: {
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -355,6 +358,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0531C",
     borderRadius: 999,
     paddingVertical: 18,
+    width: "100%",
   },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
 });

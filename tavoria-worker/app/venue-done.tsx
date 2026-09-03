@@ -12,9 +12,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 
 export default function VenueDone() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const profile = getVenueProfile();
   const venueName = (profile?.name || "Bar Centrale").toUpperCase();
   const venueCity = profile?.city || "Milan";
@@ -132,7 +134,7 @@ export default function VenueDone() {
 
         <View style={styles.bottom}>
           <Pressable
-            style={styles.cta}
+            style={[styles.cta, isDesktop && desktopButtonStyle]}
             onPress={() => router.replace("/venue-photo")}
           >
             <Text style={styles.ctaTxt}>{t("venue_done.post_shift")}</Text>
@@ -269,6 +271,7 @@ const styles = StyleSheet.create({
   bottom: { gap: 12, alignItems: "center", paddingBottom: 24, paddingTop: 8 },
   cta: {
     width: "100%",
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

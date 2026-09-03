@@ -2,6 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { desktopButtonStyle } from "../lib/responsive";
 
 export default function WorkerWelcome() {
   const router = useRouter();
@@ -48,7 +49,7 @@ export default function WorkerWelcome() {
 
         <View style={[styles.bottom, isDesktop && styles.desktopBottom]}>
           <Link href="/signup?next=worker-profile" asChild>
-            <Pressable style={styles.cta}>
+            <Pressable style={[styles.cta, isDesktop && desktopButtonStyle]}>
               <Text style={styles.ctaTxt}>Start — it's free</Text>
               <Feather name="arrow-right" size={20} color="#0E1A24" />
             </Pressable>
@@ -141,6 +142,7 @@ const styles = StyleSheet.create({
   desktopBottom: { alignSelf: "center", maxWidth: 820, width: "100%" },
   cta: {
     width: "100%",
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

@@ -9,9 +9,11 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 
 export default function WorkerMedia() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   // Mock: index 0 already has the coached video done in /record
   const [photos, setPhotos] = useState<boolean[]>([true, false, false, false, false]);
   const [videos, setVideos] = useState<boolean[]>([true, false, false]);
@@ -182,7 +184,7 @@ export default function WorkerMedia() {
 
       <View style={styles.bottom}>
         <Pressable
-          style={styles.cta}
+          style={[styles.cta, isDesktop && desktopButtonStyle]}
           onPress={() => router.replace("/worker-done")}
         >
           <Text style={styles.ctaTxt}>Save and go live</Text>
@@ -359,6 +361,7 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(0,0,0,0.08)",
   },
   cta: {
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -366,6 +369,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0531C",
     borderRadius: 999,
     paddingVertical: 18,
+    width: "100%",
   },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
 });

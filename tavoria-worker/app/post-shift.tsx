@@ -4,6 +4,7 @@ import { setPostedShift } from "../lib/postedShift";
 import { getVenueProfile, patchVenueProfile } from "../lib/venueProfile";
 import { getCurrentVenueRow, insertShift } from "../lib/db";
 import { t } from "../lib/i18n";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -110,6 +111,7 @@ const COMMON_ROLES = [
 
 export default function PostShift() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const venueRoles = getVenueProfile()?.roles ?? [];
   // Shifts inherit the venue's saved positions automatically.
   // If a venue wants to change which positions a shift covers, they edit
@@ -526,7 +528,7 @@ export default function PostShift() {
       <View style={styles.bottom}>
         <Pressable
           disabled={busy}
-          style={[styles.cta, busy && { opacity: 0.45 }]}
+          style={[styles.cta, isDesktop && desktopButtonStyle, busy && { opacity: 0.45 }]}
           onPress={async () => {
             if (roles.length === 0) {
               // Use inline error instead of Alert.alert — Alert is flaky on
@@ -1687,6 +1689,7 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(0,0,0,0.08)",
   },
   cta: {
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -1694,6 +1697,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0531C",
     borderRadius: 999,
     paddingVertical: 18,
+    width: "100%",
   },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
 });

@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { getCurrentWorkerFull } from "../lib/db";
 import { i18n, LANGUAGES, t } from "../lib/i18n";
 import { getWorkerProfile, patchWorkerProfile } from "../lib/workerProfile";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 
 type ItemKey = "interview" | "personality" | "videos" | "photos" | "documents";
 
@@ -68,6 +69,7 @@ const ITEMS: Item[] = [
 
 export default function WorkerBonus() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const params = useLocalSearchParams<{ mode?: string }>();
   const isEditMode = params.mode === "edit";
   const scale = useRef(new Animated.Value(0.4)).current;
@@ -282,7 +284,7 @@ export default function WorkerBonus() {
       <View style={styles.bottom}>
         {!allDone && (
           <Pressable
-            style={styles.cta}
+            style={[styles.cta, isDesktop && desktopButtonStyle]}
             onPress={() => router.push(nextItem.route as any)}
           >
             <Text style={styles.ctaTxt}>
@@ -484,6 +486,7 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(0,0,0,0.08)",
   },
   cta: {
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -491,6 +494,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0531C",
     borderRadius: 999,
     paddingVertical: 18,
+    width: "100%",
   },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
   skipBtn: { alignItems: "center", paddingVertical: 8 },

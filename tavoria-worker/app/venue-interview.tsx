@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { updateVenue } from "../lib/db";
 import { t } from "../lib/i18n";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import {
   InterviewQuestion,
   localizeQuestions,
@@ -30,6 +31,7 @@ import {
 
 export default function VenueInterview() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const profile = getVenueProfile();
   // venue.roles uses lowercase labels (e.g. "Barista") matching worker positions
   const roles = profile?.roles ?? [];
@@ -125,7 +127,7 @@ export default function VenueInterview() {
 
         <View style={styles.bottom}>
           <Pressable
-            style={[styles.cta, busy && { opacity: 0.6 }]}
+            style={[styles.cta, isDesktop && desktopButtonStyle, busy && { opacity: 0.6 }]}
             disabled={busy}
             onPress={onSaveAndContinue}
           >
@@ -393,6 +395,7 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(0,0,0,0.08)",
   },
   cta: {
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -400,6 +403,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0531C",
     borderRadius: 999,
     paddingVertical: 18,
+    width: "100%",
   },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
 });

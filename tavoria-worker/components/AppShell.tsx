@@ -17,6 +17,7 @@ import { clearVenueProfile } from "../lib/venueProfile";
 import { clearWorkerProfile } from "../lib/workerProfile";
 import { setCachedHomeContext, type HomeContext } from "../lib/homeContextCache";
 import { supabase } from "../lib/supabase";
+import VenueQrFab from "./VenueQrFab";
 
 const FOCUSED_ROUTES = new Set([
   "apply",
@@ -140,17 +141,14 @@ function DesktopPublicFrame({
   route: string;
   children: ReactNode;
 }) {
-  const isHowItWorks = route === "how-it-works";
-  const surfaceColor = isHowItWorks || DARK_FLOW_ROUTES.has(route)
+  const surfaceColor = route === "how-it-works" || DARK_FLOW_ROUTES.has(route)
     ? "#0E1A24"
     : route === "terms" || route === "venue-board"
       ? "#F1EFE8"
       : "#F7F4EE";
-  const maxWidth = isHowItWorks ? 820 : route === "terms" ? 900 : 1040;
-
   return (
     <View style={[styles.publicSurface, { backgroundColor: surfaceColor }]}>
-      <View style={[styles.publicSurfaceInner, { maxWidth }]}>{children}</View>
+      <View style={styles.publicSurfaceInner}>{children}</View>
     </View>
   );
 }
@@ -166,7 +164,7 @@ function DesktopAppFrame({
 
   return (
     <View style={[styles.appSurface, { backgroundColor: surfaceColor }]}>
-      <View style={styles.appSurfaceInner}>{children}</View>
+      {children}
     </View>
   );
 }
@@ -270,7 +268,6 @@ function DesktopFlowFrame({
 function DesktopSidebar({ currentRoute }: { currentRoute: string }) {
   const router = useRouter();
   const [context, setContext] = useState<HomeContext | null>(null);
-  const [postShiftHovered, setPostShiftHovered] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -299,14 +296,12 @@ function DesktopSidebar({ currentRoute }: { currentRoute: string }) {
     () =>
       venueMode
         ? [
-            { route: "/venue-browse-workers", icon: "users", label: t("home_in.browse_workers") },
             { route: "/venue-inbox", icon: "inbox", label: t("home_in.inbox") },
             { route: "/venue-shifts", icon: "briefcase", label: t("home_in.my_shifts") },
           ]
         : [
             { route: "/discover", icon: "compass", label: t("home_in.browse_shifts") },
             { route: "/worker-applications", icon: "send", label: t("home_in.my_applications") },
-            { route: "/scan", icon: "maximize", label: t("home.scan_qr") },
           ],
     [venueMode]
   );
@@ -360,23 +355,8 @@ function DesktopSidebar({ currentRoute }: { currentRoute: string }) {
             );
           })}
         </View>
+        {venueMode ? <VenueQrFab variant="sidebar" /> : null}
       </ScrollView>
-
-      {venueMode ? (
-        <Pressable
-          onPress={() => router.push("/post-shift")}
-          onHoverIn={() => setPostShiftHovered(true)}
-          onHoverOut={() => setPostShiftHovered(false)}
-          onFocus={() => setPostShiftHovered(true)}
-          onBlur={() => setPostShiftHovered(false)}
-          style={[styles.sidebarFab, postShiftHovered && styles.sidebarFabExpanded]}
-          accessibilityRole="button"
-          accessibilityLabel={t("home_in.post_shift")}
-        >
-          <Feather name="plus" size={19} color="#FFFFFF" />
-          {postShiftHovered ? <Text style={styles.sidebarFabText}>{t("home_in.post_shift")}</Text> : null}
-        </Pressable>
-      ) : null}
 
       <View style={styles.sidebarFooter}>
         <Pressable
@@ -440,7 +420,6 @@ const styles = StyleSheet.create({
   publicSurface: { flex: 1, minWidth: 0, width: "100%" },
   publicSurfaceInner: { alignSelf: "center", flex: 1, minWidth: 0, width: "100%" },
   appSurface: { flex: 1, minWidth: 0, width: "100%" },
-  appSurfaceInner: { alignSelf: "center", flex: 1, maxWidth: 1160, minWidth: 0, width: "100%" },
   desktopFrame: {
     flex: 1,
     flexDirection: "row",
@@ -564,30 +543,6 @@ const styles = StyleSheet.create({
   sidebarNavItemActive: { backgroundColor: "#F0531C" },
   sidebarNavLabel: { color: "rgba(247,244,238,0.68)", flex: 1, fontSize: 13, fontWeight: "700" },
   sidebarNavLabelActive: { color: "#FFFFFF" },
-  sidebarFab: {
-    alignItems: "center",
-    backgroundColor: "#F0531C",
-    borderRadius: 999,
-    bottom: 108,
-    elevation: 5,
-    height: 46,
-    justifyContent: "center",
-    position: "absolute",
-    right: 18,
-    shadowColor: "#000000",
-    shadowOffset: { height: 4, width: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    width: 46,
-    zIndex: 3,
-  },
-  sidebarFabExpanded: {
-    gap: 8,
-    justifyContent: "flex-start",
-    paddingHorizontal: 14,
-    width: 170,
-  },
-  sidebarFabText: { color: "#FFFFFF", fontSize: 12, fontWeight: "800" },
   sidebarFooter: { borderTopColor: "rgba(247,244,238,0.1)", borderTopWidth: 1, paddingHorizontal: 20, paddingVertical: 18 },
   sidebarAccount: { alignItems: "center", flexDirection: "row", gap: 10 },
   sidebarAvatar: { borderRadius: 999, height: 36, width: 36 },

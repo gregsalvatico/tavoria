@@ -18,6 +18,7 @@ import { getCurrentWorkerFull, uploadWorkerMedia } from "../lib/db";
 import { t } from "../lib/i18n";
 import { getWorkerProfile, patchWorkerProfile } from "../lib/workerProfile";
 import { pickVideoWeb } from "../lib/webMedia";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 
 type VideoRow = {
   id: string;
@@ -51,6 +52,7 @@ const VIDEOS: VideoRow[] = [
 
 export default function WorkerVideos() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   // Seed completed state from the worker's existing profile so a video
   // already uploaded during signup shows as "Recorded" here.
   const [done, setDone] = useState<Record<string, boolean>>((): Record<string, boolean> => {
@@ -254,7 +256,7 @@ export default function WorkerVideos() {
       <View style={styles.bottom}>
         <Pressable
           onPress={() => router.push("/worker-photos")}
-          style={styles.cta}
+          style={[styles.cta, isDesktop && desktopButtonStyle]}
         >
           <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
           <Feather name="arrow-right" size={20} color="#F7F4EE" />
@@ -477,6 +479,7 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(0,0,0,0.08)",
   },
   cta: {
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -484,6 +487,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0531C",
     borderRadius: 999,
     paddingVertical: 18,
+    width: "100%",
   },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
   skipBtn: { alignItems: "center", paddingVertical: 4 },

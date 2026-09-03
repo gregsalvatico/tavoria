@@ -5,6 +5,7 @@ import { insertVenue, recordVenueTermsAcceptance } from "../lib/db";
 import { registerPush } from "../lib/pushNotifications";
 import { sendVenueWelcomeEmail } from "../lib/email";
 import { t } from "../lib/i18n";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import {
   generateUsername,
   nameToSlug,
@@ -29,6 +30,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function VenueInfo() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
@@ -155,6 +157,8 @@ export default function VenueInfo() {
           style={{ flex: 1 }}
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
         >
           <Text style={[styles.h1, styles.h1Center]}>
             <Text style={styles.h1Accent}>{t("venue_info.title").charAt(0)}</Text>
@@ -334,7 +338,7 @@ export default function VenueInfo() {
           <Pressable
             disabled={!canContinue || busy}
             onPress={onContinue}
-            style={[styles.cta, (!canContinue || busy) && styles.ctaDisabled]}
+            style={[styles.cta, isDesktop && desktopButtonStyle, (!canContinue || busy) && styles.ctaDisabled]}
           >
             {busy ? (
               <ActivityIndicator color="#F7F4EE" />
@@ -449,6 +453,7 @@ const styles = StyleSheet.create({
 
   bottom: { paddingBottom: 24, paddingHorizontal: 20, paddingTop: 20 },
   cta: {
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -456,6 +461,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0531C",
     borderRadius: 999,
     paddingVertical: 18,
+    width: "100%",
   },
   ctaDisabled: { backgroundColor: "rgba(11,15,26,0.15)" },
   requirements: {

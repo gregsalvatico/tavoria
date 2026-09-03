@@ -4,9 +4,11 @@ import { useEffect, useRef } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 
 export default function WorkerDone() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const scale = useRef(new Animated.Value(0.4)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
@@ -89,14 +91,14 @@ export default function WorkerDone() {
 
         <View style={styles.bottom}>
           <Pressable
-            style={styles.cta}
+            style={[styles.cta, isDesktop && desktopButtonStyle]}
             onPress={() => router.push("/candidate")}
           >
             <Feather name="eye" size={18} color="#F7F4EE" />
             <Text style={styles.ctaTxt}>{t("worker_done.preview")}</Text>
           </Pressable>
           <Pressable
-            style={styles.secondaryBtn}
+            style={[styles.secondaryBtn, isDesktop && desktopButtonStyle]}
             onPress={() => router.replace("/")}
           >
             <Text style={styles.secondaryBtnTxt}>{t("worker_done.discover")}</Text>
@@ -176,6 +178,7 @@ const styles = StyleSheet.create({
   bottom: { gap: 12, alignItems: "center", paddingBottom: 24, paddingTop: 8 },
   cta: {
     width: "100%",
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -187,6 +190,7 @@ const styles = StyleSheet.create({
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
   secondaryBtn: {
     width: "100%",
+    alignSelf: "center",
     paddingVertical: 14,
     borderRadius: 999,
     borderWidth: 0.5,

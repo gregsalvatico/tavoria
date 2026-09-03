@@ -2,6 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { t } from "../lib/i18n";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import { patchVenueProfile } from "../lib/venueProfile";
 import {
   Image,
@@ -79,6 +80,7 @@ const TYPE_LABEL_KEYS: Record<string, string> = {
 
 export default function VenueType() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const [picked, setPicked] = useState<string | null>(null);
 
   return (
@@ -162,7 +164,7 @@ export default function VenueType() {
             if (chosen) patchVenueProfile({ type: chosen.label });
             router.push("/venue-info");
           }}
-          style={[styles.cta, !picked && styles.ctaDisabled]}
+          style={[styles.cta, isDesktop && desktopButtonStyle, !picked && styles.ctaDisabled]}
         >
           <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
           <Feather name="arrow-right" size={20} color="#F7F4EE" />
@@ -299,6 +301,7 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(0,0,0,0.08)",
   },
   cta: {
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -306,6 +309,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0531C",
     borderRadius: 999,
     paddingVertical: 18,
+    width: "100%",
   },
   ctaDisabled: { backgroundColor: "rgba(11,15,26,0.15)" },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
