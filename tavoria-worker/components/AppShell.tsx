@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
     position: "absolute",
   },
   authMain: { flex: 1, minWidth: 0 },
-  authMainInner: { alignSelf: "center", flex: 1, maxWidth: 690, width: "100%" },
+  authMainInner: { flex: 1, width: "100%" },
   flowAside: {
     backgroundColor: "#0E1A24",
     padding: 30,

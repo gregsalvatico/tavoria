@@ -186,7 +186,7 @@ export default function Signup() {
         </View>
 
         <ScrollView
-          style={{ flex: 1 }}
+          style={styles.formScroll}
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -392,20 +392,22 @@ export default function Signup() {
         </ScrollView>
 
         <View style={styles.bottom}>
-          <Pressable
-            disabled={!canContinue || busy}
-            onPress={onContinue}
-            style={[styles.cta, isDesktop && desktopButtonStyle, (!canContinue || busy) && styles.ctaDisabled]}
-          >
-            {busy ? (
-              <ActivityIndicator color="#F7F4EE" />
-            ) : (
-              <>
-                <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
-                <Feather name="arrow-right" size={20} color="#F7F4EE" />
-              </>
-            )}
-          </Pressable>
+          <View style={styles.bottomInner}>
+            <Pressable
+              disabled={!canContinue || busy}
+              onPress={onContinue}
+              style={[styles.cta, isDesktop && desktopButtonStyle, (!canContinue || busy) && styles.ctaDisabled]}
+            >
+              {busy ? (
+                <ActivityIndicator color="#F7F4EE" />
+              ) : (
+                <>
+                  <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
+                  <Feather name="arrow-right" size={20} color="#F7F4EE" />
+                </>
+              )}
+            </Pressable>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -447,6 +449,7 @@ const styles = StyleSheet.create({
   },
   dotOn: { backgroundColor: "#0E1A24" },
 
+  formScroll: { alignSelf: "center", flex: 1, maxWidth: 690, width: "100%" },
   scroll: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 14 },
 
   breadcrumb: {
@@ -541,6 +544,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",
   },
+  bottomInner: { alignSelf: "center", maxWidth: 690, width: "100%" },
   cta: {
     alignSelf: "center",
     flexDirection: "row",
@@ -549,6 +553,7 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: "#F0531C",
     borderRadius: 999,
+    paddingHorizontal: 20,
     paddingVertical: 18,
     width: "100%",
   },
