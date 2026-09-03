@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { updateShift } from "../lib/db";
 import { STANDARD_CONTRACT_TYPES, normalizeContractType } from "../lib/contractTypes";
 import { t } from "../lib/i18n";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import { supabase } from "../lib/supabase";
 
 const UNITS = ["hour", "day", "week", "month"] as const;
@@ -27,6 +28,7 @@ const TIME_OPTIONS = Array.from({ length: 48 }, (_, index) => {
 export default function ShiftEdit() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [contract, setContract] = useState<string>("part_time");
@@ -162,7 +164,7 @@ export default function ShiftEdit() {
           </View>
 
           <Pressable
-            style={[styles.save, (!canSave || saving) && styles.saveDisabled]}
+            style={[styles.save, isDesktop && desktopButtonStyle, (!canSave || saving) && styles.saveDisabled]}
             onPress={save}
             disabled={!canSave || saving}
           >

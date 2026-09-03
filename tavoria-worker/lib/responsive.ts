@@ -6,5 +6,10 @@ export function useIsDesktop(): boolean {
   return Platform.OS === "web" && width >= 1024;
 }
 
-/** Applied after a full-width mobile button style to let desktop CTAs fit content. */
-export const desktopButtonStyle = { width: "auto" as const };
+/** Applied after mobile button styles so desktop actions fit content with comfortable side padding. */
+export const desktopButtonStyle = {
+  alignSelf: "center" as const,
+  flex: 0,
+  paddingHorizontal: 20,
+  width: "auto" as const,
+};

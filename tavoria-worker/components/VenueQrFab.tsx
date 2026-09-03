@@ -24,9 +24,10 @@ export default function VenueQrFab({ variant = "fab" }: Props) {
   const [venue, setVenue] = useState<VenueInfo | null>(null);
   const [dataUrl, setDataUrl] = useState<string | null>(null);
 
-  const loadQr = async () => {
+  const loadQr = async (force = false) => {
     setOpen(true);
-    if (dataUrl) return;
+    if (dataUrl && !force) return;
+    if (force) setDataUrl(null);
     setLoading(true);
     try {
       const currentVenue = await getCurrentVenueRow();
@@ -119,7 +120,19 @@ export default function VenueQrFab({ variant = "fab" }: Props) {
                     </View>
                   </>
                 ) : (
-                  <Text style={styles.error}>{t("common.try_again")}</Text>
+                  <View style={styles.errorState}>
+                    <Feather name="refresh-cw" size={24} color="#F0531C" />
+                    <Text style={styles.error}>{t("common.try_again")}</Text>
+                    <Pressable
+                      style={styles.reloadButton}
+                      onPress={() => void loadQr(true)}
+                      accessibilityRole="button"
+                      accessibilityLabel={t("common.try_again")}
+                    >
+                      <Feather name="refresh-cw" size={16} color="white" />
+                      <Text style={styles.reloadText}>{t("common.try_again")}</Text>
+                    </Pressable>
+                  </View>
                 )}
               </View>
               <Pressable style={[styles.download, !venue && styles.downloadDisabled]} onPress={() => void download()} disabled={!venue}>
@@ -157,7 +170,10 @@ const styles = StyleSheet.create({
   posterBrand: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 23, lineHeight: 26 },
   posterBrandAccent: { color: "#F0531C" },
   posterUrl: { color: "#0E1A24", fontSize: 9, fontWeight: "800", letterSpacing: 0.3, marginTop: 3 },
+  errorState: { alignItems: "center", gap: 10, paddingVertical: 16 },
   error: { color: "#6B7280", fontSize: 13, lineHeight: 19, maxWidth: 200, textAlign: "center" },
+  reloadButton: { alignItems: "center", backgroundColor: "#0E1A24", borderRadius: 999, flexDirection: "row", gap: 7, justifyContent: "center", minHeight: 44, paddingHorizontal: 18 },
+  reloadText: { color: "white", fontSize: 14, fontWeight: "800" },
   download: { alignItems: "center", backgroundColor: "#F0531C", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", marginTop: 18, minHeight: 52, paddingHorizontal: 18 },
   downloadDisabled: { opacity: 0.55 },
   downloadText: { color: "white", fontSize: 15, fontWeight: "800" },

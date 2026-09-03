@@ -667,7 +667,7 @@ export default function Profile() {
 
       {/* Sticky action bar */}
       {isOwnerMode ? (
-        <View style={styles.ownerActionBar}>
+        <View style={[styles.ownerActionBar, isDesktop && styles.ownerActionBarDesktop]}>
           <Pressable
             style={[styles.ownerButton, styles.ownerEdit, isDesktop && desktopButtonStyle]}
             onPress={() => router.push("/worker-bonus?mode=edit")}
@@ -1095,6 +1095,7 @@ const styles = StyleSheet.create({
   },
   actionResultText: { color: "#3B6D11", fontSize: 12, fontWeight: "600" },
   ownerActionBar: { backgroundColor: "white", borderTopColor: "rgba(0,0,0,0.08)", borderTopWidth: 0.5, gap: 10, paddingBottom: 24, paddingHorizontal: 12, paddingTop: 12 },
+  ownerActionBarDesktop: { flexDirection: "row", justifyContent: "center" },
   ownerButton: { alignItems: "center", alignSelf: "center", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 54, paddingHorizontal: 18, paddingVertical: 15, width: "100%" },
   ownerButtonText: { color: "white", fontSize: 15, fontWeight: "700" },
   actionBtn: {

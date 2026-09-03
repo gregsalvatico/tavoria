@@ -654,7 +654,7 @@ export default function Candidate() {
           </View>
 
           {isOwnerMode ? (
-            <View style={styles.ownerButtons}>
+            <View style={[styles.ownerButtons, isDesktop && styles.ownerButtonsDesktop]}>
               <Pressable
                 style={[styles.ownerButton, styles.ownerButtonPrimary, isDesktop && desktopButtonStyle]}
                 onPress={() => router.push("/worker-bonus?mode=edit")}
@@ -1266,6 +1266,7 @@ const styles = StyleSheet.create({
   finalStatusDeclined: { backgroundColor: "#FCEBEB" },
   finalStatusText: { fontSize: 15, fontWeight: "800" },
   ownerButtons: { borderTopColor: "rgba(0,0,0,0.08)", borderTopWidth: 0.5, gap: 10, padding: 12 },
+  ownerButtonsDesktop: { flexDirection: "row", justifyContent: "center" },
   ownerButton: { alignItems: "center", alignSelf: "center", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 54, paddingHorizontal: 18, paddingVertical: 15, width: "100%" },
   ownerButtonPrimary: { backgroundColor: "#F0531C" },
   ownerButtonSecondary: { backgroundColor: "#0E1A24" },

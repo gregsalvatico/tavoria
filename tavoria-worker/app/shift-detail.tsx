@@ -453,12 +453,13 @@ export default function ShiftDetail() {
 
       <View style={styles.bottom}>
         {isOwner ? (
-          <View style={styles.ownerBar}>
+          <View style={[styles.ownerBar, isDesktop && styles.ownerBarDesktop]}>
             <OwnerAction
               icon="edit-2"
               label={t("shift_owner.edit")}
               color="white"
               bg="#F0531C"
+              isDesktop={isDesktop}
               onPress={() => router.push({ pathname: "/shift-edit", params: { id } })}
             />
             <OwnerAction
@@ -466,6 +467,7 @@ export default function ShiftDetail() {
               label={t("shift_owner.share")}
               color="#0E1A24"
               bg="#F1EFE8"
+              isDesktop={isDesktop}
               onPress={onShare}
             />
           </View>
@@ -474,7 +476,7 @@ export default function ShiftDetail() {
             <Pressable
               onPress={() => canOpenContact && setContactOpen(true)}
               disabled={!canOpenContact}
-              style={[styles.applyBtn, canOpenContact ? styles.contactBtn : styles.applicationStatusBtn]}
+              style={[styles.applyBtn, isDesktop && desktopButtonStyle, canOpenContact ? styles.contactBtn : styles.applicationStatusBtn]}
             >
               <Text style={styles.applyTxt}>
                 {applicationStatus === "interview_requested"
@@ -493,7 +495,7 @@ export default function ShiftDetail() {
             <Pressable
               onPress={onApply}
               disabled={applying}
-              style={[styles.applyBtn, applying && { opacity: 0.6}]}
+              style={[styles.applyBtn, isDesktop && desktopButtonStyle, applying && { opacity: 0.6}]}
             >
               {applying ? (
                 <ActivityIndicator color="#F7F4EE" />
@@ -581,17 +583,19 @@ function OwnerAction({
   label,
   color,
   bg,
+  isDesktop,
   onPress,
 }: {
   icon: keyof typeof Feather.glyphMap;
   label: string;
   color: string;
   bg: string;
+  isDesktop: boolean;
   onPress: () => void;
 }) {
   return (
     <Pressable
-      style={[styles.ownerTile, { backgroundColor: bg, borderColor: color }]}
+      style={[styles.ownerTile, isDesktop && desktopButtonStyle, { backgroundColor: bg, borderColor: color }]}
       onPress={onPress}
     >
       <Feather name={icon} size={19} color={color} />
@@ -857,6 +861,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     gap: 8,
   },
+  ownerBarDesktop: { flexDirection: "row", justifyContent: "center" },
   ownerTile: {
     borderRadius: 999,
     borderWidth: 1,

@@ -24,6 +24,7 @@ import { localizeRoles } from "../lib/positions";
 import AppBottomNav from "../components/AppBottomNav";
 import { mapsUrl, websiteLabel, websiteUrl } from "../lib/contact";
 import { openExternalLink } from "../lib/externalLinks";
+import { desktopButtonStyle } from "../lib/responsive";
 
 const VENUE_TYPE_PHOTOS: Record<string, any> = {
   cafe: require("../assets/venue-cafe.png"),
@@ -167,7 +168,7 @@ export default function VenueShifts() {
           </View>
         ) : (
           <>
-            {venue ? <VenueSummary venue={venue} onEdit={() => router.push("/venue-edit")} /> : null}
+            {venue ? <VenueSummary venue={venue} isDesktop={isDesktop} onEdit={() => router.push("/venue-edit")} /> : null}
             <Pressable
               onPress={() => router.push("/venue-photo")}
               style={styles.postShiftCard}
@@ -201,7 +202,7 @@ export default function VenueShifts() {
   );
 }
 
-function VenueSummary({ venue, onEdit }: { venue: VenueRow; onEdit: () => void }) {
+function VenueSummary({ venue, isDesktop, onEdit }: { venue: VenueRow; isDesktop: boolean; onEdit: () => void }) {
   const image = venue.photo_url
     ? { uri: venue.photo_url }
     : VENUE_TYPE_PHOTOS[(venue.type || "cafe").toLowerCase()] ?? VENUE_TYPE_PHOTOS.cafe;
@@ -251,7 +252,7 @@ function VenueSummary({ venue, onEdit }: { venue: VenueRow; onEdit: () => void }
           ) : null}
         </View>
       ) : null}
-      <Pressable style={styles.editVenueButton} onPress={onEdit}>
+      <Pressable style={[styles.editVenueButton, isDesktop && desktopButtonStyle]} onPress={onEdit}>
         <Feather name="edit-2" size={15} color="#0E1A24" />
         <Text style={styles.editVenueText}>Edit profile</Text>
       </Pressable>

@@ -17,12 +17,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { getCurrentVenueRow, updateVenue } from "../lib/db";
 import { getVenueProfile, patchVenueProfile } from "../lib/venueProfile";
 import { websiteUrl } from "../lib/contact";
+import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 
 type InterviewLocationOption = "venue" | "phone" | "video" | "other";
 const DEFAULT_INTERVIEW_OPTIONS: InterviewLocationOption[] = ["venue", "phone", "video"];
 
 export default function VenueEdit() {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const [venueId, setVenueId] = useState<string | null>(getVenueProfile()?.id ?? null);
   const [name, setName] = useState(getVenueProfile()?.name ?? "");
   const [address, setAddress] = useState(getVenueProfile()?.address ?? "");
@@ -154,7 +156,7 @@ export default function VenueEdit() {
               <InterviewFormatToggle icon="video" label="Video call" value={interviewOptions.includes("video")} onPress={() => toggleInterviewOption("video", interviewOptions, setInterviewOptions)} />
               <InterviewFormatToggle icon="edit-3" label="Another location" value={interviewOptions.includes("other")} onPress={() => toggleInterviewOption("other", interviewOptions, setInterviewOptions)} />
             </View>
-            <Pressable style={[styles.save, saving && { opacity: 0.65 }]} onPress={save} disabled={saving}>
+            <Pressable style={[styles.save, isDesktop && desktopButtonStyle, saving && { opacity: 0.65 }]} onPress={save} disabled={saving}>
               {saving ? <ActivityIndicator color="white" /> : <><Feather name="check" size={18} color="white" /><Text style={styles.saveText}>Save venue details</Text></>}
             </Pressable>
           </ScrollView>

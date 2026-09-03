@@ -424,7 +424,7 @@ export default function Record() {
                 {t("record_screen.take_photo")}
               </Text>
             </Pressable>
-            <Pressable style={styles.ghostBtn} onPress={pickPhotoFromLibrary}>
+            <Pressable style={[styles.ghostBtn, isDesktop && desktopButtonStyle]} onPress={pickPhotoFromLibrary}>
               <Feather name="image" size={16} color="#F7F4EE" />
               <Text style={styles.ghostBtnTxt}>
                 {t("record_screen.choose_lib")}
@@ -434,9 +434,9 @@ export default function Record() {
         )}
 
         {phase === "photo-preview" && (
-          <View style={styles.reviewButtons}>
+          <View style={[styles.reviewButtons, isDesktop && styles.reviewButtonsDesktop]}>
             <Pressable
-              style={styles.retakeBtn}
+              style={[styles.retakeBtn, isDesktop && desktopButtonStyle]}
               onPress={() => {
                 setPhotoUri(null);
                 setPhase("intro");
@@ -448,7 +448,7 @@ export default function Record() {
               </Text>
             </Pressable>
             <Pressable
-              style={styles.submitBtn}
+              style={[styles.submitBtn, isDesktop && desktopButtonStyle]}
               onPress={() => setPhase("video-intro")}
             >
               <Text style={styles.submitTxt}>Continue</Text>
@@ -469,9 +469,9 @@ export default function Record() {
         )}
 
         {phase === "video-preview" && (
-          <View style={styles.reviewButtons}>
+          <View style={[styles.reviewButtons, isDesktop && styles.reviewButtonsDesktop]}>
             <Pressable
-              style={styles.retakeBtn}
+              style={[styles.retakeBtn, isDesktop && desktopButtonStyle]}
               onPress={() => {
                 setVideoUri(null);
                 setVideoDuration(0);
@@ -483,7 +483,7 @@ export default function Record() {
                 {t("record_screen.retake")}
               </Text>
             </Pressable>
-            <Pressable style={styles.submitBtn} onPress={submitAll}>
+            <Pressable style={[styles.submitBtn, isDesktop && desktopButtonStyle]} onPress={submitAll}>
               <Text style={styles.submitTxt}>{t("record_screen.submit")}</Text>
               <Feather name="arrow-right" size={18} color="#F7F4EE" />
             </Pressable>
@@ -727,6 +727,7 @@ const styles = StyleSheet.create({
     gap: 12,
     width: "100%",
   },
+  reviewButtonsDesktop: { justifyContent: "center" },
   retakeBtn: {
     flexDirection: "row",
     alignItems: "center",
