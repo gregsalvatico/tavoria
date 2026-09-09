@@ -254,13 +254,10 @@ export default function ApplicationActionModal({
             }
             disabled={loading || !interviewValid}
           >
-            {loading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={styles.confirmText}>
-                {t(`candidate_actions.confirm_${action}_cta`)}
-              </Text>
-            )}
+            <Text style={styles.confirmText}>
+              {t(`candidate_actions.confirm_${action}_cta`)}
+            </Text>
+            {loading ? <ActivityIndicator color="white" size="small" /> : null}
           </Pressable>
           <Pressable
             style={styles.cancel}
@@ -364,6 +361,8 @@ const styles = StyleSheet.create({
     minHeight: 52,
     borderRadius: 999,
     alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
     justifyContent: "center",
     paddingHorizontal: 18,
   },

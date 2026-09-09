@@ -430,13 +430,11 @@ export default function WorkerExperience() {
             onPress={onContinue}
             style={[styles.cta, isDesktop && desktopButtonStyle, (!canContinue || busy) && styles.ctaDisabled]}
           >
+            <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
             {busy ? (
-              <ActivityIndicator color="#F7F4EE" />
+              <ActivityIndicator color="#F7F4EE" size="small" />
             ) : (
-              <>
-                <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
-                <Feather name="arrow-right" size={20} color="#F7F4EE" />
-              </>
+              <Feather name="arrow-right" size={20} color="#F7F4EE" />
             )}
           </Pressable>
         </View>

@@ -157,7 +157,9 @@ export default function VenueEdit() {
               <InterviewFormatToggle icon="edit-3" label="Another location" value={interviewOptions.includes("other")} onPress={() => toggleInterviewOption("other", interviewOptions, setInterviewOptions)} />
             </View>
             <Pressable style={[styles.save, isDesktop && desktopButtonStyle, saving && { opacity: 0.65 }]} onPress={save} disabled={saving}>
-              {saving ? <ActivityIndicator color="white" /> : <><Feather name="check" size={18} color="white" /><Text style={styles.saveText}>Save venue details</Text></>}
+              <Feather name="check" size={18} color="white" />
+              <Text style={styles.saveText}>Save venue details</Text>
+              {saving ? <ActivityIndicator color="white" size="small" /> : null}
             </Pressable>
           </ScrollView>
         )}

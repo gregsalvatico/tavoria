@@ -168,7 +168,9 @@ export default function ShiftEdit() {
             onPress={save}
             disabled={!canSave || saving}
           >
-            {saving ? <ActivityIndicator color="white" /> : <><Feather name="check" size={18} color="white" /><Text style={styles.saveText}>{t("shift_edit.save")}</Text></>}
+            <Feather name="check" size={18} color="white" />
+            <Text style={styles.saveText}>{t("shift_edit.save")}</Text>
+            {saving ? <ActivityIndicator color="white" size="small" /> : null}
           </Pressable>
         </ScrollView>
       )}

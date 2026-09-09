@@ -161,7 +161,10 @@ export default function Signup() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+    <SafeAreaView
+      style={styles.safe}
+      edges={isDesktop ? ["top"] : ["top", "bottom"]}
+    >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -177,11 +180,6 @@ export default function Signup() {
           >
             <Feather name="chevron-left" size={26} color="#0E1A24" />
           </Pressable>
-          <View style={styles.dotsRow}>
-            <View style={[styles.dot, styles.dotOn]} />
-            <View style={styles.dot} />
-            <View style={styles.dot} />
-          </View>
           <View style={{ width: 32 }} />
         </View>
 
@@ -192,27 +190,17 @@ export default function Signup() {
           showsVerticalScrollIndicator={false}
           showsHorizontalScrollIndicator={false}
         >
-          <View style={styles.breadcrumb}>
-            {isApplyFlow ? (
-              <>
-                <Feather name="briefcase" size={13} color="#854F0B" />
-                <Text style={styles.breadcrumbTxt}>
-                  {t("auth_pin.breadcrumb_apply")}{" "}
-                  <Text style={styles.breadcrumbBold}>
-                    {venueName || t("auth_pin.breadcrumb_this_shift")}
-                  </Text>
+          {isApplyFlow ? (
+            <View style={styles.breadcrumb}>
+              <Feather name="briefcase" size={13} color="#854F0B" />
+              <Text style={styles.breadcrumbTxt}>
+                {t("auth_pin.breadcrumb_apply")} {" "}
+                <Text style={styles.breadcrumbBold}>
+                  {venueName || t("auth_pin.breadcrumb_this_shift")}
                 </Text>
-              </>
-            ) : (
-              <>
-                <Feather name="user" size={13} color="#854F0B" />
-                <Text style={styles.breadcrumbTxt}>
-                  {t("auth_pin.breadcrumb_welcome")}{" "}
-                  <Text style={styles.breadcrumbBold}>Tavoria</Text>
-                </Text>
-              </>
-            )}
-          </View>
+              </Text>
+            </View>
+          ) : null}
 
           <Text style={[styles.h1, { textAlign: "center" }]}>
             <Text style={{ color: "#F0531C" }}>
@@ -398,13 +386,11 @@ export default function Signup() {
               onPress={onContinue}
               style={[styles.cta, isDesktop && desktopButtonStyle, (!canContinue || busy) && styles.ctaDisabled]}
             >
+              <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
               {busy ? (
-                <ActivityIndicator color="#F7F4EE" />
+                <ActivityIndicator color="#F7F4EE" size="small" />
               ) : (
-                <>
-                  <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
-                  <Feather name="arrow-right" size={20} color="#F7F4EE" />
-                </>
+                <Feather name="arrow-right" size={20} color="#F7F4EE" />
               )}
             </Pressable>
           </View>
@@ -440,14 +426,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   iconBtn: { padding: 4, width: 32 },
-  dotsRow: { flexDirection: "row", gap: 5 },
-  dot: {
-    width: 22,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "rgba(11,15,26,0.15)",
-  },
-  dotOn: { backgroundColor: "#0E1A24" },
 
   formScroll: { alignSelf: "center", flex: 1, maxWidth: 690, width: "100%" },
   scroll: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 14 },
@@ -537,14 +515,16 @@ const styles = StyleSheet.create({
   },
 
   bottom: {
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 24,
+    paddingBottom: 0,
     backgroundColor: "white",
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",
   },
-  bottomInner: { alignSelf: "center", maxWidth: 690, width: "100%" },
+  bottomInner: { alignItems: "center", alignSelf: "center", maxWidth: 690, width: "100%" },
   cta: {
     alignSelf: "center",
     flexDirection: "row",

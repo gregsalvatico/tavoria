@@ -99,25 +99,17 @@ export default function DesktopLanding({ currentLanguage, onLanguageChange }: Pr
                   accent="#F0531C"
                   variant="primary"
                 />
-                <DesktopAction
-                  href="/scan"
-                  icon="maximize"
-                  label={t("home.scan_qr")}
-                  description="Use a venue QR code to apply on the spot."
-                  accent="#6B7280"
-                  variant="link"
-                />
               </View>
 
               <Text style={styles.panelFootnote}>No CV required to get started.</Text>
             </View>
           </View>
-
-          <View style={styles.footerRow}>
-            <Text style={styles.footerLead}>A simpler way into hospitality work.</Text>
-            <Text style={styles.footerMeta}>K3Y Solutions S.r.l. · Milano, Italia</Text>
-          </View>
         </ScrollView>
+
+        <View style={styles.footerRow}>
+          <Text style={styles.footerLead}>A simpler way into hospitality work.</Text>
+          <Text style={styles.footerMeta}>K3Y Solutions S.r.l. · Milano, Italia</Text>
+        </View>
       </View>
 
       <Modal
@@ -207,6 +199,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: "row",
     gap: 6,
+    minHeight: 36,
     paddingHorizontal: 11,
     paddingVertical: 8,
   },
@@ -215,13 +208,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: 8,
+    minHeight: 36,
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
   signInText: { color: "#6B7280", fontSize: 13, fontWeight: "600" },
   scroll: { flex: 1 },
   scrollContent: {
-    gap: 44,
+    flexGrow: 1,
     paddingHorizontal: 24,
     paddingBottom: 24,
     paddingTop: 58,
@@ -266,9 +260,9 @@ const styles = StyleSheet.create({
   panelEyebrow: { color: "#F0531C", fontFamily: "DMMono_500Medium", fontSize: 10, letterSpacing: 1.5 },
   panelTitle: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 34, lineHeight: 37, marginTop: 13 },
   actions: { gap: 8, marginTop: 30 },
-  action: { alignItems: "center", borderColor: "rgba(14,26,36,0.10)", borderRadius: 13, borderWidth: 1, flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingVertical: 13 },
-  actionPrimary: { alignItems: "center", backgroundColor: "#F0531C", borderColor: "#F0531C", borderRadius: 13, borderWidth: 1, flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingVertical: 13 },
-  actionLink: { alignItems: "center", flexDirection: "row", gap: 12, paddingHorizontal: 13, paddingVertical: 6 },
+  action: { alignItems: "center", borderColor: "rgba(14,26,36,0.10)", borderRadius: 13, borderWidth: 1, flexDirection: "row", gap: 12, minHeight: 62, paddingHorizontal: 16, paddingVertical: 13 },
+  actionPrimary: { alignItems: "center", backgroundColor: "#F0531C", borderColor: "#F0531C", borderRadius: 13, borderWidth: 1, flexDirection: "row", gap: 12, minHeight: 62, paddingHorizontal: 16, paddingVertical: 13 },
+  actionLink: { alignItems: "center", flexDirection: "row", gap: 12, minHeight: 62, paddingHorizontal: 16, paddingVertical: 13 },
   actionIcon: { alignItems: "center", borderRadius: 9, height: 34, justifyContent: "center", width: 34 },
   actionIconLink: { alignItems: "center", height: 34, justifyContent: "center", width: 34 },
   actionCopy: { flex: 1, minWidth: 0 },
@@ -279,7 +273,7 @@ const styles = StyleSheet.create({
   actionDescriptionPrimary: { color: "rgba(247,244,238,0.80)", fontSize: 11, marginTop: 3 },
   actionDescriptionLink: { color: "#8A929A", fontSize: 11, marginTop: 3 },
   panelFootnote: { color: "#8A929A", fontSize: 11, marginTop: 24 },
-  footerRow: { alignItems: "center", borderTopColor: "rgba(14,26,36,0.12)", borderTopWidth: 1, flexDirection: "row", justifyContent: "space-between", paddingTop: 18 },
+  footerRow: { alignItems: "center", borderTopColor: "rgba(14,26,36,0.12)", borderTopWidth: 1, flexDirection: "row", justifyContent: "space-between", paddingBottom: 18, paddingHorizontal: 24, paddingTop: 18 },
   footerLead: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 18 },
   footerMeta: { color: "#8A929A", fontSize: 11 },
   modalBackdrop: { backgroundColor: "rgba(14,26,36,0.38)", flex: 1 },

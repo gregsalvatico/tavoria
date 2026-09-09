@@ -309,15 +309,6 @@ export default function Welcome() {
               </Pressable>
             </Link>
 
-            <Link href="/discover" asChild>
-              <Pressable style={styles.landingBrowseBtn}>
-                <Feather name="search" size={18} color={colors.secondary} />
-                <Text style={styles.landingBrowseBtnText}>
-                  {t("home_in.browse_shifts")}
-                </Text>
-              </Pressable>
-            </Link>
-
             <Link href="/scan" asChild>
               <Pressable style={styles.scanQrLink}>
                 <Feather name="maximize" size={15} color="#5C6670" />
@@ -1131,16 +1122,6 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   landingWorkerBtnText: { color: "#0E1A24", fontSize: 17, fontWeight: "700" },
-  landingBrowseBtn: {
-    alignItems: "center",
-    backgroundColor: colors.tertiary,
-    borderRadius: 999,
-    flexDirection: "row",
-    gap: 9,
-    justifyContent: "center",
-    paddingVertical: 17,
-  },
-  landingBrowseBtnText: { color: colors.secondary, fontSize: 17, fontWeight: "700" },
   scanQrLink: {
     alignItems: "center",
     alignSelf: "center",

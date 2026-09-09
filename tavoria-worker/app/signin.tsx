@@ -42,7 +42,6 @@ export default function SignIn() {
   const [busy, setBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [pinError, setPinError] = useState(false);
-  const [hasRemembered, setHasRemembered] = useState(false);
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>([]);
   const pinInputRef = useRef<TextInput>(null);
 
@@ -51,8 +50,7 @@ export default function SignIn() {
       const accounts = await getSavedAccounts();
       setSavedAccounts(accounts);
       if (accounts[0]) {
-          setUsername(accounts[0].username);
-          setHasRemembered(true);
+        setUsername(accounts[0].username);
       }
     })();
   }, []);
@@ -62,21 +60,17 @@ export default function SignIn() {
     setPin("");
     setErrorMsg(null);
     setPinError(false);
-    setHasRemembered(true);
-  };
-
-  const switchAccount = () => {
-    setUsername("");
-    setPin("");
-    setErrorMsg(null);
-    setPinError(false);
-    setHasRemembered(false);
   };
 
   const removeSavedAccount = async (account: SavedAccount) => {
     const next = await forgetAccount(account.username);
     setSavedAccounts(next);
-    if (username === account.username) switchAccount();
+    if (username === account.username) {
+      setUsername("");
+      setPin("");
+      setErrorMsg(null);
+      setPinError(false);
+    }
   };
 
   const onSignIn = async () => {
@@ -123,7 +117,10 @@ export default function SignIn() {
   const canSubmit = username.trim().length > 0 && /^\d{4}$/.test(pin);
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+    <SafeAreaView
+      style={styles.safe}
+      edges={isDesktop ? ["top"] : ["top", "bottom"]}
+    >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -155,11 +152,7 @@ export default function SignIn() {
             </Text>
             {t("auth_pin.sign_in_title").slice(1)}
           </Text>
-          <Text style={styles.h2}>
-            {hasRemembered
-              ? t("auth_pin.sign_in_sub_remembered")
-              : t("auth_pin.sign_in_sub_fresh")}
-          </Text>
+          <Text style={styles.h2}>{t("auth_pin.sign_in_sub_fresh")}</Text>
 
           {savedAccounts.length > 0 && (
             <View style={styles.savedAccounts}>
@@ -167,7 +160,7 @@ export default function SignIn() {
                 {t("auth_pin.saved_accounts")}
               </Text>
               {savedAccounts.map((account) => {
-                const selected = account.username === username && hasRemembered;
+                const selected = account.username === username;
                 return (
                   <View
                     key={account.username}
@@ -224,7 +217,6 @@ export default function SignIn() {
                 value={username}
                 onChangeText={(value) => {
                   setUsername(value);
-                  setHasRemembered(false);
                 }}
                 placeholder="maria-k7p2"
                 placeholderTextColor="#9CA3AF"
@@ -254,20 +246,10 @@ export default function SignIn() {
                 keyboardType="number-pad"
                 secureTextEntry
                 maxLength={4}
-                autoFocus={hasRemembered}
                 returnKeyType="done"
                 onSubmitEditing={() => canSubmit && onSignIn()}
               />
             </View>
-
-            {hasRemembered && (
-              <Pressable onPress={switchAccount} style={styles.switchBtn}>
-                <Feather name="repeat" size={13} color="#185FA5" />
-                <Text style={styles.switchTxt}>
-                  {t("auth_pin.switch_account")}
-                </Text>
-              </Pressable>
-            )}
           </View>
 
           {errorMsg && (
@@ -303,13 +285,11 @@ export default function SignIn() {
               onPress={onSignIn}
               style={[styles.cta, isDesktop && desktopButtonStyle, (!canSubmit || busy) && styles.ctaDisabled]}
             >
+              <Text style={styles.ctaTxt}>{t("auth_pin.sign_in_cta")}</Text>
               {busy ? (
-                <ActivityIndicator color="#F7F4EE" />
+                <ActivityIndicator color="#F7F4EE" size="small" />
               ) : (
-                <>
-                  <Text style={styles.ctaTxt}>{t("auth_pin.sign_in_cta")}</Text>
-                  <Feather name="arrow-right" size={20} color="#F7F4EE" />
-                </>
+                <Feather name="arrow-right" size={20} color="#F7F4EE" />
               )}
             </Pressable>
           </View>
@@ -420,16 +400,6 @@ const styles = StyleSheet.create({
   inputWrapError: { borderColor: "#D92D20", borderWidth: 1 },
   input: { flex: 1, fontSize: 16, color: "#0E1A24", padding: 0 },
 
-  switchBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 12,
-    marginTop: 4,
-  },
-  switchTxt: { color: "#185FA5", fontSize: 13, fontWeight: "600" },
-
   errorBox: { alignItems: "center", backgroundColor: "#FDECEC", borderRadius: 12, flexDirection: "row", gap: 8, marginTop: 14, padding: 12 },
   errorTxt: {
     color: "#B91C1C",
@@ -442,14 +412,16 @@ const styles = StyleSheet.create({
   authSwitchLink: { color: "#185FA5", fontSize: 13, fontWeight: "800" },
 
   bottom: {
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 24,
+    paddingBottom: 0,
     backgroundColor: "white",
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",
   },
-  bottomInner: { alignSelf: "center", maxWidth: 690, width: "100%" },
+  bottomInner: { alignItems: "center", alignSelf: "center", maxWidth: 690, width: "100%" },
   cta: {
     alignSelf: "center",
     flexDirection: "row",

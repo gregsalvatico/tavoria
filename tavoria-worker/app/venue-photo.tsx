@@ -511,13 +511,11 @@ export default function VenuePhoto() {
           onPress={onPrimaryAction}
           style={[styles.cta, isDesktop && desktopButtonStyle, busy && styles.ctaDisabled]}
         >
+          <Text style={styles.ctaTxt}>Continue</Text>
           {busy ? (
-            <ActivityIndicator color="#F7F4EE" />
+            <ActivityIndicator color="#F7F4EE" size="small" />
           ) : (
-            <>
-              <Text style={styles.ctaTxt}>Continue</Text>
-              <Feather name="arrow-right" size={20} color="#F7F4EE" />
-            </>
+            <Feather name="arrow-right" size={20} color="#F7F4EE" />
           )}
         </Pressable>
       </View>

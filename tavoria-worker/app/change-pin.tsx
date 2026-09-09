@@ -82,7 +82,8 @@ export default function ChangePin() {
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <Pressable style={[styles.submit, isDesktop && desktopButtonStyle, !canSubmit && styles.submitDisabled]} onPress={() => void submit()} disabled={!canSubmit || saving}>
-            {saving ? <ActivityIndicator color="white" /> : <Text style={styles.submitText}>{t("change_pin.save")}</Text>}
+            <Text style={styles.submitText}>{t("change_pin.save")}</Text>
+            {saving ? <ActivityIndicator color="white" size="small" /> : null}
           </Pressable>
           <View style={styles.note}>
             <Feather name="mail" size={15} color="#F0531C" />
@@ -129,7 +130,7 @@ const styles = StyleSheet.create({
   successCopy: { flex: 1 },
   successTitle: { color: "#135C3C", fontSize: 13, fontWeight: "800", lineHeight: 18 },
   successText: { color: "#256747", fontSize: 12, lineHeight: 17, marginTop: 2 },
-  submit: { alignItems: "center", alignSelf: "center", backgroundColor: "#F0531C", borderRadius: 999, justifyContent: "center", marginTop: 8, minHeight: 54, width: "100%" },
+  submit: { alignItems: "center", alignSelf: "center", backgroundColor: "#F0531C", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", marginTop: 8, minHeight: 54, width: "100%" },
   submitDisabled: { opacity: 0.42 },
   submitText: { color: "white", fontSize: 15, fontWeight: "800" },
   note: { alignItems: "flex-start", flexDirection: "row", gap: 8, marginTop: 18, paddingHorizontal: 4 },

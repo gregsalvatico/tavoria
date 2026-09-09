@@ -183,7 +183,6 @@ export default function Scan() {
             style={[styles.grantBtn, isCheckingCamera && styles.grantBtnDisabled]}
             onPress={requestCameraAccess}
           >
-            {isCheckingCamera && <ActivityIndicator color="#F7F4EE" size="small" />}
             <Text style={styles.grantBtnTxt}>
               {isCheckingCamera
                 ? t("scan.checking_camera")
@@ -191,6 +190,7 @@ export default function Scan() {
                   ? t("scan.camera_retry")
                   : t("scan.grant_btn")}
             </Text>
+            {isCheckingCamera && <ActivityIndicator color="#F7F4EE" size="small" />}
           </Pressable>
         </View>
       </SafeAreaView>

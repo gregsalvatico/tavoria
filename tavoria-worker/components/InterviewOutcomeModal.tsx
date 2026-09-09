@@ -37,11 +37,12 @@ export default function InterviewOutcomeModal({
             disabled={loading}
             onPress={() => onSelect("hire")}
           >
-            {loading ? <ActivityIndicator color="white" /> : <Feather name="check-circle" size={19} color="white" />}
+            <Feather name="check-circle" size={19} color="white" />
             <View style={{ flex: 1 }}>
               <Text style={styles.hireTitle}>{t("candidate_actions.outcome_hire")}</Text>
               <Text style={styles.hireBody}>{t("candidate_actions.outcome_hire_sub")}</Text>
             </View>
+            {loading ? <ActivityIndicator color="white" size="small" /> : null}
           </Pressable>
 
           <Pressable

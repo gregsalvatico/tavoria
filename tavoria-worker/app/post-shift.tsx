@@ -606,13 +606,11 @@ export default function PostShift() {
             }
           }}
         >
+          <Text style={styles.ctaTxt}>{t("post_shift.post")}</Text>
           {busy ? (
-            <ActivityIndicator color="#F7F4EE" />
+            <ActivityIndicator color="#F7F4EE" size="small" />
           ) : (
-            <>
-              <Text style={styles.ctaTxt}>{t("post_shift.post")}</Text>
-              <Feather name="arrow-right" size={20} color="#F7F4EE" />
-            </>
+            <Feather name="arrow-right" size={20} color="#F7F4EE" />
           )}
         </Pressable>
       </View>

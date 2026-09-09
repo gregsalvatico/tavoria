@@ -113,14 +113,14 @@ export default function ShiftDetail() {
     } catch (e) {
       // Revert on error
       setShiftStatus(shiftStatus);
-      Alert.alert("Could not update status", "Try again.");
+    Alert.alert(t("shift_detail.status_update_error_title"), t("shift_detail.try_again"));
     }
   };
 
   const onShare = async () => {
     if (!shift) return;
-    const venueName = shift.venue?.name ?? "our venue";
-    const role = localizeRole((shift.roles ?? [])[0]) || "a position";
+    const venueName = shift.venue?.name ?? t("shift_detail.our_venue");
+    const role = localizeRole((shift.roles ?? [])[0]) || t("shift_detail.position_fallback");
     try {
       await Share.share({
         message: `${t("shift_owner.share_msg")} ${venueName} — ${role}.\n${Linking.createURL(`shift-detail?id=${encodeURIComponent(id)}`)}`,
@@ -159,7 +159,7 @@ export default function ShiftDetail() {
       setApplication(existingApplication);
       setHasAccount(account.hasVenue || account.hasWorker);
     } catch (e: any) {
-      setErrorMsg(e?.message ?? "Could not load shift.");
+      setErrorMsg(e?.message ?? t("shift_detail.load_error"));
     } finally {
       setLoading(false);
     }
@@ -212,8 +212,8 @@ export default function ShiftDetail() {
       });
     } catch (e: any) {
       Alert.alert(
-        "Could not apply",
-        e?.message ?? "Try again in a moment."
+        t("shift_detail.apply_error_title"),
+        e?.message ?? t("shift_detail.apply_error_body")
       );
       setApplying(false);
     }
@@ -221,7 +221,7 @@ export default function ShiftDetail() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+      <SafeAreaView style={styles.safe} edges={isDesktop ? ["top"] : ["top", "bottom"]}>
         <View style={styles.loadingWrap}>
           <ActivityIndicator color="#F0531C" size="large" />
         </View>
@@ -231,12 +231,12 @@ export default function ShiftDetail() {
 
   if (errorMsg || !shift) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+      <SafeAreaView style={styles.safe} edges={isDesktop ? ["top"] : ["top", "bottom"]}>
         <View style={styles.errorWrap}>
           <Feather name="alert-circle" size={40} color="#993556" />
-          <Text style={styles.errorTitle}>Shift not available</Text>
+          <Text style={styles.errorTitle}>{t("shift_detail.shift_unavailable")}</Text>
           <Text style={styles.errorSub}>
-            {errorMsg ?? "This shift might have been filled or cancelled."}
+            {errorMsg ?? t("shift_detail.shift_cancelled")}
           </Text>
           <Pressable
             onPress={() => {
@@ -245,7 +245,7 @@ export default function ShiftDetail() {
             }}
             style={[styles.backPrimaryBtn, isDesktop && desktopButtonStyle]}
           >
-            <Text style={styles.backPrimaryTxt}>Back to shifts</Text>
+            <Text style={styles.backPrimaryTxt}>{t("shift_detail.back_to_shifts")}</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -263,7 +263,7 @@ export default function ShiftDetail() {
     shift.pay_amount && shift.pay_unit
       ? `€${shift.pay_amount} / ${payUnitLabel(shift.pay_unit)}`
       : t("shift_detail.pay_discussed");
-  const roleStr = localizeRoles(shift.roles ?? []).join(" · ") || "Shift";
+  const roleStr = localizeRoles(shift.roles ?? []).join(" · ") || t("shift_detail.default_shift");
   const hoursStr =
     shift.hours_start && shift.hours_end
       ? `${shift.hours_start} – ${shift.hours_end}`
@@ -285,19 +285,15 @@ export default function ShiftDetail() {
       ? t("candidate_actions.status_hired")
       : applicationStatus === "declined"
       ? t("candidate_actions.status_declined")
-      : "Application sent — awaiting reply";
+      : t("shift_detail.application_pending");
   const applicationIcon =
     applicationStatus === "hired"
       ? "check-circle"
       : applicationStatus === "declined"
       ? "x-circle"
       : "clock";
-  const applicationLabel = application?.status === "declined"
-    ? "This application is closed"
-    : "Application sent — awaiting reply";
-
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+    <SafeAreaView style={styles.safe} edges={isDesktop ? ["top"] : ["top", "bottom"]}>
       <View style={[styles.header, isDesktop && styles.headerDesktop]}>
         <Pressable
           onPress={() => {
@@ -377,7 +373,7 @@ export default function ShiftDetail() {
             onPress={() => router.push({ pathname: "/venue-board", params: { venueId: shift.venue_id } })}
             style={styles.venueNameLink}
           >
-            <Text style={styles.venueName}>{v?.name ?? "Venue"}</Text>
+            <Text style={styles.venueName}>{v?.name ?? t("shift_detail.default_venue")}</Text>
             <Feather name="arrow-up-right" size={19} color="#185FA5" />
           </Pressable>
           <View style={styles.metaRow}>
@@ -449,75 +445,76 @@ export default function ShiftDetail() {
           />
         </View>
         </View>
-      </ScrollView>
 
-      <View style={styles.bottom}>
-        {isOwner ? (
-          <View style={[styles.ownerBar, isDesktop && styles.ownerBarDesktop]}>
-            <OwnerAction
-              icon="edit-2"
-              label={t("shift_owner.edit")}
-              color="white"
-              bg="#F0531C"
-              isDesktop={isDesktop}
-              onPress={() => router.push({ pathname: "/shift-edit", params: { id } })}
-            />
-            <OwnerAction
-              icon="share-2"
-              label={t("shift_owner.share")}
-              color="#0E1A24"
-              bg="#F1EFE8"
-              isDesktop={isDesktop}
-              onPress={onShare}
-            />
-          </View>
-        ) : (
-          application ? (
-            <Pressable
-              onPress={() => canOpenContact && setContactOpen(true)}
-              disabled={!canOpenContact}
-              style={[styles.applyBtn, isDesktop && desktopButtonStyle, canOpenContact ? styles.contactBtn : styles.applicationStatusBtn]}
-            >
-              <Text style={styles.applyTxt}>
-                {applicationStatus === "interview_requested"
-                  ? hasContactMethod
-                    ? "Contact venue"
-                    : "Contact details unavailable"
-                  : applicationStateLabel}
-              </Text>
-              <Feather
-                name={canOpenContact ? "message-circle" : applicationIcon}
-                size={19}
-                color="#F7F4EE"
+        <View style={styles.bottom}>
+          {isOwner ? (
+            <View style={[styles.ownerBar, isDesktop && styles.ownerBarDesktop]}>
+              <OwnerAction
+                icon="edit-2"
+                label={t("shift_owner.edit")}
+                color="white"
+                bg="#F0531C"
+                isDesktop={isDesktop}
+                onPress={() => router.push({ pathname: "/shift-edit", params: { id } })}
               />
-            </Pressable>
+              <OwnerAction
+                icon="share-2"
+                label={t("shift_owner.share")}
+                color="#0E1A24"
+                bg="#F1EFE8"
+                isDesktop={isDesktop}
+                onPress={onShare}
+              />
+            </View>
           ) : (
-            <Pressable
-              onPress={onApply}
-              disabled={applying}
-              style={[styles.applyBtn, isDesktop && desktopButtonStyle, applying && { opacity: 0.6}]}
-            >
-              {applying ? (
-                <ActivityIndicator color="#F7F4EE" />
-              ) : (
-                <>
-                  <Text style={styles.applyTxt}>{t("shift_detail.apply_now")}</Text>
+            application ? (
+              <Pressable
+                onPress={() => canOpenContact && setContactOpen(true)}
+                disabled={!canOpenContact}
+                style={[styles.applyBtn, isDesktop && desktopButtonStyle, canOpenContact ? styles.contactBtn : styles.applicationStatusBtn]}
+              >
+                <Text style={styles.applyTxt}>
+                  {applicationStatus === "interview_requested"
+                    ? hasContactMethod
+                    ? t("shift_detail.contact_venue")
+                    : t("shift_detail.contact_details_unavailable")
+                    : applicationStateLabel}
+                </Text>
+                <Feather
+                  name={canOpenContact ? "message-circle" : applicationIcon}
+                  size={19}
+                  color="#F7F4EE"
+                />
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={onApply}
+                disabled={applying}
+                style={[styles.applyBtn, isDesktop && desktopButtonStyle, applying && { opacity: 0.6}]}
+              >
+                <Text style={styles.applyTxt}>{t("shift_detail.apply_now")}</Text>
+                {applying ? (
+                  <ActivityIndicator color="#F7F4EE" size="small" />
+                ) : (
                   <Feather name="arrow-right" size={20} color="#F7F4EE" />
-                </>
-              )}
-            </Pressable>
-          )
-        )}
-      </View>
+                )}
+              </Pressable>
+            )
+          )}
+        </View>
+      </ScrollView>
 
       <ContactPersonModal
         visible={contactOpen}
         onClose={() => setContactOpen(false)}
-        name={v?.name ?? "venue"}
+        name={v?.name ?? t("shift_detail.default_venue")}
         email={venueEmail}
         phone={venuePhone}
         visitAddress={visitAddress}
-        initialMessage={`Hi ${v?.name ?? ""}, I’m following up about the ${roleStr} shift.`.trim()}
+        initialMessage={t("shift_detail.follow_up_message", {
+          venue: v?.name ?? t("shift_detail.default_venue"),
+          role: roleStr,
+        })}
       />
 
     </SafeAreaView>
@@ -542,19 +539,23 @@ function VenueContactDetails({
           <Feather name={unlocked ? "unlock" : "lock"} size={15} color={unlocked ? "#F0531C" : "#854F0B"} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.contactDetailsTitle}>{unlocked ? "Venue contact details" : "Venue contact details locked"}</Text>
-          <Text style={styles.contactDetailsSub}>{unlocked ? "Use any method the venue has enabled below." : "The venue will share these after it requests an interview or hires you."}</Text>
+          <Text style={styles.contactDetailsTitle}>
+            {unlocked ? t("shift_detail.venue_contact_details") : t("shift_detail.venue_contact_details_locked")}
+          </Text>
+          <Text style={styles.contactDetailsSub}>
+            {unlocked ? t("shift_detail.contact_details_open_sub") : t("shift_detail.contact_details_locked_sub")}
+          </Text>
         </View>
       </View>
       {unlocked ? (
         email || phone || visitAddress ? (
           <View style={styles.contactMethodList}>
-            {email ? <ContactMethod icon="mail" label="Email" value={email} /> : null}
-            {phone ? <ContactMethod icon="phone" label="Phone & WhatsApp" value={phone} /> : null}
-            {visitAddress ? <ContactMethod icon="map-pin" label="Visit in person" value={visitAddress} /> : null}
+            {email ? <ContactMethod icon="mail" label={t("shift_detail.contact_email")} value={email} /> : null}
+            {phone ? <ContactMethod icon="phone" label={t("shift_detail.contact_phone")} value={phone} /> : null}
+            {visitAddress ? <ContactMethod icon="map-pin" label={t("shift_detail.contact_visit")} value={visitAddress} /> : null}
           </View>
         ) : (
-          <Text style={styles.contactNone}>This venue has not enabled a contact method yet.</Text>
+          <Text style={styles.contactNone}>{t("shift_detail.contact_none")}</Text>
         )
       ) : (
         <View style={styles.contactLockedPlaceholders}>
@@ -801,9 +802,12 @@ const styles = StyleSheet.create({
   contactPlaceholder: { color: "#9CA3AF", fontSize: 12, letterSpacing: 1, textDecorationLine: "line-through" },
 
   bottom: {
-    paddingBottom: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 16,
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingBottom: 0,
+    paddingTop: 12,
     backgroundColor: "white",
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",
