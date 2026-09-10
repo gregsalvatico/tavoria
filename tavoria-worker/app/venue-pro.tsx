@@ -7,6 +7,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 
 export default function VenuePro() {
   const router = useRouter();
@@ -67,15 +68,14 @@ export default function VenuePro() {
           <ProBullet text={t("venue_pro.bullet3")} />
         </View>
       </ScrollView>
-
-      <View style={styles.bottom}>
+      <StickyFooter fullBleed backgroundColor="#0E1A24">
         <Text style={styles.price}>{t("venue_pro.price")}</Text>
         <Text style={styles.comingSoon}>{t("common.coming_soon")}</Text>
         <Pressable style={[styles.cta, isDesktop && desktopButtonStyle, styles.ctaDisabled]} disabled>
           <Text style={styles.ctaTxt}>{t("venue_pro.cta")}</Text>
           <Feather name="lock" size={18} color="#6B7280" />
         </Pressable>
-      </View>
+      </StickyFooter>
     </SafeAreaView>
   );
 }

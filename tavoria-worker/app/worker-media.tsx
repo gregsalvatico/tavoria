@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 
 export default function WorkerMedia() {
   const router = useRouter();
@@ -180,9 +181,9 @@ export default function WorkerMedia() {
         </View>
 
         <View style={{ height: 12 }} />
-      </ScrollView>
 
-      <View style={styles.bottom}>
+      </ScrollView>
+      <StickyFooter desktopRow fullBleed>
         <Pressable
           style={[styles.cta, isDesktop && desktopButtonStyle]}
           onPress={() => router.replace("/worker-done")}
@@ -190,7 +191,7 @@ export default function WorkerMedia() {
           <Text style={styles.ctaTxt}>Save and go live</Text>
           <Feather name="arrow-right" size={20} color="#F7F4EE" />
         </Pressable>
-      </View>
+      </StickyFooter>
     </SafeAreaView>
   );
 }

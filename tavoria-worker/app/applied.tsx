@@ -5,6 +5,7 @@ import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 
 export default function Applied() {
   const router = useRouter();
@@ -77,7 +78,9 @@ export default function Applied() {
           </View>
         </View>
 
-        <View style={styles.bottom}>
+      </View>
+
+      <StickyFooter desktopRow fullBleed>
           <Pressable
             style={[styles.primaryBtn, isDesktop && desktopButtonStyle]}
             onPress={() => router.replace("/")}
@@ -85,8 +88,7 @@ export default function Applied() {
             <Feather name="check" size={20} color="#F7F4EE" />
             <Text style={styles.primaryBtnTxt}>{t("common.done")}</Text>
           </Pressable>
-        </View>
-      </View>
+      </StickyFooter>
     </SafeAreaView>
   );
 }

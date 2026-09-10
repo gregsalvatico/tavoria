@@ -5,6 +5,7 @@ import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 
 export default function WorkerDone() {
   const router = useRouter();
@@ -89,7 +90,9 @@ export default function WorkerDone() {
           </View>
         </View>
 
-        <View style={styles.bottom}>
+      </View>
+
+      <StickyFooter desktopRow fullBleed>
           <Pressable
             style={[styles.cta, isDesktop && desktopButtonStyle]}
             onPress={() => router.push("/candidate")}
@@ -103,8 +106,7 @@ export default function WorkerDone() {
           >
             <Text style={styles.secondaryBtnTxt}>{t("worker_done.discover")}</Text>
           </Pressable>
-        </View>
-      </View>
+      </StickyFooter>
     </SafeAreaView>
   );
 }
@@ -176,6 +178,7 @@ const styles = StyleSheet.create({
   divider: { height: 0.5, backgroundColor: "rgba(0,0,0,0.08)", marginVertical: 2 },
 
   bottom: { gap: 12, alignItems: "center", paddingBottom: 24, paddingTop: 8 },
+  bottomDesktop: { flexDirection: "row-reverse", justifyContent: "center" },
   cta: {
     width: "100%",
     alignSelf: "center",
@@ -199,4 +202,3 @@ const styles = StyleSheet.create({
   },
   secondaryBtnTxt: { color: "#0E1A24", fontSize: 15, fontWeight: "600" },
 });
-

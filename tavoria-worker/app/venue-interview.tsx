@@ -18,6 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { updateVenue } from "../lib/db";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 import {
   InterviewQuestion,
   localizeQuestions,
@@ -125,7 +126,7 @@ export default function VenueInterview() {
           </Text>
         </View>
 
-        <View style={styles.bottom}>
+        <StickyFooter desktopRow fullBleed>
           <Pressable
             style={[styles.cta, isDesktop && desktopButtonStyle, busy && { opacity: 0.6 }]}
             disabled={busy}
@@ -134,7 +135,7 @@ export default function VenueInterview() {
             <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
             <Feather name="arrow-right" size={20} color="#F7F4EE" />
           </Pressable>
-        </View>
+        </StickyFooter>
       </SafeAreaView>
     );
   }

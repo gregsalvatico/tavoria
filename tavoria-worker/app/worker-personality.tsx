@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { updateCurrentWorker } from "../lib/db";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 import { getWorkerProfile, patchWorkerProfile } from "../lib/workerProfile";
 
 type Option = {
@@ -454,12 +455,12 @@ export default function WorkerPersonality() {
       )}
 
       {done && (
-        <View style={styles.bottom}>
+        <StickyFooter desktopRow fullBleed>
           <Pressable onPress={onSave} style={[styles.cta, isDesktop && desktopButtonStyle]}>
             <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
             <Feather name="arrow-right" size={20} color="#F7F4EE" />
           </Pressable>
-        </View>
+        </StickyFooter>
       )}
     </SafeAreaView>
   );

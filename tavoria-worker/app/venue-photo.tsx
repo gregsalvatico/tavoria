@@ -22,6 +22,7 @@ import {
 import { updateVenue } from "../lib/db";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 import { localizeRole } from "../lib/positions";
 
 type Schedule = {
@@ -434,7 +435,23 @@ export default function VenuePhoto() {
         )}
 
         <View style={{ height: 12 }} />
+        {errorMsg && <Text style={styles.errorTxt}>{errorMsg}</Text>}
+
       </ScrollView>
+      <StickyFooter desktopRow fullBleed backgroundColor="#F7F4EE">
+        <Pressable
+          disabled={busy}
+          onPress={onPrimaryAction}
+          style={[styles.cta, isDesktop && desktopButtonStyle, busy && styles.ctaDisabled]}
+        >
+          <Text style={styles.ctaTxt}>Continue</Text>
+          {busy ? (
+            <ActivityIndicator color="#F7F4EE" size="small" />
+          ) : (
+            <Feather name="arrow-right" size={20} color="#F7F4EE" />
+          )}
+        </Pressable>
+      </StickyFooter>
 
       {/* Custom schedule input modal */}
       <Modal
@@ -503,22 +520,6 @@ export default function VenuePhoto() {
         </View>
       </Modal>
 
-      {errorMsg && <Text style={styles.errorTxt}>{errorMsg}</Text>}
-
-      <View style={styles.bottom}>
-        <Pressable
-          disabled={busy}
-          onPress={onPrimaryAction}
-          style={[styles.cta, isDesktop && desktopButtonStyle, busy && styles.ctaDisabled]}
-        >
-          <Text style={styles.ctaTxt}>Continue</Text>
-          {busy ? (
-            <ActivityIndicator color="#F7F4EE" size="small" />
-          ) : (
-            <Feather name="arrow-right" size={20} color="#F7F4EE" />
-          )}
-        </Pressable>
-      </View>
     </SafeAreaView>
   );
 }

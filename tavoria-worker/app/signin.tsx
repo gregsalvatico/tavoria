@@ -21,6 +21,7 @@ import { t } from "../lib/i18n";
 import { getCurrentUserContext } from "../lib/db";
 import { setCachedHomeContext } from "../lib/homeContextCache";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 import {
   forgetAccount,
   getSavedAccounts,
@@ -278,7 +279,7 @@ export default function SignIn() {
           </Pressable>
         </ScrollView>
 
-        <View style={styles.bottom}>
+        <StickyFooter>
           <View style={styles.bottomInner}>
             <Pressable
               disabled={busy || !canSubmit}
@@ -293,7 +294,7 @@ export default function SignIn() {
               )}
             </Pressable>
           </View>
-        </View>
+        </StickyFooter>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

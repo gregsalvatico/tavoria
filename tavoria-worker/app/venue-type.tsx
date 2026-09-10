@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 import { patchVenueProfile } from "../lib/venueProfile";
 import {
   Image,
@@ -155,8 +156,7 @@ export default function VenueType() {
           })}
         </View>
       </ScrollView>
-
-      <View style={styles.bottom}>
+      <StickyFooter desktopRow fullBleed backgroundColor="#F7F4EE">
         <Pressable
           disabled={!picked}
           onPress={() => {
@@ -169,7 +169,7 @@ export default function VenueType() {
           <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
           <Feather name="arrow-right" size={20} color="#F7F4EE" />
         </Pressable>
-      </View>
+      </StickyFooter>
     </SafeAreaView>
   );
 }

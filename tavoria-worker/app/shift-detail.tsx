@@ -32,6 +32,7 @@ import { localizeContractType } from "../lib/contractTypes";
 import { localizeRole, localizeRoles } from "../lib/positions";
 import ContactPersonModal from "../components/ContactPersonModal";
 import { desktopButtonStyle } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 
 const VENUE_CAFE = require("../assets/venue-cafe.png");
 const VENUE_TYPE_PHOTOS: Record<string, number> = {
@@ -446,63 +447,64 @@ export default function ShiftDetail() {
         </View>
         </View>
 
-        <View style={styles.bottom}>
-          {isOwner ? (
-            <View style={[styles.ownerBar, isDesktop && styles.ownerBarDesktop]}>
-              <OwnerAction
-                icon="edit-2"
-                label={t("shift_owner.edit")}
-                color="white"
-                bg="#F0531C"
-                isDesktop={isDesktop}
-                onPress={() => router.push({ pathname: "/shift-edit", params: { id } })}
-              />
-              <OwnerAction
-                icon="share-2"
-                label={t("shift_owner.share")}
-                color="#0E1A24"
-                bg="#F1EFE8"
-                isDesktop={isDesktop}
-                onPress={onShare}
-              />
-            </View>
-          ) : (
-            application ? (
-              <Pressable
-                onPress={() => canOpenContact && setContactOpen(true)}
-                disabled={!canOpenContact}
-                style={[styles.applyBtn, isDesktop && desktopButtonStyle, canOpenContact ? styles.contactBtn : styles.applicationStatusBtn]}
-              >
-                <Text style={styles.applyTxt}>
-                  {applicationStatus === "interview_requested"
-                    ? hasContactMethod
-                    ? t("shift_detail.contact_venue")
-                    : t("shift_detail.contact_details_unavailable")
-                    : applicationStateLabel}
-                </Text>
-                <Feather
-                  name={canOpenContact ? "message-circle" : applicationIcon}
-                  size={19}
-                  color="#F7F4EE"
-                />
-              </Pressable>
-            ) : (
-              <Pressable
-                onPress={onApply}
-                disabled={applying}
-                style={[styles.applyBtn, isDesktop && desktopButtonStyle, applying && { opacity: 0.6}]}
-              >
-                <Text style={styles.applyTxt}>{t("shift_detail.apply_now")}</Text>
-                {applying ? (
-                  <ActivityIndicator color="#F7F4EE" size="small" />
-                ) : (
-                  <Feather name="arrow-right" size={20} color="#F7F4EE" />
-                )}
-              </Pressable>
-            )
-          )}
-        </View>
       </ScrollView>
+
+      <StickyFooter desktopRow>
+        {isOwner ? (
+          <View style={[styles.ownerBar, isDesktop && styles.ownerBarDesktop]}>
+            <OwnerAction
+              icon="edit-2"
+              label={t("shift_owner.edit")}
+              color="white"
+              bg="#F0531C"
+              isDesktop={isDesktop}
+              onPress={() => router.push({ pathname: "/shift-edit", params: { id } })}
+            />
+            <OwnerAction
+              icon="share-2"
+              label={t("shift_owner.share")}
+              color="#0E1A24"
+              bg="#F1EFE8"
+              isDesktop={isDesktop}
+              onPress={onShare}
+            />
+          </View>
+        ) : (
+          application ? (
+            <Pressable
+              onPress={() => canOpenContact && setContactOpen(true)}
+              disabled={!canOpenContact}
+              style={[styles.applyBtn, isDesktop && desktopButtonStyle, canOpenContact ? styles.contactBtn : styles.applicationStatusBtn]}
+            >
+              <Text style={styles.applyTxt}>
+                {applicationStatus === "interview_requested"
+                  ? hasContactMethod
+                  ? t("shift_detail.contact_venue")
+                  : t("shift_detail.contact_details_unavailable")
+                  : applicationStateLabel}
+              </Text>
+              <Feather
+                name={canOpenContact ? "message-circle" : applicationIcon}
+                size={19}
+                color="#F7F4EE"
+              />
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={onApply}
+              disabled={applying}
+              style={[styles.applyBtn, isDesktop && desktopButtonStyle, applying && { opacity: 0.6 }]}
+            >
+              <Text style={styles.applyTxt}>{t("shift_detail.apply_now")}</Text>
+              {applying ? (
+                <ActivityIndicator color="#F7F4EE" size="small" />
+              ) : (
+                <Feather name="arrow-right" size={20} color="#F7F4EE" />
+              )}
+            </Pressable>
+          )
+        )}
+      </StickyFooter>
 
       <ContactPersonModal
         visible={contactOpen}
@@ -865,7 +867,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     gap: 8,
   },
-  ownerBarDesktop: { flexDirection: "row", justifyContent: "center" },
+  ownerBarDesktop: { flexDirection: "row-reverse", justifyContent: "center" },
   ownerTile: {
     borderRadius: 999,
     borderWidth: 1,

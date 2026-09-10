@@ -25,6 +25,7 @@ import {
 } from "../lib/db";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 import { getWorkerProfile, patchWorkerProfile } from "../lib/workerProfile";
 import { pickDocumentImageWeb, pickImageWeb } from "../lib/webMedia";
 
@@ -418,9 +419,9 @@ export default function WorkerPhotos() {
         </View>
 
         <View style={{ height: 12 }} />
-      </ScrollView>
 
-      <View style={styles.bottom}>
+      </ScrollView>
+      <StickyFooter desktopRow fullBleed>
         <Pressable
           style={[styles.cta, isDesktop && desktopButtonStyle]}
           onPress={async () => {
@@ -442,11 +443,11 @@ export default function WorkerPhotos() {
         </Pressable>
         <Pressable
           onPress={() => router.replace("/worker-done")}
-          style={styles.skipBtn}
+          style={[styles.skipBtn, isDesktop && styles.skipBtnDesktop]}
         >
           <Text style={styles.skipBtnTxt}>{t("worker_photos.add_later")}</Text>
         </Pressable>
-      </View>
+      </StickyFooter>
 
       {/* Moderation: "Checking…" overlay */}
       <Modal visible={checking !== null} transparent animationType="fade">
@@ -823,6 +824,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",
   },
+  bottomDesktop: { alignItems: "center", flexDirection: "row-reverse", justifyContent: "center" },
   cta: {
     alignSelf: "center",
     flexDirection: "row",
@@ -836,6 +838,7 @@ const styles = StyleSheet.create({
   },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
   skipBtn: { alignItems: "center", paddingVertical: 4 },
+  skipBtnDesktop: { justifyContent: "center", minHeight: 48, paddingHorizontal: 14 },
   skipBtnTxt: { color: "#6B7280", fontSize: 13, fontWeight: "600" },
 
   // Upload sheets

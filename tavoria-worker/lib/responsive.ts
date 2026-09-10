@@ -10,7 +10,11 @@ export function useIsDesktop(): boolean {
 export const desktopButtonStyle = {
   alignSelf: "center" as const,
   flex: 0,
+  flexShrink: 0,
+  maxHeight: 48,
   minHeight: 48,
-  paddingHorizontal: 20,
+  minWidth: 220,
+  paddingHorizontal: 16,
+  paddingVertical: 14,
   width: "auto" as const,
 };

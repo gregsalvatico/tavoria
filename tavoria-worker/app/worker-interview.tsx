@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 import {
   InterviewQuestion,
   getQuestionsByIds,
@@ -132,12 +133,12 @@ export default function WorkerInterview() {
           <Text style={styles.resultSub}>{t("interview_ui.worker_done_sub")}</Text>
         </View>
 
-        <View style={styles.bottom}>
+        <StickyFooter desktopRow fullBleed>
           <Pressable style={[styles.cta, isDesktop && desktopButtonStyle]} onPress={onSaveAndContinue}>
             <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
             <Feather name="arrow-right" size={20} color="#F7F4EE" />
           </Pressable>
-        </View>
+        </StickyFooter>
       </SafeAreaView>
     );
   }

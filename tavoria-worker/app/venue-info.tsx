@@ -6,6 +6,7 @@ import { registerPush } from "../lib/pushNotifications";
 import { sendVenueWelcomeEmail } from "../lib/email";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 import {
   generateUsername,
   nameToSlug,
@@ -328,13 +329,10 @@ export default function VenueInfo() {
           <Text style={styles.requirements}>
             Enter a venue name, valid email, matching 4-digit PINs, and accept the Terms to continue.
           </Text>
+          {errorMsg && <Text style={styles.errorTxt}>{errorMsg}</Text>}
+
         </ScrollView>
-
-        {errorMsg && (
-          <Text style={styles.errorTxt}>{errorMsg}</Text>
-        )}
-
-        <View style={styles.bottom}>
+        <StickyFooter desktopRow fullBleed backgroundColor="#F7F4EE">
           <Pressable
             disabled={!canContinue || busy}
             onPress={onContinue}
@@ -347,7 +345,7 @@ export default function VenueInfo() {
               <Feather name="arrow-right" size={20} color="#F7F4EE" />
             )}
           </Pressable>
-        </View>
+        </StickyFooter>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

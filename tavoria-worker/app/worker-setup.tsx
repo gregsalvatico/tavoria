@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { patchWorkerProfile } from "../lib/workerProfile";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 
 const POSITIONS = [
   "Barista",
@@ -225,9 +226,9 @@ export default function WorkerSetup() {
           </Section>
 
           <View style={{ height: 12 }} />
-        </ScrollView>
 
-        <View style={styles.bottom}>
+        </ScrollView>
+        <StickyFooter desktopRow fullBleed>
           <Pressable
             disabled={!canContinue}
             onPress={() => {
@@ -246,7 +247,7 @@ export default function WorkerSetup() {
             <Text style={styles.ctaTxt}>Save and go live</Text>
             <Feather name="arrow-right" size={20} color="#F7F4EE" />
           </Pressable>
-        </View>
+        </StickyFooter>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

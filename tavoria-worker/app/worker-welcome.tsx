@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   },
   stepConn: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.15)" },
 
-  bottom: { gap: 10, alignItems: "center", paddingBottom: 24 },
+  bottom: { gap: 10, alignItems: "center", paddingBottom: 0 },
   desktopBottom: { alignSelf: "center", maxWidth: 820, width: "100%" },
   cta: {
     width: "100%",

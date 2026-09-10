@@ -25,6 +25,7 @@ import { getWorkerProfile, patchWorkerProfile } from "../lib/workerProfile";
 import { updateCurrentWorker, upsertWorker } from "../lib/db";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 
 const EXPERIENCE = [
   { id: 0, labelKey: "worker_experience.exp_new" },
@@ -371,7 +372,23 @@ export default function WorkerExperience() {
           </View>
 
           <View style={{ height: 12 }} />
+          {errorMsg && <Text style={styles.errorTxt}>{errorMsg}</Text>}
+
         </ScrollView>
+        <StickyFooter desktopRow fullBleed>
+          <Pressable
+            disabled={!canContinue || busy}
+            onPress={onContinue}
+            style={[styles.cta, isDesktop && desktopButtonStyle, (!canContinue || busy) && styles.ctaDisabled]}
+          >
+            <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
+            {busy ? (
+              <ActivityIndicator color="#F7F4EE" size="small" />
+            ) : (
+              <Feather name="arrow-right" size={20} color="#F7F4EE" />
+            )}
+          </Pressable>
+        </StickyFooter>
 
         <CountryPicker
           visible={countryPickerOpen}
@@ -422,22 +439,6 @@ export default function WorkerExperience() {
           </View>
         </Modal>
 
-        {errorMsg && <Text style={styles.errorTxt}>{errorMsg}</Text>}
-
-        <View style={styles.bottom}>
-          <Pressable
-            disabled={!canContinue || busy}
-            onPress={onContinue}
-            style={[styles.cta, isDesktop && desktopButtonStyle, (!canContinue || busy) && styles.ctaDisabled]}
-          >
-            <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
-            {busy ? (
-              <ActivityIndicator color="#F7F4EE" size="small" />
-            ) : (
-              <Feather name="arrow-right" size={20} color="#F7F4EE" />
-            )}
-          </Pressable>
-        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

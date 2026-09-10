@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 
 export default function VenueDone() {
   const router = useRouter();
@@ -132,7 +133,9 @@ export default function VenueDone() {
           </View>
         </View>
 
-        <View style={styles.bottom}>
+      </View>
+
+      <StickyFooter desktopRow fullBleed>
           <Pressable
             style={[styles.cta, isDesktop && desktopButtonStyle]}
             onPress={() => router.replace("/venue-photo")}
@@ -142,24 +145,17 @@ export default function VenueDone() {
           </Pressable>
           <Pressable
             onPress={() => router.push("/venue-inbox")}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-              paddingVertical: 10,
-            }}
+            style={[styles.secondaryAction, isDesktop && styles.secondaryActionDesktop]}
           >
             <Feather name="inbox" size={16} color="#0E1A24" />
             <Text style={{ color: "#0E1A24", fontSize: 14, fontWeight: "700" }}>
               View applicants
             </Text>
           </Pressable>
-          <Pressable onPress={() => router.replace("/")}>
+          <Pressable style={[styles.secondaryLater, isDesktop && styles.secondaryLaterDesktop]} onPress={() => router.replace("/")}>
             <Text style={styles.secondaryTxt}>I'll do it later</Text>
           </Pressable>
-        </View>
-      </View>
+      </StickyFooter>
     </SafeAreaView>
   );
 }
@@ -269,6 +265,7 @@ const styles = StyleSheet.create({
   divider: { height: 0.5, backgroundColor: "rgba(0,0,0,0.08)", marginVertical: 4 },
 
   bottom: { gap: 12, alignItems: "center", paddingBottom: 24, paddingTop: 8 },
+  bottomDesktop: { flexDirection: "row-reverse", justifyContent: "center" },
   cta: {
     width: "100%",
     alignSelf: "center",
@@ -281,5 +278,9 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
   },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
+  secondaryAction: { alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "center", paddingVertical: 10 },
+  secondaryActionDesktop: { minHeight: 48, paddingHorizontal: 14 },
+  secondaryLater: { alignItems: "center" },
+  secondaryLaterDesktop: { justifyContent: "center", minHeight: 48, paddingHorizontal: 14 },
   secondaryTxt: { color: "#6B7280", fontSize: 14, paddingVertical: 4 },
 });

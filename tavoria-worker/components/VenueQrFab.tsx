@@ -121,7 +121,7 @@ export default function VenueQrFab({ variant = "fab" }: Props) {
                   </>
                 ) : (
                   <View style={styles.errorState}>
-                    <Feather name="refresh-cw" size={24} color="#F0531C" />
+                    <Feather name="refresh-cw" size={18} color="#F0531C" />
                     <Text style={styles.error}>{t("common.try_again")}</Text>
                     <Pressable
                       style={styles.reloadButton}

@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { createApplication, uploadWorkerMedia } from "../lib/db";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 import { patchWorkerProfile } from "../lib/workerProfile";
 import { pickImageWeb, pickVideoWeb } from "../lib/webMedia";
 
@@ -415,9 +416,9 @@ export default function Record() {
       </View>
 
       {/* Bottom bar — action buttons per phase */}
-      <View style={styles.bottom}>
+      <StickyFooter fullBleed backgroundColor="#0E1A24">
         {phase === "intro" && (
-          <View style={styles.bottomCol}>
+          <View style={[styles.bottomCol, isDesktop && styles.bottomColDesktop]}>
             <Pressable style={[styles.primaryBtn, isDesktop && desktopButtonStyle]} onPress={takePhoto}>
               <Feather name="camera" size={18} color="#F7F4EE" />
               <Text style={styles.primaryBtnTxt}>
@@ -493,7 +494,7 @@ export default function Record() {
         {(phase === "uploading" || phase === "done") && (
           <View style={{ height: 60 }} />
         )}
-      </View>
+      </StickyFooter>
     </SafeAreaView>
   );
 }
@@ -691,6 +692,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   bottomCol: { width: "100%", gap: 10 },
+  bottomColDesktop: { alignItems: "center", flexDirection: "row-reverse", justifyContent: "center" },
   primaryBtn: {
     alignSelf: "center",
     flexDirection: "row",

@@ -19,6 +19,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 import {
   generateUsername,
   signUpWithUsernamePin,
@@ -379,7 +380,7 @@ export default function Signup() {
           </Pressable>
         </ScrollView>
 
-        <View style={styles.bottom}>
+        <StickyFooter>
           <View style={styles.bottomInner}>
             <Pressable
               disabled={!canContinue || busy}
@@ -394,7 +395,7 @@ export default function Signup() {
               )}
             </Pressable>
           </View>
-        </View>
+        </StickyFooter>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

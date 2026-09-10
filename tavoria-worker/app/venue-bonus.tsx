@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../lib/supabase";
 import { t } from "../lib/i18n";
 import { getVenueProfile, patchVenueProfile } from "../lib/venueProfile";
+import StickyFooter from "../components/StickyFooter";
 
 export default function VenueBonus() {
   const router = useRouter();
@@ -183,16 +184,16 @@ export default function VenueBonus() {
         </Pressable>
 
         <View style={{ height: 14 }} />
-      </ScrollView>
 
-      <View style={styles.bottom}>
+      </ScrollView>
+      <StickyFooter fullBleed>
         <Pressable
           onPress={() => router.replace("/")}
           style={styles.skipBtn}
         >
           <Text style={styles.skipBtnTxt}>{t("venue_bonus.save_finish")}</Text>
         </Pressable>
-      </View>
+      </StickyFooter>
     </SafeAreaView>
   );
 }

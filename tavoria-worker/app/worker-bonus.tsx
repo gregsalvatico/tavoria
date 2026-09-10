@@ -15,6 +15,7 @@ import { getCurrentWorkerFull } from "../lib/db";
 import { i18n, LANGUAGES, t } from "../lib/i18n";
 import { getWorkerProfile, patchWorkerProfile } from "../lib/workerProfile";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 
 type ItemKey = "interview" | "personality" | "videos" | "photos" | "documents";
 
@@ -279,9 +280,9 @@ export default function WorkerBonus() {
         </View>
 
         <View style={{ height: 14 }} />
-      </ScrollView>
 
-      <View style={styles.bottom}>
+      </ScrollView>
+      <StickyFooter desktopRow fullBleed>
         {!allDone && (
           <Pressable
             style={[styles.cta, isDesktop && desktopButtonStyle]}
@@ -296,14 +297,14 @@ export default function WorkerBonus() {
           </Pressable>
         )}
         <Pressable
-          style={styles.skipBtn}
+          style={[styles.skipBtn, isDesktop && styles.skipBtnDesktop]}
           onPress={() => router.replace("/worker-done")}
         >
           <Text style={styles.skipBtnTxt}>
             {allDone ? t("common.done") : t("worker_bonus.save_finish")}
           </Text>
         </Pressable>
-      </View>
+      </StickyFooter>
     </SafeAreaView>
   );
 }
@@ -485,6 +486,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",
   },
+  bottomDesktop: { alignItems: "center", flexDirection: "row-reverse", justifyContent: "center" },
   cta: {
     alignSelf: "center",
     flexDirection: "row",
@@ -498,5 +500,6 @@ const styles = StyleSheet.create({
   },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
   skipBtn: { alignItems: "center", paddingVertical: 8 },
+  skipBtnDesktop: { justifyContent: "center", minHeight: 48, paddingHorizontal: 14 },
   skipBtnTxt: { color: "#6B7280", fontSize: 14, fontWeight: "600" },
 });

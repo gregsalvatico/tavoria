@@ -5,6 +5,7 @@ import { getVenueProfile, patchVenueProfile } from "../lib/venueProfile";
 import { getCurrentVenueRow, insertShift } from "../lib/db";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import StickyFooter from "../components/StickyFooter";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -520,12 +521,10 @@ export default function PostShift() {
         </Section>
 
         <View style={{ height: 12 }} />
+        {errorMsg && <Text style={styles.errorTxt}>{errorMsg}</Text>}
+
       </ScrollView>
-      </KeyboardAvoidingView>
-
-      {errorMsg && <Text style={styles.errorTxt}>{errorMsg}</Text>}
-
-      <View style={styles.bottom}>
+      <StickyFooter desktopRow fullBleed backgroundColor="#F7F4EE">
         <Pressable
           disabled={busy}
           style={[styles.cta, isDesktop && desktopButtonStyle, busy && { opacity: 0.45 }]}
@@ -613,7 +612,8 @@ export default function PostShift() {
             <Feather name="arrow-right" size={20} color="#F7F4EE" />
           )}
         </Pressable>
-      </View>
+      </StickyFooter>
+      </KeyboardAvoidingView>
 
       {/* iOS keyboard "Done" toolbar — appears above numeric keypad */}
       {Platform.OS === "ios" && (

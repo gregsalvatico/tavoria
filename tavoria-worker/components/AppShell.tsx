@@ -487,6 +487,7 @@ const styles = StyleSheet.create({
   authMainInner: { flex: 1, width: "100%" },
   flowAside: {
     backgroundColor: "#0E1A24",
+    flexShrink: 0,
     padding: 30,
     width: 286,
   },
