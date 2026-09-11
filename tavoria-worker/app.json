@@ -32,7 +32,7 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./assets/tavoria-favicon.jpg"
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
