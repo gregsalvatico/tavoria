@@ -22,6 +22,9 @@ import { t } from "../lib/i18n";
 import { localizeRoles } from "../lib/positions";
 import AppBottomNav from "../components/AppBottomNav";
 import FilterChips from "../components/FilterChips";
+import { FilterBar, ListRow, ListSurface, PageContainer, RefreshIconButton } from "../components/PagePrimitives";
+import WorkerScreenHeader from "../components/WorkerScreenHeader";
+import { TAVORIA } from "../lib/designTokens";
 
 const WORKER_LAST_SEEN_KEY = "gigi.worker.apps_last_seen";
 const WORKER_SEEN_INTERVIEW_UPDATES_KEY = "gigi.worker.seen_interview_application_updates";
@@ -175,33 +178,30 @@ export default function WorkerApplications() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <View style={[styles.header, isDesktop && styles.headerDesktop]}>
-        {isDesktop ? <View style={styles.iconBtn} /> : (
-          <Pressable
-            onPress={() => {
-              if (router.canGoBack()) { router.back(); return; }
-              router.replace("/");
-            }}
-            hitSlop={12}
-            style={styles.iconBtn}
-          >
-            <Feather name="chevron-left" size={26} color="#0E1A24" />
-          </Pressable>
-        )}
-        <Text style={styles.h1}>
-          <Text style={{ color: "#F0531C" }}>M</Text>y applications
-        </Text>
-        <Pressable onPress={() => load()} hitSlop={12} style={styles.iconBtn}>
-          <Feather name="refresh-cw" size={20} color="#0E1A24" />
-        </Pressable>
-      </View>
+      <PageContainer>
+        <WorkerScreenHeader title={t("home_in.my_applications")} active="applications" />
+      </PageContainer>
 
-      <FilterChips
-        options={filters.map((item) => ({ ...item, count: counts[item.id] }))}
-        value={filter}
-        onChange={setFilter}
-        desktop={isDesktop}
-      />
+      <FilterBar
+        trailing={!loading ? (
+          <RefreshIconButton
+            label={t("talent.retry")}
+            loading={refreshing}
+            onPress={() => {
+              setRefreshing(true);
+              void load();
+            }}
+          />
+        ) : null}
+      >
+        <FilterChips
+          options={filters.map((item) => ({ ...item, count: counts[item.id] }))}
+          value={filter}
+          onChange={setFilter}
+          desktop={isDesktop}
+          contained
+        />
+      </FilterBar>
 
       <ScrollView
         style={{ flex: 1 }}
@@ -253,18 +253,19 @@ export default function WorkerApplications() {
             )}
           </View>
         ) : (
-          <View style={isDesktop && styles.desktopGrid}>
-            {filtered.map((a) => (
+          <ListSurface>
+            {filtered.map((a, index) => (
             <ApplicationCard
               key={a.id}
               a={a}
               router={router}
               isDesktop={isDesktop}
+              last={index === filtered.length - 1}
               hasUnreadInterview={a.status === "interview_requested" && seenInterviewUpdates[a.id] !== a.updated_at}
               onOpen={() => markInterviewSeen(a.id, a.updated_at)}
             />
             ))}
-          </View>
+          </ListSurface>
         )}
       </ScrollView>
       <AppBottomNav role="worker" active="applications" />
@@ -276,12 +277,14 @@ function ApplicationCard({
   a,
   router,
   isDesktop,
+  last,
   hasUnreadInterview,
   onOpen,
 }: {
   a: ApplicationRow;
   router: ReturnType<typeof useRouter>;
   isDesktop: boolean;
+  last: boolean;
   hasUnreadInterview: boolean;
   onOpen: () => void;
 }) {
@@ -300,7 +303,7 @@ function ApplicationCard({
     ? [
         v?.contact_email_enabled !== false ? v?.email : undefined,
         v?.contact_phone_enabled !== false ? v?.phone : undefined,
-        v?.contact_in_person_enabled === true ? "Visit in person" : undefined,
+        v?.contact_in_person_enabled === true ? t("shift_detail.contact_visit") : undefined,
       ].filter(Boolean)
     : [];
 
@@ -313,23 +316,24 @@ function ApplicationCard({
     : t("candidate_actions.direct_interview_invitation");
 
   return (
-    <View style={[styles.rowWrap, isDesktop && styles.rowWrapDesktop]}>
-      <Pressable
-        onPress={() => {
-          onOpen();
-          if (s?.id) {
-            router.push({ pathname: "/shift-detail", params: { id: s.id } });
-          } else {
-            const venueId = v?.id ?? a.venue_id;
-            if (venueId) {
-              router.push({ pathname: "/venue-board", params: { venueId } });
-            }
+    <ListRow
+      label={v?.name || t("shift_detail.default_venue")}
+      last={last}
+      onPress={() => {
+        onOpen();
+        if (s?.id) {
+          router.push({ pathname: "/shift-detail", params: { id: s.id } });
+        } else {
+          const venueId = v?.id ?? a.venue_id;
+          if (venueId) {
+            router.push({ pathname: "/venue-board", params: { venueId } });
           }
-        }}
-        style={[styles.row, hasUnreadInterview && styles.rowInterviewUpdate]}
-      >
-        <Image source={photo} style={styles.thumb} resizeMode="cover" />
-        <View style={{ flex: 1 }}>
+        }
+      }}
+      style={hasUnreadInterview && styles.rowInterviewUpdate}
+    >
+        <Image source={photo} style={[styles.thumb, isDesktop && styles.thumbDesktop]} resizeMode="cover" />
+        <View style={styles.rowBody}>
           <View style={styles.line1}>
             <Pressable
               onPress={(event) => {
@@ -339,14 +343,14 @@ function ApplicationCard({
               }}
               style={styles.venueNameLink}
             >
-              <Text style={styles.venueName} numberOfLines={1}>
-                {v?.name || "Venue"}
+              <Text style={[styles.venueName, isDesktop && styles.venueNameDesktop]} numberOfLines={1}>
+                {v?.name || t("shift_detail.default_venue")}
               </Text>
               <Feather name="arrow-up-right" size={14} color="#185FA5" />
             </Pressable>
             {payStr && <Text style={styles.pay}>{payStr}</Text>}
           </View>
-          <Text style={styles.role} numberOfLines={1}>
+          <Text style={[styles.role, isDesktop && styles.roleDesktop]} numberOfLines={1}>
             {roleStr}
           </Text>
           <View style={styles.line3}>
@@ -372,15 +376,13 @@ function ApplicationCard({
               {contactUnlocked
                 ? contactItems.length > 0
                   ? contactItems.join(" / ")
-                  : "No contact method enabled"
-                : "Contact details unlock after an interview request"}
+                  : t("shift_detail.contact_none")
+                : t("shift_detail.contact_details_locked_sub")}
             </Text>
           </View>
         </View>
         <Feather name="chevron-right" size={18} color="#9CA3AF" />
-      </Pressable>
-
-    </View>
+    </ListRow>
   );
 }
 
@@ -453,7 +455,7 @@ function formatWhen(iso: string) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F1EFE8" },
+  safe: { flex: 1, backgroundColor: TAVORIA.color.paperDeep },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -461,7 +463,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  headerDesktop: { paddingHorizontal: 24 },
+  headerDesktop: { alignSelf: "center", maxWidth: 1180, paddingHorizontal: 24, width: "100%" },
   iconBtn: { padding: 4, width: 32 },
   h1: {
     fontFamily: "InstrumentSerif_400Regular",
@@ -470,10 +472,13 @@ const styles = StyleSheet.create({
     color: "#0E1A24",
     letterSpacing: -0.4,
   },
+  h1Desktop: { fontSize: 29 },
 
-  scroll: { paddingHorizontal: 14, paddingBottom: 20 },
-  scrollDesktop: { paddingHorizontal: 24 },
-  desktopGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  scroll: { paddingHorizontal: 16, paddingBottom: 20 },
+  scrollDesktop: { alignSelf: "center", maxWidth: 1180, paddingHorizontal: 24, width: "100%" },
+  filterBar: { alignSelf: "center", maxWidth: 1180, paddingHorizontal: 14, width: "100%" },
+  filterBarDesktop: { paddingHorizontal: 24 },
+  desktopGrid: { backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.medium, borderWidth: 1, overflow: "hidden" },
   loadingWrap: { paddingVertical: 60, alignItems: "center" },
   fullWidthState: { width: "100%" },
   emptyWrap: {
@@ -502,25 +507,15 @@ const styles = StyleSheet.create({
   },
   emptyCtaTxt: { color: "white", fontWeight: "800", fontSize: 14 },
 
-  rowWrap: { marginBottom: 8 },
-  rowWrapDesktop: { marginBottom: 0, width: "48.8%" },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: "white",
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 0.5,
-    borderColor: "rgba(0,0,0,0.08)",
-  },
-  rowInterviewUpdate: { backgroundColor: "#FFAB7D", borderColor: "#F0531C", borderWidth: 2 },
+  rowInterviewUpdate: { backgroundColor: TAVORIA.color.orangeSoft },
   thumb: {
-    width: 60,
-    height: 60,
-    borderRadius: 10,
+    width: 64,
+    height: 72,
+    borderRadius: 14,
     backgroundColor: "#E5E5E0",
   },
+  thumbDesktop: { borderRadius: 14, height: 72, width: 64 },
+  rowBody: { flex: 1, gap: 5, minWidth: 0 },
   line1: {
     flexDirection: "row",
     alignItems: "center",
@@ -528,16 +523,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   venueName: {
-    flex: 1,
+    flexShrink: 1,
     fontSize: 15,
     fontWeight: "800",
     color: "#0E1A24",
     letterSpacing: -0.2,
   },
   venueNameLink: { alignItems: "center", flex: 1, flexDirection: "row", gap: 4, minWidth: 0 },
+  venueNameDesktop: { fontSize: 17 },
   pay: { fontSize: 14, fontWeight: "900", color: "#F0531C" },
-  role: {
-    fontFamily: "InstrumentSerif_400Regular", fontSize: 13, fontWeight: "400", color: "#6B7280", marginTop: 3 },
+  role: { color: "#303C49", fontSize: 14 },
+  roleDesktop: { fontSize: 14 },
   line3: {
     flexDirection: "row",
     alignItems: "center",

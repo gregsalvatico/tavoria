@@ -65,22 +65,16 @@ export default async function ApplicationsPage() {
               </tr>
             )}
             {apps.map((a) => {
-              const worker = (a as any).worker as
-                | {
-                    id: string;
-                    first_name: string;
-                    last_name: string;
-                    photo_url?: string;
-                    positions?: string[];
-                    city?: string;
-                  }
-                | null;
-              const venue = (a as any).venue as
-                | { id: string; name: string; type?: string; city?: string }
-                | null;
-              const shift = (a as any).shift as
-                | { roles?: string[] }
-                | null;
+              const worker = (a as unknown as { worker: {
+                id: string;
+                first_name: string;
+                last_name: string;
+                photo_url?: string;
+                positions?: string[];
+                city?: string;
+              } | null }).worker;
+              const venue = (a as unknown as { venue: { id: string; name: string; type?: string; city?: string } | null }).venue;
+              const shift = (a as unknown as { shift: { roles?: string[] } | null }).shift;
               const wname =
                 [worker?.first_name, worker?.last_name]
                   .filter(Boolean)

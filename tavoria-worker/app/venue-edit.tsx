@@ -17,14 +17,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { getCurrentVenueRow, updateVenue } from "../lib/db";
 import { getVenueProfile, patchVenueProfile } from "../lib/venueProfile";
 import { websiteUrl } from "../lib/contact";
-import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import { t } from "../lib/i18n";
+import ActionButton from "../components/ActionButton";
+import StickyFooter from "../components/StickyFooter";
+import { PageContainer, PageHeader } from "../components/PagePrimitives";
+import { TAVORIA } from "../lib/designTokens";
 
 type InterviewLocationOption = "venue" | "phone" | "video" | "other";
 const DEFAULT_INTERVIEW_OPTIONS: InterviewLocationOption[] = ["venue", "phone", "video"];
 
 export default function VenueEdit() {
   const router = useRouter();
-  const isDesktop = useIsDesktop();
   const [venueId, setVenueId] = useState<string | null>(getVenueProfile()?.id ?? null);
   const [name, setName] = useState(getVenueProfile()?.name ?? "");
   const [address, setAddress] = useState(getVenueProfile()?.address ?? "");
@@ -69,13 +72,13 @@ export default function VenueEdit() {
 
   const save = async () => {
     if (!venueId || !name.trim() || !email.trim()) {
-      Alert.alert("Missing details", "Venue name and email are required.");
+      Alert.alert(t("talent.invalid"), `${t("venue_info.venue_name")} and ${t("signup.email")} are required.`);
       return;
     }
     const nextAddress = address.trim();
     const nextWebsite = websiteUrl(website);
     if (website.trim() && !nextWebsite) {
-      Alert.alert("Invalid website", "Enter a valid website link, for example yourvenue.com.");
+      Alert.alert(t("venue_info.website_invalid"), t("venue_info.website_invalid"));
       return;
     }
     const city = nextAddress.split(",").pop()?.trim() || "Milan";
@@ -110,7 +113,7 @@ export default function VenueEdit() {
       });
       router.back();
     } catch (error: any) {
-      Alert.alert("Could not save venue", error?.message ?? "Please try again.");
+      Alert.alert(t("talent.loadError"), error?.message ?? t("talent.retry"));
     } finally {
       setSaving(false);
     }
@@ -119,13 +122,12 @@ export default function VenueEdit() {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-        <View style={styles.header}>
-          <Pressable style={styles.back} onPress={() => router.back()} hitSlop={12}>
-            <Feather name="chevron-left" size={26} color="#0E1A24" />
-          </Pressable>
-          <Text style={styles.title}>Edit venue</Text>
-          <View style={styles.back} />
-        </View>
+        <PageContainer>
+          <PageHeader
+            title={t("venue_edit.title")}
+            left={<Pressable style={styles.back} onPress={() => router.back()} hitSlop={12} accessibilityLabel={t("common.back")}><Feather name="chevron-left" size={24} color={TAVORIA.color.navy} /></Pressable>}
+          />
+        </PageContainer>
         {loading ? (
           <View style={styles.loading}><ActivityIndicator size="large" color="#F0531C" /></View>
         ) : (
@@ -135,34 +137,42 @@ export default function VenueEdit() {
             showsVerticalScrollIndicator={false}
             showsHorizontalScrollIndicator={false}
           >
-            <Text style={styles.lede}>Keep the details workers use to recognise and contact your venue up to date.</Text>
-            <Field label="Venue name" icon="bookmark" value={name} onChangeText={setName} autoCapitalize="words" />
-            <Field label="Address" icon="map-pin" value={address} onChangeText={setAddress} autoCapitalize="words" />
-            <Field label="Email" icon="mail" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-            <Field label="Phone" icon="phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-            <Field label="Website" icon="globe" value={website} onChangeText={setWebsite} keyboardType="url" autoCapitalize="none" />
-            <View style={styles.contactSettings}>
-              <Text style={styles.contactTitle}>Contact options after an interview</Text>
-              <Text style={styles.contactSub}>Only workers you invite to interview or hire can see these details.</Text>
-              <ContactToggle icon="mail" label="Share email" detail={email ? email : "Add an email above"} value={shareEmail} onPress={() => setShareEmail((value) => !value)} disabled={!email} />
-              <ContactToggle icon="phone" label="Share phone and WhatsApp" detail={phone ? phone : "Add a phone number above"} value={sharePhone} onPress={() => setSharePhone((value) => !value)} disabled={!phone} />
-              <ContactToggle icon="map-pin" label="Invite them to visit in person" detail={address ? address : "Add an address above"} value={allowInPerson} onPress={() => setAllowInPerson((value) => !value)} disabled={!address} />
-            </View>
-            <View style={styles.contactSettings}>
-              <Text style={styles.contactTitle}>Interview formats</Text>
-              <Text style={styles.contactSub}>Choose every way you are open to meeting candidates. Venue, phone and video are selected by default.</Text>
-              <InterviewFormatToggle icon="map-pin" label="At the venue" value={interviewOptions.includes("venue")} onPress={() => toggleInterviewOption("venue", interviewOptions, setInterviewOptions)} />
-              <InterviewFormatToggle icon="phone" label="Phone call" value={interviewOptions.includes("phone")} onPress={() => toggleInterviewOption("phone", interviewOptions, setInterviewOptions)} />
-              <InterviewFormatToggle icon="video" label="Video call" value={interviewOptions.includes("video")} onPress={() => toggleInterviewOption("video", interviewOptions, setInterviewOptions)} />
-              <InterviewFormatToggle icon="edit-3" label="Another location" value={interviewOptions.includes("other")} onPress={() => toggleInterviewOption("other", interviewOptions, setInterviewOptions)} />
-            </View>
-            <Pressable style={[styles.save, isDesktop && desktopButtonStyle, saving && { opacity: 0.65 }]} onPress={save} disabled={saving}>
-              <Feather name="check" size={18} color="white" />
-              <Text style={styles.saveText}>Save venue details</Text>
-              {saving ? <ActivityIndicator color="white" size="small" /> : null}
+            <Text style={styles.lede}>{t("venue_edit.intro")}</Text>
+            <Pressable style={styles.mediaCard} onPress={() => router.push("/venue-profile-media")}>
+              <View style={styles.mediaIcon}><Feather name="image" size={18} color="#F0531C" /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.mediaTitle}>{t("venue_edit.media_title")}</Text>
+                <Text style={styles.mediaSub}>{t("venue_edit.media_sub")}</Text>
+              </View>
+              <Feather name="chevron-right" size={18} color="#0E1A24" />
             </Pressable>
+            <Field label={t("venue_info.venue_name")} icon="bookmark" value={name} onChangeText={setName} autoCapitalize="words" />
+            <Field label={t("venue_info.address")} icon="map-pin" value={address} onChangeText={setAddress} autoCapitalize="words" />
+            <Field label={t("signup.email")} icon="mail" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+            <Field label={t("venue_info.phone")} icon="phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+            <Field label={t("venue_info.website")} icon="globe" value={website} onChangeText={setWebsite} keyboardType="url" autoCapitalize="none" />
+            <View style={styles.contactSettings}>
+              <Text style={styles.contactTitle}>{t("venue_edit.contact_title")}</Text>
+              <Text style={styles.contactSub}>{t("venue_edit.contact_sub")}</Text>
+              <ContactToggle icon="mail" label={t("venue_card.email")} detail={email || t("venue_edit.add_email")} value={shareEmail} onPress={() => setShareEmail((value) => !value)} disabled={!email} />
+              <ContactToggle icon="phone" label={t("venue_info.phone")} detail={phone || t("venue_edit.add_phone")} value={sharePhone} onPress={() => setSharePhone((value) => !value)} disabled={!phone} />
+              <ContactToggle icon="map-pin" label={t("venue_card.directions")} detail={address || t("venue_edit.add_address")} value={allowInPerson} onPress={() => setAllowInPerson((value) => !value)} disabled={!address} />
+            </View>
+            <View style={styles.contactSettings}>
+              <Text style={styles.contactTitle}>{t("venue_edit.interview_title")}</Text>
+              <Text style={styles.contactSub}>{t("venue_edit.interview_sub")}</Text>
+              <InterviewFormatToggle icon="map-pin" label={t("venue_card.directions")} value={interviewOptions.includes("venue")} onPress={() => toggleInterviewOption("venue", interviewOptions, setInterviewOptions)} />
+              <InterviewFormatToggle icon="phone" label={t("venue_info.phone")} value={interviewOptions.includes("phone")} onPress={() => toggleInterviewOption("phone", interviewOptions, setInterviewOptions)} />
+              <InterviewFormatToggle icon="video" label={t("talent.videos")} value={interviewOptions.includes("video")} onPress={() => toggleInterviewOption("video", interviewOptions, setInterviewOptions)} />
+              <InterviewFormatToggle icon="edit-3" label={t("common.other")} value={interviewOptions.includes("other")} onPress={() => toggleInterviewOption("other", interviewOptions, setInterviewOptions)} />
+            </View>
           </ScrollView>
         )}
+        {!loading ? (
+          <StickyFooter desktopRow>
+            <ActionButton label={t("venue_edit.save")} icon="check" loading={saving} onPress={save} />
+          </StickyFooter>
+        ) : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -209,13 +219,17 @@ function Field(props: { label: string; icon: keyof typeof Feather.glyphMap; valu
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F1EFE8" },
-  header: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 14, paddingVertical: 10 },
+  safe: { flex: 1, backgroundColor: TAVORIA.color.paperDeep },
+  header: { alignItems: "center", borderBottomColor: TAVORIA.color.border, borderBottomWidth: StyleSheet.hairlineWidth, flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 12 },
   back: { alignItems: "center", justifyContent: "center", width: 34 },
-  title: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 22 },
+  title: { color: TAVORIA.color.navy, fontFamily: "InstrumentSerif_400Regular", fontSize: 22 },
   loading: { alignItems: "center", flex: 1, justifyContent: "center" },
-  content: { padding: 20, paddingTop: 14 },
-  lede: { color: "#5D6670", fontSize: 14, lineHeight: 20, marginBottom: 24 },
+  content: { alignSelf: "center", maxWidth: 840, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 24, width: "100%" },
+  lede: { color: TAVORIA.color.muted, fontSize: 14, lineHeight: 20, marginBottom: 24 },
+  mediaCard: { alignItems: "center", backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.medium, borderWidth: 1, flexDirection: "row", gap: 11, marginBottom: 22, minHeight: 64, paddingHorizontal: 14 },
+  mediaIcon: { alignItems: "center", backgroundColor: "#FFF0E7", borderRadius: 10, height: 38, justifyContent: "center", width: 38 },
+  mediaTitle: { color: "#0E1A24", fontSize: 14, fontWeight: "800" },
+  mediaSub: { color: "#626B78", fontSize: 11, marginTop: 3 },
   field: { marginBottom: 17 },
   label: { color: "#0E1A24", fontSize: 12, fontWeight: "800", marginBottom: 7 },
   inputWrap: { alignItems: "center", backgroundColor: "white", borderColor: "rgba(14,26,36,0.12)", borderRadius: 13, borderWidth: 1, flexDirection: "row", gap: 10, minHeight: 52, paddingHorizontal: 14 },
@@ -232,6 +246,4 @@ const styles = StyleSheet.create({
   switchOn: { backgroundColor: "#F0531C" },
   switchThumb: { backgroundColor: "white", borderRadius: 999, height: 19, width: 19 },
   switchThumbOn: { alignSelf: "flex-end" },
-  save: { alignItems: "center", backgroundColor: "#F0531C", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", marginTop: 12, minHeight: 54, paddingHorizontal: 18 },
-  saveText: { color: "white", fontSize: 15, fontWeight: "800" },
 });

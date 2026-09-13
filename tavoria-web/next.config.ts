@@ -1,9 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Same idea for TypeScript: the new pages typecheck clean, but legacy code
-  // may have rough edges that shouldn't block a marketing deploy.
-  typescript: { ignoreBuildErrors: true },
   async headers() {
     return [
       {

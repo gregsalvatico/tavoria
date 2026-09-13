@@ -12,6 +12,7 @@ import {
 import { mailtoUrl, mapsUrl, telUrl, whatsAppUrl } from "../lib/contact";
 import { openExternalLink } from "../lib/externalLinks";
 import { t } from "../lib/i18n";
+import { TAVORIA } from "../lib/designTokens";
 
 type Props = {
   visible: boolean;
@@ -48,7 +49,7 @@ export default function ContactPersonModal({
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <ScrollView style={styles.sheet} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView style={styles.sheet} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <View style={styles.handle} />
           <View style={styles.titleRow}>
             <View>
@@ -65,29 +66,33 @@ export default function ContactPersonModal({
           {email ? (
             <Pressable style={[styles.action, styles.emailAction]} onPress={() => void open(mailtoUrl(email, `Tavoria - ${name}`, ""), t("external_link.email"))}>
               <Feather name="mail" size={18} color="#185FA5" />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.actionTitle}>{t("contact_modal.open_email")}</Text>
+              <View style={styles.actionCopy}>
+                <View style={styles.actionTitleRow}>
+                  <Text style={styles.actionTitle}>{t("contact_modal.open_email")}</Text>
+                  <Feather name="arrow-up-right" size={17} color="#185FA5" />
+                </View>
                 <Text style={styles.actionDetail} numberOfLines={1}>{email}</Text>
               </View>
-              <Feather name="arrow-up-right" size={17} color="#185FA5" />
             </Pressable>
           ) : null}
 
           {phone ? (
             <Pressable style={[styles.action, styles.whatsAppAction]} onPress={() => void open(whatsAppUrl(phone, ""), t("external_link.whatsapp"))}>
               <Feather name="message-circle" size={18} color="white" />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.actionTitleLight}>{t("contact_modal.whatsapp")}</Text>
+              <View style={styles.actionCopy}>
+                <View style={styles.actionTitleRow}>
+                  <Text style={styles.actionTitleLight}>{t("contact_modal.whatsapp")}</Text>
+                  <Feather name="arrow-up-right" size={17} color="white" />
+                </View>
                 <Text style={styles.actionDetailLight} numberOfLines={1}>{phone}</Text>
               </View>
-              <Feather name="arrow-up-right" size={17} color="white" />
             </Pressable>
           ) : null}
 
           {email ? (
             <Pressable style={[styles.action, styles.copyAction]} onPress={copyEmail}>
               <Feather name={copied ? "check" : "copy"} size={18} color="#0E1A24" />
-              <View style={{ flex: 1 }}>
+              <View style={styles.actionCopy}>
                 <Text style={styles.actionTitle}>{copied ? t("contact_modal.email_copied") : t("contact_modal.copy_email")}</Text>
                 <Text style={styles.actionDetail} numberOfLines={1}>{email}</Text>
               </View>
@@ -97,22 +102,26 @@ export default function ContactPersonModal({
           {phone ? (
             <Pressable style={styles.action} onPress={() => void open(telUrl(phone), t("external_link.phone"))}>
               <Feather name="phone-call" size={18} color="#0E1A24" />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.actionTitle}>{t("contact_modal.call", { recipient: recipientLabel.toLowerCase() })}</Text>
+              <View style={styles.actionCopy}>
+                <View style={styles.actionTitleRow}>
+                  <Text style={styles.actionTitle}>{t("contact_modal.call", { recipient: recipientLabel.toLowerCase() })}</Text>
+                  <Feather name="arrow-up-right" size={17} color="#0E1A24" />
+                </View>
                 <Text style={styles.actionDetail}>{phone}</Text>
               </View>
-              <Feather name="arrow-up-right" size={17} color="#0E1A24" />
             </Pressable>
           ) : null}
 
           {visitAddress ? (
             <Pressable style={[styles.action, styles.visitAction]} onPress={() => void open(mapsUrl(visitAddress), t("external_link.maps"))}>
               <Feather name="map-pin" size={18} color="#F0531C" />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.actionTitle}>{t("contact_modal.visit")}</Text>
+              <View style={styles.actionCopy}>
+                <View style={styles.actionTitleRow}>
+                  <Text style={styles.actionTitle}>{t("contact_modal.visit")}</Text>
+                  <Feather name="arrow-up-right" size={17} color="#F0531C" />
+                </View>
                 <Text style={styles.actionDetail} numberOfLines={2}>{visitAddress}</Text>
               </View>
-              <Feather name="arrow-up-right" size={17} color="#F0531C" />
             </Pressable>
           ) : null}
 
@@ -124,20 +133,22 @@ export default function ContactPersonModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: { backgroundColor: "rgba(14,26,36,0.48)", flex: 1, justifyContent: "flex-end" },
-  sheet: { backgroundColor: "#F7F4EE", borderTopLeftRadius: 26, borderTopRightRadius: 26, maxHeight: "86%" },
+  overlay: { backgroundColor: "rgba(14,26,36,0.42)", flex: 1, justifyContent: "flex-end" },
+  sheet: { backgroundColor: TAVORIA.color.paper, borderTopLeftRadius: 26, borderTopRightRadius: 26, maxHeight: "86%" },
   content: { paddingBottom: 30, paddingHorizontal: 18, paddingTop: 11 },
   handle: { alignSelf: "center", backgroundColor: "#C8CBCF", borderRadius: 999, height: 4, marginBottom: 17, width: 38 },
   titleRow: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
-  kicker: { color: "#F0531C", fontSize: 10, fontWeight: "800", letterSpacing: 1.2 },
-  title: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 27, lineHeight: 31, marginTop: 2 },
-  close: { alignItems: "center", backgroundColor: "white", borderRadius: 999, height: 38, justifyContent: "center", width: 38 },
+  kicker: { color: TAVORIA.color.orange, fontSize: 10, fontWeight: "800", letterSpacing: 1.2 },
+  title: { color: TAVORIA.color.navy, fontFamily: "InstrumentSerif_400Regular", fontSize: 27, lineHeight: 31, marginTop: 2 },
+  close: { alignItems: "center", backgroundColor: TAVORIA.color.white, borderRadius: TAVORIA.radius.pill, height: 38, justifyContent: "center", width: 38 },
   intro: { color: "#5D6670", fontSize: 13, lineHeight: 19, marginBottom: 8, marginTop: 10 },
-  action: { alignItems: "center", backgroundColor: "white", borderColor: "rgba(14,26,36,0.12)", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 11, marginTop: 10, minHeight: 62, paddingHorizontal: 13 },
+  action: { alignItems: "center", backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.medium, borderWidth: 1, flexDirection: "row", gap: 11, marginTop: 10, minHeight: 62, paddingHorizontal: 13 },
   emailAction: { marginTop: 12 },
   copyAction: { marginTop: 8 },
   visitAction: { borderColor: "#F7C7AB" },
   whatsAppAction: { backgroundColor: "#25D366", borderColor: "#25D366" },
+  actionCopy: { flex: 1, minWidth: 0 },
+  actionTitleRow: { alignItems: "center", flexDirection: "row", gap: 5 },
   actionTitle: { color: "#0E1A24", fontSize: 14, fontWeight: "800" },
   actionDetail: { color: "#6B7280", fontSize: 11, marginTop: 2 },
   actionTitleLight: { color: "white", fontSize: 14, fontWeight: "800" },

@@ -129,7 +129,7 @@ export default async function WorkerDetail({
 
       {/* Interview QCM answers */}
       {(worker.interview_answers ?? []).length > 0 && (
-        <Section title={`Interview answers (${(worker.interview_answers as any[]).length})`}>
+        <Section title={`Interview answers (${(worker.interview_answers as Array<{ q_id: string; q_text: string; role: string; a_id: string; a_text: string }>).length})`}>
           <p className="text-xs text-stone-500 mb-4">
             Worker chose these multiple-choice answers to scenario questions
             tailored to their roles. Shows how they think — no right or wrong.
@@ -265,9 +265,7 @@ export default async function WorkerDetail({
         ) : (
           <ul className="divide-y divide-stone-100">
             {apps.map((a) => {
-              const v = (a as any).venue as
-                | { id: string; name: string; type?: string; city?: string }
-                | null;
+              const v = (a as unknown as { venue: { id: string; name: string; type?: string; city?: string } | null }).venue;
               return (
                 <li
                   key={a.id}

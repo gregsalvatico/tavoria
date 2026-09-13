@@ -2,52 +2,61 @@ import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   useWindowDimensions,
   View,
 } from "react-native";
 import { getCurrentUserContext } from "../lib/db";
-import { t } from "../lib/i18n";
+import { LANGUAGES, setLanguage, t, useLanguage, type Language } from "../lib/i18n";
 import { clearVenueProfile } from "../lib/venueProfile";
 import { clearWorkerProfile } from "../lib/workerProfile";
-import { setCachedHomeContext, type HomeContext } from "../lib/homeContextCache";
+import { getCachedHomeContext, setCachedHomeContext, type HomeContext } from "../lib/homeContextCache";
+import { getAccountMenuSections, type AccountMenuActionId } from "../lib/accountNavigation";
 import { supabase } from "../lib/supabase";
+import { TAVORIA } from "../lib/designTokens";
+import { openExternalLink } from "../lib/externalLinks";
 import VenueQrFab from "./VenueQrFab";
 
 const FOCUSED_ROUTES = new Set([
   "apply",
   "applied",
-  "change-pin",
-  "how-it-works",
   "interview-prep",
   "post-shift",
   "record",
   "scan",
   "shift-edit",
+  "shift-media-edit",
   "signup",
   "signin",
   "terms",
+  "venue-media-edit",
   "venue-bonus",
   "venue-done",
   "venue-edit",
   "venue-info",
   "venue-interview",
   "venue-photo",
-  "venue-pro",
+  "venue-profile-media",
   "venue-type",
   "venue-welcome",
   "worker-bonus",
   "worker-done",
+  "worker-documents",
   "worker-experience",
   "worker-interview",
   "worker-media",
+  "worker-media-edit",
   "worker-personality",
   "worker-photos",
+  "worker-profile-edit",
   "worker-positions",
   "worker-setup",
   "worker-videos",
@@ -59,26 +68,31 @@ const AUTH_ROUTES = new Set(["signin", "signup"]);
 const DESKTOP_FLOW_ROUTES = new Set([
   "apply",
   "applied",
-  "change-pin",
   "interview-prep",
   "post-shift",
   "record",
   "scan",
   "shift-edit",
+  "shift-media-edit",
+  "venue-media-edit",
   "venue-edit",
   "venue-info",
   "venue-interview",
   "venue-photo",
+  "venue-profile-media",
   "venue-bonus",
   "venue-type",
   "venue-done",
   "worker-bonus",
   "worker-experience",
   "worker-done",
+  "worker-documents",
   "worker-interview",
   "worker-media",
+  "worker-media-edit",
   "worker-personality",
   "worker-photos",
+  "worker-profile-edit",
   "worker-positions",
   "worker-setup",
   "worker-videos",
@@ -86,8 +100,9 @@ const DESKTOP_FLOW_ROUTES = new Set([
 
 const DESKTOP_INTRO_ROUTES = new Set(["venue-welcome", "worker-welcome"]);
 
-const DARK_FLOW_ROUTES = new Set(["apply", "record", "scan", "venue-pro"]);
-const PAPER_FLOW_ROUTES = new Set(["change-pin", "venue-info", "venue-photo", "venue-type"]);
+const DARK_FLOW_ROUTES = new Set(["apply", "record", "scan"]);
+const PAPER_FLOW_ROUTES = new Set(["venue-info", "venue-photo", "venue-type"]);
+const DESKTOP_SIDEBAR_WIDTH = 238;
 
 type Props = {
   children: ReactNode;
@@ -97,6 +112,8 @@ type Props = {
 
 export default function AppShell({ children, currentRoute, isSignedIn }: Props) {
   const { width } = useWindowDimensions();
+  const [, setLanguageVersion] = useState(0);
+  const language = useLanguage();
   const isDesktop = Platform.OS === "web" && width >= 1024;
   const route = currentRoute || "index";
   const showSidebar = isDesktop && isSignedIn && !FOCUSED_ROUTES.has(route);
@@ -125,7 +142,7 @@ export default function AppShell({ children, currentRoute, isSignedIn }: Props) 
           showSidebar && styles.sidebarWorkspace,
         ]}
       >
-        {showSidebar ? <DesktopSidebar currentRoute={route} /> : null}
+        {showSidebar ? <DesktopSidebar currentRoute={route} onLanguageChange={() => setLanguageVersion((value) => value + 1)} /> : null}
         <View style={[styles.content, showSidebar && styles.sidebarContent]}>
           <View style={styles.contentInner}>{desktopContent}</View>
         </View>
@@ -141,7 +158,7 @@ function DesktopPublicFrame({
   route: string;
   children: ReactNode;
 }) {
-  const surfaceColor = route === "how-it-works" || DARK_FLOW_ROUTES.has(route)
+  const surfaceColor = DARK_FLOW_ROUTES.has(route)
     ? "#0E1A24"
     : route === "terms" || route === "venue-board"
       ? "#F1EFE8"
@@ -223,14 +240,14 @@ function DesktopFlowFrame({
   const workerFlow =
     route.startsWith("worker-") ||
     ["apply", "applied", "interview-prep", "record", "scan"].includes(route);
-  const steps = workerFlow
-    ? ["Your details", "Your story", "Go live"]
-    : ["Your venue", "What you hire", "Get started"];
   const activeStep = route.includes("welcome") || route === "venue-type" || route === "worker-setup"
     ? 0
     : route.includes("done") || route === "applied"
       ? 2
       : 1;
+  const flowSteps = workerFlow
+    ? [t("desktop_flow.worker_step_1"), t("desktop_flow.worker_step_2"), t("desktop_flow.worker_step_3")]
+    : [t("desktop_flow.venue_step_1"), t("desktop_flow.venue_step_2"), t("desktop_flow.venue_step_3")];
 
   return (
     <View style={styles.desktopFrame}>
@@ -239,18 +256,16 @@ function DesktopFlowFrame({
           Tavoria<Text style={styles.brandAccent}>.</Text>
         </Text>
         <View style={styles.flowAsideCopy}>
-          <Text style={styles.flowKicker}>{workerFlow ? "WORKER FLOW" : "VENUE FLOW"}</Text>
+          <Text style={styles.flowKicker}>{t(workerFlow ? "desktop_flow.worker_kicker" : "desktop_flow.venue_kicker")}</Text>
           <Text style={styles.flowTitle}>
-            {workerFlow ? "Build once.\nGet hired again." : "Set up once.\nHire with confidence."}
+            {t(workerFlow ? "desktop_flow.worker_title" : "desktop_flow.venue_title")}
           </Text>
           <Text style={styles.flowSub}>
-            {workerFlow
-              ? "A few focused steps and your profile is ready for nearby venues."
-              : "Tell venues what you do and start finding the right people."}
+            {t(workerFlow ? "desktop_flow.worker_sub" : "desktop_flow.venue_sub")}
           </Text>
         </View>
         <View style={styles.flowSteps}>
-          {steps.map((step, index) => (
+          {flowSteps.map((step, index) => (
             <View key={step} style={styles.flowStep}>
               <View style={[styles.flowStepDot, index <= activeStep && styles.flowStepDotActive]} />
               <Text style={[styles.flowStepLabel, index === activeStep && styles.flowStepLabelActive]}>{step}</Text>
@@ -265,17 +280,32 @@ function DesktopFlowFrame({
   );
 }
 
-function DesktopSidebar({ currentRoute }: { currentRoute: string }) {
+function DesktopSidebar({ currentRoute, onLanguageChange }: { currentRoute: string; onLanguageChange: () => void }) {
   const router = useRouter();
-  const [context, setContext] = useState<HomeContext | null>(null);
+  const [context, setContext] = useState<HomeContext | null>(() => getCachedHomeContext());
+  const [contextLoading, setContextLoading] = useState(() => !getCachedHomeContext());
+  const [languageOpen, setLanguageOpen] = useState(false);
+  const language = useLanguage();
 
   useEffect(() => {
     let active = true;
+    const cached = getCachedHomeContext();
+    if (cached) {
+      setContext(cached);
+      setContextLoading(false);
+    } else {
+      setContextLoading(currentRoute === "index");
+    }
     getCurrentUserContext()
       .then((next) => {
-        if (active) setContext(next);
+        if (active) {
+          setContext(next);
+          setContextLoading(false);
+        }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (active) setContextLoading(false);
+      });
     return () => {
       active = false;
     };
@@ -291,20 +321,74 @@ function DesktopSidebar({ currentRoute }: { currentRoute: string }) {
     ? context?.venueName || t("home_in.continue_venue")
     : context?.workerName || t("home_in.continue_worker");
   const initials = displayName.charAt(0).toUpperCase();
+  const accountMenu = getAccountMenuSections(venueMode ? "venue" : "worker");
 
   const items = useMemo(
     () =>
       venueMode
         ? [
+            { route: "/venue-browse-workers", icon: "users", label: t("home_in.candidates") },
             { route: "/venue-inbox", icon: "inbox", label: t("home_in.inbox") },
             { route: "/venue-shifts", icon: "briefcase", label: t("home_in.my_shifts") },
           ]
         : [
-            { route: "/discover", icon: "compass", label: t("home_in.browse_shifts") },
+            { route: "/", icon: "compass", label: t("home_in.venues") },
             { route: "/worker-applications", icon: "send", label: t("home_in.my_applications") },
+            { route: "/candidate", icon: "user", label: t("home_in.my_card") },
           ],
-    [venueMode]
+    [language, venueMode]
   );
+
+  const share = async () => {
+    try {
+      await Share.share({
+        message: venueMode ? t("home_in.share_venue_msg") : t("home_in.share_worker_msg"),
+      });
+    } catch {}
+  };
+
+  const chooseLanguage = async (next: Language) => {
+    await setLanguage(next);
+    setLanguageOpen(false);
+    onLanguageChange();
+  };
+
+  const runMenuAction = (id: AccountMenuActionId) => {
+    if (id === "language") {
+      setLanguageOpen(true);
+      return;
+    }
+    if (id === "change_pin") {
+      router.push("/change-pin");
+      return;
+    }
+    if (id === "share") {
+      void share();
+      return;
+    }
+    void openExternalLink("mailto:hello@tavoriapp.com", t("external_link.email"));
+  };
+
+  if (contextLoading && currentRoute === "index") {
+    return (
+      <View style={styles.sidebar}>
+        <Pressable
+          style={({ hovered, pressed }) => [
+            styles.sidebarBrand,
+            hovered && styles.sidebarBrandHovered,
+            pressed && styles.sidebarBrandPressed,
+          ]}
+          onPress={() => router.replace("/")}
+          accessibilityRole="button"
+        >
+          <Text style={styles.brandText}><Text style={styles.brandAccent}>T</Text>avoria<Text style={styles.brandAccent}>.</Text></Text>
+        </Pressable>
+        <View style={styles.sidebarLoading}>
+          <ActivityIndicator color={TAVORIA.color.orange} size="small" />
+        </View>
+      </View>
+    );
+  }
 
   const signOut = async () => {
     clearWorkerProfile();
@@ -317,13 +401,17 @@ function DesktopSidebar({ currentRoute }: { currentRoute: string }) {
   return (
     <View style={styles.sidebar}>
       <Pressable
-        style={styles.sidebarBrand}
+        style={({ hovered, pressed }) => [
+          styles.sidebarBrand,
+          hovered && styles.sidebarBrandHovered,
+          pressed && styles.sidebarBrandPressed,
+        ]}
         onPress={() => router.replace("/")}
         accessibilityRole="button"
         accessibilityLabel={t("home_in.home")}
       >
         <Text style={styles.brandText}>
-          Tavoria<Text style={styles.brandAccent}>.</Text>
+          <Text style={styles.brandAccent}>T</Text>avoria<Text style={styles.brandAccent}>.</Text>
         </Text>
       </Pressable>
 
@@ -331,14 +419,20 @@ function DesktopSidebar({ currentRoute }: { currentRoute: string }) {
         <View style={styles.sidebarNavGroup}>
           {items.map((item) => {
             const itemRoute = item.route.slice(1) || "index";
-            const active = itemRoute === currentRoute || (itemRoute === "index" && currentRoute === "index");
+            const homeRoute = venueMode ? "venue-browse-workers" : "index";
+            const active = itemRoute === currentRoute || (currentRoute === "index" && itemRoute === homeRoute);
             return (
               <Pressable
                 key={item.route}
                 onPress={() => {
                   if (!active) router.replace(item.route as never);
                 }}
-                style={[styles.sidebarNavItem, active && styles.sidebarNavItemActive]}
+                style={({ hovered, pressed }) => [
+                  styles.sidebarNavItem,
+                  active && styles.sidebarNavItemActive,
+                  hovered && !active && styles.sidebarNavItemHovered,
+                  pressed && styles.sidebarNavItemPressed,
+                ]}
                 accessibilityRole="button"
                 accessibilityState={{ selected: active }}
                 accessibilityLabel={item.label}
@@ -346,7 +440,7 @@ function DesktopSidebar({ currentRoute }: { currentRoute: string }) {
                 <Feather
                   name={item.icon as keyof typeof Feather.glyphMap}
                   size={18}
-                  color={active ? "#F7F4EE" : "rgba(247,244,238,0.62)"}
+                  color={active ? TAVORIA.color.orange : "rgba(14,26,36,0.62)"}
                 />
                 <Text style={[styles.sidebarNavLabel, active && styles.sidebarNavLabelActive]}>
                   {item.label}
@@ -355,13 +449,54 @@ function DesktopSidebar({ currentRoute }: { currentRoute: string }) {
             );
           })}
         </View>
+        {accountMenu.roleActions.length ? (
+          <View style={styles.sidebarUtilityGroup}>
+            {accountMenu.roleActions.map((item) => (
+              <Pressable
+                key={item.id}
+                style={({ hovered, pressed }) => [
+                  styles.sidebarUtilityItem,
+                  hovered && styles.sidebarUtilityItemHovered,
+                  pressed && styles.sidebarUtilityItemPressed,
+                ]}
+                onPress={() => runMenuAction(item.id)}
+                accessibilityRole="button"
+              >
+                <Feather name={item.icon} size={17} color="rgba(14,26,36,0.62)" />
+                <Text style={styles.sidebarUtilityLabel}>{t(item.labelKey)}</Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+        <View style={styles.sidebarUtilityGroup}>
+          {accountMenu.commonActions.map((item) => (
+            <Pressable
+              key={item.id}
+              style={({ hovered, pressed }) => [
+                styles.sidebarUtilityItem,
+                hovered && styles.sidebarUtilityItemHovered,
+                pressed && styles.sidebarUtilityItemPressed,
+              ]}
+              onPress={() => runMenuAction(item.id)}
+              accessibilityRole="button"
+            >
+              <Feather name={item.icon} size={17} color="rgba(14,26,36,0.62)" />
+              <Text style={styles.sidebarUtilityLabel}>{t(item.labelKey)}</Text>
+              {item.id === "language" ? <Text style={styles.sidebarUtilityMeta}>{language.toUpperCase()}</Text> : null}
+            </Pressable>
+          ))}
+        </View>
         {venueMode ? <VenueQrFab variant="sidebar" /> : null}
       </ScrollView>
 
       <View style={styles.sidebarFooter}>
         <Pressable
           onPress={() => router.push(venueMode ? "/venue-shifts" : "/candidate")}
-          style={styles.sidebarAccount}
+          style={({ hovered, pressed }) => [
+            styles.sidebarAccount,
+            hovered && styles.sidebarAccountHovered,
+            pressed && styles.sidebarAccountPressed,
+          ]}
           accessibilityRole="button"
           accessibilityLabel={venueMode ? "Open venue profile" : "Open worker profile"}
         >
@@ -383,21 +518,45 @@ function DesktopSidebar({ currentRoute }: { currentRoute: string }) {
         </Pressable>
         <Pressable
           onPress={() => void signOut()}
-          style={styles.sidebarSignOut}
+          style={({ hovered, pressed }) => [
+            styles.sidebarSignOut,
+            hovered && styles.sidebarSignOutHovered,
+            pressed && styles.sidebarSignOutPressed,
+          ]}
           accessibilityRole="button"
           accessibilityLabel={t("common.sign_out")}
         >
-          <Feather name="log-out" size={16} color="rgba(247,244,238,0.62)" />
+          <Feather name="log-out" size={16} color="rgba(14,26,36,0.62)" />
           <Text style={styles.sidebarSignOutText}>{t("common.sign_out")}</Text>
         </Pressable>
       </View>
+
+      <Modal transparent visible={languageOpen} animationType="fade" onRequestClose={() => setLanguageOpen(false)}>
+        <View style={styles.sidebarModalOverlay}>
+          <Pressable style={styles.sidebarModalBackdrop} onPress={() => setLanguageOpen(false)} />
+          <View style={styles.sidebarLanguageCard}>
+            <Text style={styles.sidebarLanguageTitle}>{t("language.pick")}</Text>
+            {LANGUAGES.map((option) => (
+              <Pressable
+                key={option.code}
+                onPress={() => void chooseLanguage(option.code)}
+                style={[styles.sidebarLanguageOption, option.code === language && styles.sidebarLanguageOptionActive]}
+              >
+                <Text style={styles.sidebarLanguageFlag}>{option.flag}</Text>
+                <Text style={styles.sidebarLanguageLabel}>{option.label}</Text>
+                {option.code === language ? <Feather name="check" size={17} color={TAVORIA.color.orange} /> : null}
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   viewport: {
-    backgroundColor: "#F7F4EE",
+    backgroundColor: TAVORIA.color.paper,
     flex: 1,
   },
   workspace: {
@@ -416,7 +575,9 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
   },
-  sidebarContent: { minWidth: 0 },
+  // Keep the desktop content breathing room at the top, but let sticky
+  // footers reach the viewport edge instead of exposing the shell background.
+  sidebarContent: { backgroundColor: TAVORIA.color.paperDeep, minWidth: 0, paddingTop: TAVORIA.space.lg },
   publicSurface: { flex: 1, minWidth: 0, width: "100%" },
   publicSurfaceInner: { alignSelf: "center", flex: 1, minWidth: 0, width: "100%" },
   appSurface: { flex: 1, minWidth: 0, width: "100%" },
@@ -489,7 +650,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#0E1A24",
     flexShrink: 0,
     padding: 30,
-    width: 286,
+    width: DESKTOP_SIDEBAR_WIDTH,
   },
   flowBrand: {
     color: "#F7F4EE",
@@ -528,30 +689,55 @@ const styles = StyleSheet.create({
   flowStepLabel: { color: "rgba(247,244,238,0.48)", fontSize: 12 },
   flowStepLabelActive: { color: "#F7F4EE", fontWeight: "800" },
   flowMain: { flex: 1, minWidth: 0 },
-  flowMainInner: { alignSelf: "center", flex: 1, maxWidth: 940, width: "100%" },
+  flowMainInner: { alignSelf: "center", flex: 1, maxWidth: 1180, width: "100%" },
   sidebar: {
-    backgroundColor: "#0E1A24",
+    backgroundColor: "#F7F4EE",
+    borderRightColor: "rgba(14,26,36,0.12)",
+    borderRightWidth: 1,
     flexShrink: 0,
     position: "relative",
-    width: 238,
+    width: DESKTOP_SIDEBAR_WIDTH,
   },
-  sidebarBrand: { paddingHorizontal: 24, paddingTop: 30, paddingBottom: 28 },
-  brandText: { color: "#F7F4EE", fontFamily: "InstrumentSerif_400Regular", fontSize: 31, letterSpacing: -0.6 },
+  sidebarBrand: { borderRadius: 10, marginBottom: 20, marginHorizontal: 14, marginTop: 20, paddingHorizontal: 11, paddingVertical: 10 },
+  sidebarBrandHovered: { backgroundColor: "rgba(14,26,36,0.07)", borderRadius: 10 },
+  sidebarBrandPressed: { opacity: 0.72 },
+  brandText: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 31, letterSpacing: -0.6 },
   brandAccent: { color: "#F0531C" },
   sidebarScroll: { paddingHorizontal: 14, paddingBottom: 24 },
   sidebarNavGroup: { gap: 4 },
   sidebarNavItem: { alignItems: "center", borderRadius: 10, flexDirection: "row", gap: 12, minHeight: 44, paddingHorizontal: 11 },
-  sidebarNavItemActive: { backgroundColor: "#F0531C" },
-  sidebarNavLabel: { color: "rgba(247,244,238,0.68)", flex: 1, fontSize: 13, fontWeight: "700" },
-  sidebarNavLabelActive: { color: "#FFFFFF" },
-  sidebarFooter: { borderTopColor: "rgba(247,244,238,0.1)", borderTopWidth: 1, paddingHorizontal: 20, paddingVertical: 18 },
-  sidebarAccount: { alignItems: "center", flexDirection: "row", gap: 10 },
+  sidebarNavItemActive: { backgroundColor: TAVORIA.color.orangeSoft },
+  sidebarNavItemHovered: { backgroundColor: "rgba(14,26,36,0.07)" },
+  sidebarNavItemPressed: { opacity: 0.72 },
+  sidebarNavLabel: { color: "rgba(14,26,36,0.68)", flex: 1, fontSize: 13, fontWeight: "700" },
+  sidebarNavLabelActive: { color: TAVORIA.color.orange },
+  sidebarUtilityGroup: { borderTopColor: "rgba(14,26,36,0.1)", borderTopWidth: 1, gap: 2, marginTop: 18, paddingTop: 14 },
+  sidebarUtilityItem: { alignItems: "center", flexDirection: "row", gap: 12, minHeight: 40, paddingHorizontal: 11 },
+  sidebarUtilityItemHovered: { backgroundColor: "rgba(14,26,36,0.07)", borderRadius: 10 },
+  sidebarUtilityItemPressed: { opacity: 0.72 },
+  sidebarUtilityLabel: { color: "rgba(14,26,36,0.68)", flex: 1, fontSize: 12, fontWeight: "700" },
+  sidebarUtilityMeta: { color: "rgba(14,26,36,0.45)", fontFamily: "DMMono_500Medium", fontSize: 10 },
+  sidebarLoading: { alignItems: "center", flex: 1, justifyContent: "center" },
+  sidebarFooter: { borderTopColor: "rgba(14,26,36,0.1)", borderTopWidth: 1, paddingHorizontal: 14, paddingVertical: 18 },
+  sidebarAccount: { alignItems: "center", borderRadius: 10, flexDirection: "row", gap: 10, minHeight: 44, paddingHorizontal: 11, paddingVertical: 6 },
+  sidebarAccountHovered: { backgroundColor: "rgba(14,26,36,0.07)", borderRadius: 10 },
+  sidebarAccountPressed: { opacity: 0.72 },
   sidebarAvatar: { borderRadius: 999, height: 36, width: 36 },
   sidebarAvatarFallback: { alignItems: "center", backgroundColor: "#FFE9DB", justifyContent: "center" },
   sidebarAvatarText: { color: "#F0531C", fontFamily: "InstrumentSerif_400Regular", fontSize: 20 },
   sidebarAccountCopy: { flex: 1, minWidth: 0 },
-  sidebarAccountName: { color: "#F7F4EE", fontSize: 13, fontWeight: "700" },
-  sidebarAccountMeta: { color: "rgba(247,244,238,0.46)", fontSize: 11, marginTop: 2 },
-  sidebarSignOut: { alignItems: "center", flexDirection: "row", gap: 9, marginTop: 17, paddingVertical: 5 },
-  sidebarSignOutText: { color: "rgba(247,244,238,0.6)", fontSize: 12, fontWeight: "700" },
+  sidebarAccountName: { color: "#0E1A24", fontSize: 13, fontWeight: "700" },
+  sidebarAccountMeta: { color: "rgba(14,26,36,0.52)", fontSize: 11, marginTop: 2 },
+  sidebarSignOut: { alignItems: "center", borderRadius: 10, flexDirection: "row", gap: 9, marginTop: 17, minHeight: 40, paddingHorizontal: 11, paddingVertical: 5 },
+  sidebarSignOutHovered: { backgroundColor: "rgba(14,26,36,0.07)", borderRadius: 10 },
+  sidebarSignOutPressed: { opacity: 0.72 },
+  sidebarSignOutText: { color: "rgba(14,26,36,0.62)", fontSize: 12, fontWeight: "700" },
+  sidebarModalOverlay: { alignItems: "flex-start", flex: 1, justifyContent: "center", paddingLeft: DESKTOP_SIDEBAR_WIDTH + 18, paddingRight: 24 },
+  sidebarModalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(14,26,36,0.2)" },
+  sidebarLanguageCard: { backgroundColor: TAVORIA.color.paper, borderColor: TAVORIA.color.borderStrong, borderRadius: TAVORIA.radius.large, borderWidth: 1, elevation: 8, maxWidth: 300, padding: 14, shadowColor: TAVORIA.color.navy, shadowOffset: { height: 8, width: 0 }, shadowOpacity: 0.14, shadowRadius: 20, width: "100%" },
+  sidebarLanguageTitle: { color: TAVORIA.color.navy, fontFamily: "InstrumentSerif_400Regular", fontSize: 24, marginBottom: 10 },
+  sidebarLanguageOption: { alignItems: "center", borderRadius: TAVORIA.radius.small, flexDirection: "row", gap: 10, minHeight: 44, paddingHorizontal: 10 },
+  sidebarLanguageOptionActive: { backgroundColor: TAVORIA.color.orangeSoft },
+  sidebarLanguageFlag: { fontSize: 20, textAlign: "center", width: 25 },
+  sidebarLanguageLabel: { color: TAVORIA.color.navy, flex: 1, fontSize: 13, fontWeight: "700" },
 });

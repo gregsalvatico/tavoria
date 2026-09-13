@@ -12,8 +12,10 @@ import {
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
-import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import { useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
+import ActionButton from "../components/ActionButton";
+import { FlowTopBar } from "../components/PagePrimitives";
 import { localizeRole } from "../lib/positions";
 import { getWorkerProfile, patchWorkerProfile } from "../lib/workerProfile";
 
@@ -71,24 +73,18 @@ export default function WorkerPositions() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => {
-            if (router.canGoBack()) { router.back(); return; }
-            router.replace("/");
-          }}
-          hitSlop={12}
-          style={styles.iconBtn}
-        >
-          <Feather name="chevron-left" size={26} color="#0E1A24" />
-        </Pressable>
-        <Dots step={0} total={2} />
-        <View style={{ width: 32 }} />
-      </View>
+      <FlowTopBar
+        onBack={() => {
+          if (router.canGoBack()) { router.back(); return; }
+          router.replace("/");
+        }}
+        step={0}
+        total={2}
+      />
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.h1}>
@@ -167,7 +163,9 @@ export default function WorkerPositions() {
 
       </ScrollView>
       <StickyFooter desktopRow fullBleed>
-        <Pressable
+        <ActionButton
+          label={t("common.continue")}
+          icon="arrow-right"
           disabled={!canContinue}
           onPress={() => {
             patchWorkerProfile({
@@ -195,11 +193,8 @@ export default function WorkerPositions() {
               router.push(isEditMode ? "/worker-experience?mode=edit" : "/worker-experience");
             }
           }}
-          style={[styles.cta, isDesktop && desktopButtonStyle, !canContinue && styles.ctaDisabled]}
-        >
-          <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
-          <Feather name="arrow-right" size={20} color="#F7F4EE" />
-        </Pressable>
+          style={styles.fullWidthButton}
+        />
       </StickyFooter>
     </SafeAreaView>
   );
@@ -234,7 +229,8 @@ const styles = StyleSheet.create({
   },
   dotOn: { backgroundColor: "#0E1A24" },
 
-  scroll: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 16 },
+  scroll: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
+  scrollDesktop: { alignSelf: "center", maxWidth: 840, paddingHorizontal: 24, width: "100%" },
   h1: {
     fontFamily: "InstrumentSerif_400Regular",
     fontSize: 28,
@@ -363,9 +359,13 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: "#F0531C",
     borderRadius: 999,
-    paddingVertical: 18,
+    height: 44,
+    maxHeight: 44,
+    minHeight: 44,
+    paddingHorizontal: 16,
     width: "100%",
   },
   ctaDisabled: { backgroundColor: "rgba(11,15,26,0.15)" },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
+  fullWidthButton: { width: "100%" },
 });

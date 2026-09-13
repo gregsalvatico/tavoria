@@ -13,8 +13,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { patchWorkerProfile } from "../lib/workerProfile";
-import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import { useIsDesktop } from "../lib/responsive";
+import { t } from "../lib/i18n";
 import StickyFooter from "../components/StickyFooter";
+import ActionButton from "../components/ActionButton";
+import { PageContainer, PageHeader } from "../components/PagePrimitives";
 
 const POSITIONS = [
   "Barista",
@@ -83,24 +86,27 @@ export default function WorkerSetup() {
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={styles.header}>
-          <Pressable
-            onPress={() => {
-              if (router.canGoBack()) { router.back(); return; }
-              router.replace("/");
-            }}
-            hitSlop={12}
-            style={styles.iconBtn}
-          >
-            <Feather name="chevron-left" size={26} color="#0E1A24" />
-          </Pressable>
-          <Text style={styles.title}>Your profile</Text>
-          <View style={{ width: 32 }} />
-        </View>
+        <PageContainer>
+          <PageHeader
+            title="Your profile"
+            left={
+              <Pressable
+                onPress={() => {
+                  if (router.canGoBack()) { router.back(); return; }
+                  router.replace("/");
+                }}
+                hitSlop={12}
+                style={styles.iconBtn}
+              >
+                <Feather name="chevron-left" size={26} color="#0E1A24" />
+              </Pressable>
+            }
+          />
+        </PageContainer>
 
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={styles.scroll}
+          contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -229,7 +235,9 @@ export default function WorkerSetup() {
 
         </ScrollView>
         <StickyFooter desktopRow fullBleed>
-          <Pressable
+          <ActionButton
+            label={t("worker_photos.save_live")}
+            icon="arrow-right"
             disabled={!canContinue}
             onPress={() => {
               patchWorkerProfile({
@@ -242,11 +250,8 @@ export default function WorkerSetup() {
               });
               router.replace("/worker-done");
             }}
-            style={[styles.cta, isDesktop && desktopButtonStyle, !canContinue && styles.ctaDisabled]}
-          >
-            <Text style={styles.ctaTxt}>Save and go live</Text>
-            <Feather name="arrow-right" size={20} color="#F7F4EE" />
-          </Pressable>
+            style={styles.fullWidthButton}
+          />
         </StickyFooter>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -284,7 +289,8 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: "InstrumentSerif_400Regular", fontSize: 16, fontWeight: "400", color: "#0E1A24" },
 
-  scroll: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12 },
+  scroll: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
+  scrollDesktop: { alignSelf: "center", maxWidth: 840, paddingHorizontal: 24, width: "100%" },
   intro: { fontSize: 14, color: "#6B7280", textAlign: "center", marginBottom: 8 },
 
   section: { marginTop: 18 },
@@ -381,9 +387,13 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: "#F0531C",
     borderRadius: 999,
-    paddingVertical: 18,
+    height: 44,
+    maxHeight: 44,
+    minHeight: 44,
+    paddingHorizontal: 16,
     width: "100%",
   },
   ctaDisabled: { backgroundColor: "rgba(11,15,26,0.15)" },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
+  fullWidthButton: { width: "100%" },
 });

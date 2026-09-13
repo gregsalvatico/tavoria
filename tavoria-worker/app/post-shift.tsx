@@ -6,6 +6,11 @@ import { getCurrentVenueRow, insertShift } from "../lib/db";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
+import { PageContainer, PageHeader } from "../components/PagePrimitives";
+import ActionButton from "../components/ActionButton";
+import { RequirementFields } from "../components/TalentFields";
+import { TAVORIA } from "../lib/designTokens";
+import type { WorkerRequirements } from "../lib/workerMatching";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -51,14 +56,13 @@ const CONTRACTS: {
   id: string;
   defaultUnit: "hour" | "month";
   icon: keyof typeof Feather.glyphMap;
-  hue: string;
 }[] = [
-  { id: "oneoff", defaultUnit: "hour", icon: "zap", hue: "#F59E0B" },
-  { id: "twodays", defaultUnit: "hour", icon: "calendar", hue: "#EC4899" },
-  { id: "pt", defaultUnit: "hour", icon: "clock", hue: "#06B6D4" },
-  { id: "ft", defaultUnit: "month", icon: "briefcase", hue: "#A855F7" },
-  { id: "seasonal", defaultUnit: "hour", icon: "sun", hue: "#10B981" },
-  { id: "custom", defaultUnit: "hour", icon: "more-horizontal", hue: "#6B7280" },
+  { id: "oneoff", defaultUnit: "hour", icon: "zap" },
+  { id: "twodays", defaultUnit: "hour", icon: "calendar" },
+  { id: "pt", defaultUnit: "hour", icon: "clock" },
+  { id: "ft", defaultUnit: "month", icon: "briefcase" },
+  { id: "seasonal", defaultUnit: "hour", icon: "sun" },
+  { id: "custom", defaultUnit: "hour", icon: "more-horizontal" },
 ];
 
 // Map contract id → t() key suffix under post_shift.*
@@ -76,12 +80,11 @@ const PAY_UNITS: {
   label: string;
   unitTxt: string;
   icon: keyof typeof Feather.glyphMap;
-  hue: string;
 }[] = [
-  { id: "hour", label: "Per hour", unitTxt: "hour", icon: "clock", hue: "#F59E0B" },
-  { id: "day", label: "Per day", unitTxt: "day", icon: "sun", hue: "#10B981" },
-  { id: "week", label: "Per week", unitTxt: "week", icon: "calendar", hue: "#EC4899" },
-  { id: "month", label: "Per month", unitTxt: "month", icon: "credit-card", hue: "#3B82F6" },
+  { id: "hour", label: "Per hour", unitTxt: "hour", icon: "clock" },
+  { id: "day", label: "Per day", unitTxt: "day", icon: "sun" },
+  { id: "week", label: "Per week", unitTxt: "week", icon: "calendar" },
+  { id: "month", label: "Per month", unitTxt: "month", icon: "credit-card" },
 ];
 
 const DAYS = ["M", "T", "W", "T", "F", "S", "S"];
@@ -118,6 +121,7 @@ export default function PostShift() {
   // If a venue wants to change which positions a shift covers, they edit
   // their venue profile on /venue-photo.
   const [roles, setRoles] = useState<string[]>(venueRoles);
+  const [requirements, setRequirements] = useState<WorkerRequirements>({});
   const [contract, setContract] = useState<string | null>(null);
   const [days, setDays] = useState<number[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([{ fromMins: 0, toMins: 0 }]);
@@ -190,20 +194,23 @@ export default function PostShift() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => {
-            if (router.canGoBack()) { router.back(); return; }
-            router.replace("/");
-          }}
-          hitSlop={12}
-          style={styles.iconBtn}
-        >
-          <Feather name="chevron-left" size={26} color="#0E1A24" />
-        </Pressable>
-        <Text style={styles.title}>{t("post_shift.title")}</Text>
-        <View style={{ width: 32 }} />
-      </View>
+      <PageContainer>
+        <PageHeader
+          title={t("post_shift.title")}
+          left={
+            <Pressable
+              onPress={() => {
+                if (router.canGoBack()) { router.back(); return; }
+                router.replace("/");
+              }}
+              hitSlop={12}
+              style={styles.iconBtn}
+            >
+              <Feather name="chevron-left" size={26} color="#0E1A24" />
+            </Pressable>
+          }
+        />
+      </PageContainer>
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -212,7 +219,7 @@ export default function PostShift() {
       >
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -227,7 +234,6 @@ export default function PostShift() {
                   onPress={() => onPickContract(c.id)}
                   style={[
                     styles.contractTile,
-                    { backgroundColor: c.hue },
                     on && styles.tileOn,
                   ]}
                 >
@@ -252,7 +258,6 @@ export default function PostShift() {
               }}
               style={[
                 styles.contractTile,
-                { backgroundColor: "#6B7280" },
                 contract === "custom" && styles.tileOn,
               ]}
             >
@@ -393,7 +398,6 @@ export default function PostShift() {
               }}
               style={[
                 styles.tileLg,
-                { backgroundColor: "#F59E0B" },
                 startWhen === "asap" && styles.tileOn,
               ]}
             >
@@ -414,7 +418,6 @@ export default function PostShift() {
               }}
               style={[
                 styles.tileLg,
-                { backgroundColor: "#3B82F6" },
                 startWhen === "pickdate" && styles.tileOn,
               ]}
             >
@@ -450,7 +453,6 @@ export default function PostShift() {
                   onPress={() => onPickPayUnit(u.id)}
                   style={[
                     styles.tile,
-                    { backgroundColor: u.hue },
                     on && styles.tileOn,
                   ]}
                 >
@@ -520,15 +522,21 @@ export default function PostShift() {
           )}
         </Section>
 
+        <RequirementFields value={requirements} onChange={setRequirements} />
         <View style={{ height: 12 }} />
         {errorMsg && <Text style={styles.errorTxt}>{errorMsg}</Text>}
 
       </ScrollView>
       <StickyFooter desktopRow fullBleed backgroundColor="#F7F4EE">
-        <Pressable
-          disabled={busy}
-          style={[styles.cta, isDesktop && desktopButtonStyle, busy && { opacity: 0.45 }]}
+        <ActionButton
+          label={t("post_shift.post")}
+          icon="arrow-right"
+          style={[styles.cta, isDesktop && desktopButtonStyle]}
+          loading={busy}
           onPress={async () => {
+            if (requirements.minimumExperience !== undefined && (!Number.isFinite(requirements.minimumExperience) || requirements.minimumExperience < 0 || requirements.minimumExperience > 80)) {
+              setErrorMsg(t("talent.invalid")); return;
+            }
             if (roles.length === 0) {
               // Use inline error instead of Alert.alert — Alert is flaky on
               // React Native Web and silently fails sometimes, making the
@@ -570,6 +578,7 @@ export default function PostShift() {
               await insertShift({
                 venue_id: venueId,
                 roles,
+                worker_requirements: requirements,
                 contract_type: contractValue,
                 days: dayCodes,
                 hours_start: firstShift
@@ -604,14 +613,7 @@ export default function PostShift() {
               setBusy(false);
             }
           }}
-        >
-          <Text style={styles.ctaTxt}>{t("post_shift.post")}</Text>
-          {busy ? (
-            <ActivityIndicator color="#F7F4EE" size="small" />
-          ) : (
-            <Feather name="arrow-right" size={20} color="#F7F4EE" />
-          )}
-        </Pressable>
+        />
       </StickyFooter>
       </KeyboardAvoidingView>
 
@@ -1145,19 +1147,21 @@ function Section({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F1EFE8" },
+  safe: { flex: 1, backgroundColor: TAVORIA.color.paperDeep },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 14,
+    borderBottomColor: TAVORIA.color.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 20,
     paddingVertical: 10,
   },
   iconBtn: { padding: 4, width: 32 },
-  title: {
-    fontFamily: "InstrumentSerif_400Regular", fontSize: 16, fontWeight: "400", color: "#0E1A24" },
+  title: { fontFamily: "InstrumentSerif_400Regular", fontSize: 22, fontWeight: "400", color: TAVORIA.color.navy },
 
-  scroll: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 120 },
+  scroll: { alignSelf: "center", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 120, width: "100%" },
+  scrollDesktop: { maxWidth: 840, paddingHorizontal: 24 },
 
   inheritedRoles: {
     flexDirection: "row",
@@ -1173,22 +1177,20 @@ const styles = StyleSheet.create({
   inheritedRolesTxt: { color: "#854F0B", fontSize: 13 },
   inheritedRolesBold: { fontWeight: "800" },
 
-  section: { marginTop: 22 },
+  section: { marginTop: 24 },
   sectionTitle: {
-    fontFamily: "InstrumentSerif_400Regular",
-    fontSize: 24,
-    fontWeight: "400",
-    color: "#0E1A24",
-    letterSpacing: -0.3,
-    textAlign: "center",
+    color: TAVORIA.color.muted,
+    fontFamily: "DMMono_500Medium",
+    fontSize: 10,
+    letterSpacing: 1.1,
+    textTransform: "uppercase",
   },
-  sectionTitleFirst: { color: "#F0531C" },
+  sectionTitleFirst: { color: TAVORIA.color.orange },
   sectionSub: {
     fontSize: 13,
-    color: "#6B7280",
+    color: TAVORIA.color.muted,
     marginTop: 4,
-    textAlign: "center",
-    paddingHorizontal: 20,
+    paddingRight: 20,
     lineHeight: 18,
   },
 
@@ -1330,12 +1332,13 @@ const styles = StyleSheet.create({
   contractGrid: { gap: 10, marginTop: 4 },
   contractTile: {
     alignItems: "center",
-    borderColor: "transparent",
-    borderRadius: 14,
-    borderWidth: 2,
+    backgroundColor: TAVORIA.color.white,
+    borderColor: TAVORIA.color.border,
+    borderRadius: TAVORIA.radius.small,
+    borderWidth: 1,
     flexDirection: "row",
     gap: 12,
-    minHeight: 68,
+    minHeight: 58,
     paddingHorizontal: 14,
     paddingVertical: 10,
     position: "relative",
@@ -1343,44 +1346,41 @@ const styles = StyleSheet.create({
   },
   contractIconWrap: {
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.25)",
-    borderRadius: 999,
-    height: 38,
+    backgroundColor: TAVORIA.color.orangeSoft,
+    borderRadius: TAVORIA.radius.small,
+    height: 34,
     justifyContent: "center",
-    width: 38,
+    width: 34,
   },
-  contractLabel: { color: "white", flex: 1, fontSize: 15, fontWeight: "800" },
+  contractLabel: { color: TAVORIA.color.navy, flex: 1, fontSize: 15, fontWeight: "800" },
   tile: {
     width: "47.5%",
-    aspectRatio: 1.15,
-    borderRadius: 18,
-    borderWidth: 3,
-    borderColor: "transparent",
+    height: 72,
+    borderRadius: TAVORIA.radius.medium,
+    borderWidth: 1,
+    borderColor: TAVORIA.color.border,
+    backgroundColor: TAVORIA.color.white,
     paddingVertical: 14,
     paddingHorizontal: 12,
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
-    shadowColor: "#000",
-    shadowOpacity: 0.10,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
   },
-  tileOn: { borderColor: "#F0531C" },
+  tileOn: { backgroundColor: TAVORIA.color.orangeSoft, borderColor: TAVORIA.color.orange },
   tileIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.25)",
+    width: 34,
+    height: 34,
+    borderRadius: TAVORIA.radius.small,
+    backgroundColor: TAVORIA.color.orangeSoft,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 6,
   },
   tileIconWrapPay: {
     width: 32,
     height: 32,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.25)",
+    backgroundColor: TAVORIA.color.orangeSoft,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
@@ -1388,12 +1388,9 @@ const styles = StyleSheet.create({
   tileLbl: {
     fontSize: 15,
     fontWeight: "800",
-    color: "white",
+    color: TAVORIA.color.navy,
     textAlign: "center",
     letterSpacing: -0.2,
-    textShadowColor: "rgba(0,0,0,0.25)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
 
   // Role chips — pill toggles for picking which position(s) the shift is for
@@ -1407,13 +1404,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 999,
-    backgroundColor: "white",
+    backgroundColor: TAVORIA.color.white,
     borderWidth: 1,
-    borderColor: "rgba(11,15,26,0.15)",
+    borderColor: TAVORIA.color.borderStrong,
   },
   roleChipOn: {
-    backgroundColor: "#F0531C",
-    borderColor: "#F0531C",
+    backgroundColor: TAVORIA.color.orange,
+    borderColor: TAVORIA.color.orange,
   },
   roleChipTxt: { fontSize: 14, fontWeight: "700", color: "#0E1A24" },
   roleChipTxtOn: { color: "white" },
@@ -1473,17 +1470,13 @@ const styles = StyleSheet.create({
   // Big rate input card
   payCard: {
     marginTop: 10,
-    backgroundColor: "white",
-    borderRadius: 18,
-    paddingVertical: 28,
+    backgroundColor: TAVORIA.color.white,
+    borderRadius: TAVORIA.radius.medium,
+    paddingVertical: 18,
     paddingHorizontal: 24,
     alignItems: "center",
-    borderWidth: 0.5,
-    borderColor: "rgba(0,0,0,0.08)",
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
+    borderWidth: 1,
+    borderColor: TAVORIA.color.border,
   },
   payCardTop: {
     flexDirection: "row",
@@ -1492,12 +1485,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   payCardCurrency: {
-    fontSize: 40,
+    fontSize: 32,
     fontWeight: "800",
     color: "#0E1A24",
   },
   payCardInput: {
-    fontSize: 52,
+    fontSize: 42,
     fontWeight: "900",
     color: "#0E1A24",
     minWidth: 80,
@@ -1507,7 +1500,7 @@ const styles = StyleSheet.create({
   },
   payCardUnitWrap: {
     marginTop: 6,
-    backgroundColor: "#FFF4EE",
+    backgroundColor: TAVORIA.color.orangeSoft,
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 999,
@@ -1533,34 +1526,29 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    backgroundColor: "#E24B4A",
-    borderRadius: 18,
+    backgroundColor: TAVORIA.color.white,
+    borderRadius: TAVORIA.radius.medium,
     paddingHorizontal: 16,
     paddingVertical: 16,
     marginBottom: 10,
-    borderWidth: 3,
-    borderColor: "transparent",
-    shadowColor: "#E24B4A",
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
+    borderWidth: 1,
+    borderColor: TAVORIA.color.border,
   },
   asapIconWrap: {
-    width: 48,
-    height: 48,
+    width: 34,
+    height: 34,
     borderRadius: 999,
-    backgroundColor: "white",
+    backgroundColor: TAVORIA.color.orangeSoft,
     justifyContent: "center",
     alignItems: "center",
   },
   asapLbl: {
-    color: "white",
-    fontSize: 22,
-    fontWeight: "900",
-    letterSpacing: -0.4,
+    color: TAVORIA.color.navy,
+    fontSize: 15,
+    fontWeight: "800",
   },
   asapSub: {
-    color: "rgba(255,255,255,0.85)",
+    color: TAVORIA.color.muted,
     fontSize: 12,
     fontWeight: "600",
     marginTop: 2,
@@ -1569,19 +1557,16 @@ const styles = StyleSheet.create({
   // Large variant — for "When does it start" (2 per row, square, bigger)
   tileLg: {
     width: "47.5%",
-    aspectRatio: 1,
-    borderRadius: 18,
-    borderWidth: 3,
-    borderColor: "transparent",
-    paddingVertical: 18,
+    height: 64,
+    borderRadius: TAVORIA.radius.medium,
+    borderWidth: 1,
+    borderColor: TAVORIA.color.border,
+    backgroundColor: TAVORIA.color.white,
+    paddingVertical: 10,
     paddingHorizontal: 12,
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
-    shadowColor: "#000",
-    shadowOpacity: 0.10,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
   },
 
   unitPill: {
@@ -1633,9 +1618,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.45)",
   },
   modalSheet: {
-    backgroundColor: "white",
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
+    backgroundColor: TAVORIA.color.paper,
+    borderTopLeftRadius: TAVORIA.radius.large,
+    borderTopRightRadius: TAVORIA.radius.large,
     paddingBottom: 24,
   },
   modalHeader: {
@@ -1687,15 +1672,6 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(0,0,0,0.08)",
   },
   cta: {
-    alignSelf: "center",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#F0531C",
-    borderRadius: 999,
-    paddingVertical: 18,
     width: "100%",
   },
-  ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
 });

@@ -1,14 +1,15 @@
 import { Feather } from "@expo/vector-icons";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { t } from "../lib/i18n";
 import { desktopButtonStyle } from "../lib/responsive";
+import ActionButton from "../components/ActionButton";
 
 export default function VenueWelcome() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width >= 1024;
-
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <View style={[styles.container, isDesktop && styles.desktopContainer]}>
@@ -47,14 +48,15 @@ export default function VenueWelcome() {
         </View>
 
         <View style={[styles.bottom, isDesktop && styles.desktopBottom]}>
-          <Link href="/venue-type" asChild>
-            <Pressable style={[styles.cta, isDesktop && desktopButtonStyle]}>
-              <Text style={styles.ctaTxt}>Start — it's free</Text>
-              <Feather name="arrow-right" size={20} color="#0E1A24" />
-            </Pressable>
-          </Link>
+          <ActionButton
+            label="Start — it's free"
+            icon="arrow-right"
+            variant="secondary"
+            onPress={() => router.push("/venue-type")}
+            style={[styles.ctaButton, isDesktop && desktopButtonStyle]}
+          />
           <Text style={styles.tinyTxt}>
-            No credit card. Pro features only when you want them.
+            {t("venue_pro.founder_note")}
           </Text>
         </View>
       </View>
@@ -83,7 +85,7 @@ function Connector() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#0E1A24" },
   container: { flex: 1, paddingHorizontal: 24, paddingVertical: 14 },
-  desktopContainer: { paddingHorizontal: 56 },
+  desktopContainer: { paddingHorizontal: 24 },
   closeBtn: {
     width: 38,
     height: 38,
@@ -93,7 +95,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   middle: { flex: 1, justifyContent: "center" },
-  desktopMiddle: { alignSelf: "center", maxWidth: 900, width: "100%" },
+  desktopMiddle: { alignSelf: "center", maxWidth: 840, width: "100%" },
   kicker: {
     color: "#F0531C",
     fontSize: 11,
@@ -137,18 +139,7 @@ const styles = StyleSheet.create({
   stepConn: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.15)" },
 
   bottom: { gap: 10, alignItems: "center", paddingBottom: 0 },
-  desktopBottom: { alignSelf: "center", maxWidth: 820, width: "100%" },
-  cta: {
-    width: "100%",
-    alignSelf: "center",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#F7F4EE",
-    borderRadius: 999,
-    paddingVertical: 18,
-  },
-  ctaTxt: { color: "#0E1A24", fontSize: 16, fontWeight: "700" },
+  desktopBottom: { alignSelf: "center", maxWidth: 840, width: "100%" },
+  ctaButton: { width: "100%" },
   tinyTxt: { color: "rgba(255,255,255,0.4)", fontSize: 12 },
 });

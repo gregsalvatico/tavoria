@@ -10,7 +10,7 @@ import { Stack, useRootNavigationState, useRouter, useSegments } from "expo-rout
 import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import { useEffect, useState } from "react";
-import { initI18n } from "../lib/i18n";
+import { initI18n, useLanguage } from "../lib/i18n";
 import {
   HankenGrotesk_400Regular,
   HankenGrotesk_500Medium,
@@ -39,12 +39,18 @@ const PROTECTED_ROUTES = new Set([
   "profile",
   "record",
   "shift-edit",
+  "shift-media-edit",
   "venue-browse-workers",
   "venue-edit",
   "venue-inbox",
-  "venue-pro",
+  "venue-media-edit",
+  "venue-profile-media",
   "venue-shifts",
   "worker-applications",
+  "worker-documents",
+  "worker-photos",
+  "worker-profile-edit",
+  "worker-media-edit",
 ]);
 
 // Every lasting Tavoria account uses a generated username backed by this
@@ -125,6 +131,7 @@ export default function RootLayout() {
     DMMono_400Regular,
     DMMono_500Medium,
   });
+  const language = useLanguage();
 
   // Bootstrap i18n once for the whole app. Without this in the ROOT layout,
   // deep links / page refreshes that don't land on / would skip initI18n and
@@ -136,6 +143,22 @@ export default function RootLayout() {
   const isProtectedRoute = !!currentRoute && PROTECTED_ROUTES.has(currentRoute);
   useEffect(() => {
     initI18n().finally(() => setI18nReady(true));
+  }, []);
+
+  // Expo's web dev document does not emit app.json's favicon link, so set it
+  // explicitly at runtime and use a versioned PNG URL to bypass favicon cache.
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
+    const id = "tavoria-favicon";
+    let link = document.getElementById(id) as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement("link");
+      link.id = id;
+      link.rel = "icon";
+      document.head.appendChild(link);
+    }
+    link.type = "image/png";
+    link.href = "/favicon.png?v=3";
   }, []);
 
   useEffect(() => {
@@ -219,6 +242,7 @@ export default function RootLayout() {
     <AppShell currentRoute={currentRoute} isSignedIn={isSignedIn}>
       <StatusBar style="dark" />
       <Stack
+        key={language}
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: "#F7F4EE" },

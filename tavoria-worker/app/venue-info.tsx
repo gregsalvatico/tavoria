@@ -7,6 +7,8 @@ import { sendVenueWelcomeEmail } from "../lib/email";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
+import ActionButton from "../components/ActionButton";
+import { FlowTopBar } from "../components/PagePrimitives";
 import {
   generateUsername,
   nameToSlug,
@@ -42,9 +44,9 @@ export default function VenueInfo() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [busy, setBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
   // Stable username suffix while user keeps typing the venue name
   const [usernameSuffix, setUsernameSuffix] = useState<string>("");
+
   useEffect(() => {
     if (name.trim().length >= 1 && !usernameSuffix) {
       const u = generateUsername(name);
@@ -139,24 +141,18 @@ export default function VenueInfo() {
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={styles.header}>
-          <Pressable
-            onPress={() => {
-              if (router.canGoBack()) { router.back(); return; }
-              router.replace("/venue-type");
-            }}
-            hitSlop={12}
-            style={styles.iconBtn}
-          >
-            <Feather name="chevron-left" size={26} color="#0E1A24" />
-          </Pressable>
-          <ProgressDots step={1} total={4} />
-          <View style={{ width: 32 }} />
-        </View>
+        <FlowTopBar
+          onBack={() => {
+            if (router.canGoBack()) { router.back(); return; }
+            router.replace("/venue-type");
+          }}
+          step={1}
+          total={4}
+        />
 
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={styles.container}
+          contentContainerStyle={[styles.container, isDesktop && styles.containerDesktop]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           showsHorizontalScrollIndicator={false}
@@ -333,18 +329,14 @@ export default function VenueInfo() {
 
         </ScrollView>
         <StickyFooter desktopRow fullBleed backgroundColor="#F7F4EE">
-          <Pressable
+          <ActionButton
+            label={t("common.continue")}
+            icon="arrow-right"
             disabled={!canContinue || busy}
+            loading={busy}
             onPress={onContinue}
-            style={[styles.cta, isDesktop && desktopButtonStyle, (!canContinue || busy) && styles.ctaDisabled]}
-          >
-            <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
-            {busy ? (
-              <ActivityIndicator color="#F7F4EE" size="small" />
-            ) : (
-              <Feather name="arrow-right" size={20} color="#F7F4EE" />
-            )}
-          </Pressable>
+            style={styles.fullWidthButton}
+          />
         </StickyFooter>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -380,7 +372,8 @@ const styles = StyleSheet.create({
   },
   progDotActive: { backgroundColor: "#0E1A24" },
 
-  container: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8 },
+  container: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  containerDesktop: { alignSelf: "center", maxWidth: 840, paddingHorizontal: 24, width: "100%" },
   h1: {
     fontFamily: "InstrumentSerif_400Regular",
     fontSize: 30,
@@ -456,7 +449,10 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: "#F0531C",
     borderRadius: 999,
-    paddingVertical: 18,
+    height: 44,
+    maxHeight: 44,
+    minHeight: 44,
+    paddingHorizontal: 16,
     width: "100%",
   },
   ctaDisabled: { backgroundColor: "rgba(11,15,26,0.15)" },
@@ -468,6 +464,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
+  fullWidthButton: { width: "100%" },
 
   termsRow: {
     flexDirection: "row",

@@ -2,11 +2,14 @@ import { ReactNode } from "react";
 import {
   StyleProp,
   StyleSheet,
-  useWindowDimensions,
   View,
   ViewStyle,
 } from "react-native";
 import { useIsDesktop } from "../lib/responsive";
+import { TAVORIA } from "../lib/designTokens";
+import { PAGE_MAX_WIDTH } from "./PagePrimitives";
+
+const FOOTER_MAX_WIDTH = PAGE_MAX_WIDTH;
 
 type Props = {
   children: ReactNode;
@@ -21,31 +24,24 @@ export default function StickyFooter({
   children,
   desktopRow = false,
   fullBleed = false,
-  backgroundColor = "white",
+  backgroundColor = TAVORIA.color.white,
   style,
 }: Props) {
   const isDesktop = useIsDesktop();
-  const { width } = useWindowDimensions();
-  const flowWidth = Math.max(0, width - 286);
-  const constrainedWidth = Math.min(flowWidth, 940);
-  const bleed = Math.max(0, (flowWidth - constrainedWidth) / 2);
 
   return (
     <View
       style={[
         styles.footer,
         { backgroundColor },
-        fullBleed && isDesktop && bleed > 0 && {
-          alignSelf: "flex-start",
-          marginLeft: -bleed,
-          width: flowWidth,
-        },
+        fullBleed && styles.fullBleed,
         style,
       ]}
     >
       <View
         style={[
           styles.content,
+          isDesktop && styles.contentDesktop,
           desktopRow && isDesktop && styles.desktopRow,
         ]}
       >
@@ -58,22 +54,31 @@ export default function StickyFooter({
 const styles = StyleSheet.create({
   footer: {
     alignItems: "center",
-    borderTopColor: "rgba(14,26,36,0.10)",
+    borderTopColor: TAVORIA.color.border,
     borderTopWidth: 0.5,
     flexShrink: 0,
     gap: 10,
+    zIndex: 10,
     paddingHorizontal: 0,
     paddingTop: 12,
-    paddingBottom: 16,
+    paddingBottom: 12,
   },
+  fullBleed: { alignSelf: "stretch", width: "100%" },
   content: {
     alignItems: "center",
     gap: 10,
-    paddingHorizontal: 20,
+    paddingHorizontal: TAVORIA.space.md,
     width: "100%",
   },
+  contentDesktop: {
+    alignSelf: "center",
+    maxWidth: FOOTER_MAX_WIDTH,
+    paddingHorizontal: TAVORIA.space.lg,
+  },
   desktopRow: {
+    alignItems: "center",
     flexDirection: "row-reverse",
+    gap: TAVORIA.space.sm,
     justifyContent: "center",
   },
 });

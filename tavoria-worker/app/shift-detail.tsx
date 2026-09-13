@@ -1,4 +1,4 @@
-// Shift detail screen — reached from /discover row tap.
+// Shift detail screen — reached from the worker home feed.
 // Shows full shift info + venue + Apply button.
 
 import { Feather } from "@expo/vector-icons";
@@ -21,18 +21,19 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../lib/supabase";
 import {
-  createApplication,
   getCurrentWorkerApplicationForShift,
-  getCurrentWorkerFull,
   getCurrentUserContext,
-  updateShiftStatus,
 } from "../lib/db";
+import { applyToShift } from "../lib/applyShift";
 import { t } from "../lib/i18n";
 import { localizeContractType } from "../lib/contractTypes";
 import { localizeRole, localizeRoles } from "../lib/positions";
 import ContactPersonModal from "../components/ContactPersonModal";
+import ActionButton from "../components/ActionButton";
 import { desktopButtonStyle } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
+import VenueMediaGallery from "../components/VenueMediaGallery";
+import { TAVORIA } from "../lib/designTokens";
 
 const VENUE_CAFE = require("../assets/venue-cafe.png");
 const VENUE_TYPE_PHOTOS: Record<string, number> = {
@@ -71,6 +72,11 @@ function payScheduleLabel(schedule: string): string {
   return value && !value.includes("[missing") ? value : schedule;
 }
 
+function venueFallback(type?: string) {
+  const key = (type || "cafe").trim().toLowerCase().replace(/\s+/g, "_").replace("café", "cafe");
+  return VENUE_TYPE_PHOTOS[key] ?? VENUE_CAFE;
+}
+
 export default function ShiftDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -81,7 +87,6 @@ export default function ShiftDetail() {
   const [applying, setApplying] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isOwner, setIsOwner] = useState(false);
-  const [shiftStatus, setShiftStatus] = useState<"live" | "paused">("live");
   const [application, setApplication] = useState<any | null>(null);
   const [contactOpen, setContactOpen] = useState(false);
   const [hasAccount, setHasAccount] = useState(false);
@@ -100,23 +105,6 @@ export default function ShiftDetail() {
       } catch {}
     })();
   }, [shift?.venue?.user_id]);
-
-  useEffect(() => {
-    if (shift?.status) setShiftStatus(shift.status);
-  }, [shift?.status]);
-
-  const toggleStatus = async () => {
-    if (!id) return;
-    const next = shiftStatus === "live" ? "paused" : "live";
-    setShiftStatus(next);
-    try {
-      await updateShiftStatus(id, next);
-    } catch (e) {
-      // Revert on error
-      setShiftStatus(shiftStatus);
-    Alert.alert(t("shift_detail.status_update_error_title"), t("shift_detail.try_again"));
-    }
-  };
 
   const onShare = async () => {
     if (!shift) return;
@@ -144,7 +132,7 @@ export default function ShiftDetail() {
             `
               *,
               venue:venues(
-                id, name, type, city, address, email, phone, venue_style, photo_url,
+                id, name, type, city, address, email, phone, venue_style, photo_url, photo_urls, video_urls,
                 pay_schedule, roles, user_id,
                 contact_email_enabled, contact_phone_enabled, contact_in_person_enabled
               )
@@ -179,36 +167,24 @@ export default function ShiftDetail() {
     if (!shift) return;
     setApplying(true);
     try {
-      // Already a worker? Apply directly (no need to redo photo/video)
-      const existing = await getCurrentWorkerFull();
-      if (existing?.id) {
-        const prior = await getCurrentWorkerApplicationForShift(shift.id);
-        if (prior) {
-          setApplication(prior);
-          setApplying(false);
-          return;
-        }
-        await createApplication({
-          worker_id: existing.id,
-          venue_id: shift.venue_id,
-          shift_id: shift.id,
-        });
+      const result = await applyToShift(shift);
+      if (result.kind === "existing") {
+        setApplication(result.application);
         setApplying(false);
-        router.replace({
-          pathname: "/applied",
-          params: { venueName: shift.venue?.name ?? "" },
-        });
         return;
       }
-      // Not signed up yet — route through signup → record → application
+      if (result.kind === "created") {
+        router.replace({ pathname: "/applied", params: { venueName: result.venueName } });
+        return;
+      }
       setApplying(false);
       router.push({
         pathname: "/signup",
         params: {
           next: "apply",
-          shiftId: shift.id,
-          venueId: shift.venue_id,
-          venueName: shift.venue?.name ?? "",
+          shiftId: result.shiftId,
+          venueId: result.venueId,
+          venueName: result.venueName,
         },
       });
     } catch (e: any) {
@@ -254,9 +230,20 @@ export default function ShiftDetail() {
   }
 
   const v = shift.venue;
-  const photo = v?.photo_url
-    ? { uri: v.photo_url }
-    : VENUE_TYPE_PHOTOS[(v?.type || "cafe").toLowerCase()] ?? VENUE_CAFE;
+  // Some venue rows keep the primary image in photo_urls while older rows use
+  // photo_url. Normalize both shapes so a shift always has a real hero image.
+  const venuePhotoUrls = Array.from(
+    new Set(
+      [v?.photo_url, ...(v?.photo_urls ?? [])].filter(
+        (url): url is string => typeof url === "string" && url.trim().length > 0
+      )
+    )
+  );
+  const primaryPhotoUrl = venuePhotoUrls[0];
+  const additionalVenuePhotoUrls = primaryPhotoUrl ? venuePhotoUrls.slice(1) : [];
+  const photo = primaryPhotoUrl
+    ? { uri: primaryPhotoUrl }
+    : venueFallback(v?.type);
 
   const isUrgent =
     shift.start_when === "now" || shift.start_when === "asap";
@@ -306,45 +293,7 @@ export default function ShiftDetail() {
         >
           <Feather name="chevron-left" size={26} color="#0E1A24" />
         </Pressable>
-        {isOwner ? (
-          <View style={styles.statusPillWrap}>
-            <Text style={styles.statusHint}>
-              {t(shiftStatus === "live" ? "shift_owner.tap_to_pause" : "shift_owner.tap_to_resume")}
-            </Text>
-            <Pressable
-              onPress={toggleStatus}
-              style={[
-                styles.statusPill,
-                shiftStatus === "live" ? styles.statusLive : styles.statusPaused,
-              ]}
-            >
-              <View
-                style={[
-                  styles.statusDot,
-                  shiftStatus === "live"
-                    ? styles.statusDotLive
-                    : styles.statusDotPaused,
-                ]}
-              />
-              <Text
-                style={[
-                  styles.statusTxt,
-                  shiftStatus === "live"
-                    ? styles.statusTxtLive
-                    : styles.statusTxtPaused,
-                ]}
-              >
-                {t(
-                  shiftStatus === "live"
-                    ? "shift_owner.live"
-                    : "shift_owner.paused"
-                )}
-              </Text>
-            </Pressable>
-          </View>
-        ) : (
-          <View style={{ width: 32 }} />
-        )}
+        <View style={{ width: 32 }} />
       </View>
 
       <ScrollView
@@ -353,19 +302,26 @@ export default function ShiftDetail() {
         showsHorizontalScrollIndicator={false}
       >
         <View style={isDesktop && styles.detailGrid}>
-        {/* Hero */}
-        <View style={[styles.hero, isDesktop && styles.heroDesktop]}>
-          <Image source={photo} style={[styles.heroImg, isDesktop && styles.heroImgDesktop]} />
-          {isUrgent && (
-            <View style={styles.urgentBanner}>
-              <Feather name="zap" size={14} color="white" />
-              <Text style={styles.urgentBannerTxt}>
-                {shift.start_when === "now"
-                  ? t("shift_detail.need_now_banner")
-                  : t("shift_detail.asap_banner")}
-              </Text>
-            </View>
-          )}
+        <View style={styles.mediaColumn}>
+          {/* Hero */}
+          <View style={[styles.hero, isDesktop && styles.heroDesktop]}>
+            <Image source={photo} style={[styles.heroImg, isDesktop && styles.heroImgDesktop]} />
+            {isUrgent && (
+              <View style={styles.urgentBanner}>
+                <Feather name="zap" size={14} color="white" />
+                <Text style={styles.urgentBannerTxt}>
+                  {shift.start_when === "now"
+                    ? t("shift_detail.need_now_banner")
+                    : t("shift_detail.asap_banner")}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <VenueMediaGallery
+            photoUrls={additionalVenuePhotoUrls}
+            videoUrls={v?.video_urls}
+          />
         </View>
 
         <View style={[styles.card, isDesktop && styles.cardDesktop]}>
@@ -430,11 +386,11 @@ export default function ShiftDetail() {
           <KV icon="clock" label={t("shift_detail.hours")}>
             {hoursStr}
           </KV>
-          <KV icon="calendar" label={t("shift_detail.days")}>
+          <KV icon="calendar" label={t("shift_detail.days")} last={!shift.contract_type}>
             {daysStr}
           </KV>
           {shift.contract_type && (
-            <KV icon="file-text" label={t("shift_detail.contract")}>
+            <KV icon="file-text" label={t("shift_detail.contract")} last>
               {localizeContractType(shift.contract_type)}
             </KV>
           )}
@@ -471,37 +427,27 @@ export default function ShiftDetail() {
           </View>
         ) : (
           application ? (
-            <Pressable
+            <ActionButton
+              label={
+                applicationStatus === "interview_requested"
+                  ? hasContactMethod
+                    ? t("shift_detail.contact_venue")
+                    : t("shift_detail.contact_details_unavailable")
+                  : applicationStateLabel
+              }
+              icon={canOpenContact ? "message-circle" : applicationIcon}
               onPress={() => canOpenContact && setContactOpen(true)}
               disabled={!canOpenContact}
               style={[styles.applyBtn, isDesktop && desktopButtonStyle, canOpenContact ? styles.contactBtn : styles.applicationStatusBtn]}
-            >
-              <Text style={styles.applyTxt}>
-                {applicationStatus === "interview_requested"
-                  ? hasContactMethod
-                  ? t("shift_detail.contact_venue")
-                  : t("shift_detail.contact_details_unavailable")
-                  : applicationStateLabel}
-              </Text>
-              <Feather
-                name={canOpenContact ? "message-circle" : applicationIcon}
-                size={19}
-                color="#F7F4EE"
-              />
-            </Pressable>
+            />
           ) : (
-            <Pressable
+            <ActionButton
+              label={t("shift_detail.apply_now")}
+              icon="arrow-right"
+              loading={applying}
               onPress={onApply}
-              disabled={applying}
-              style={[styles.applyBtn, isDesktop && desktopButtonStyle, applying && { opacity: 0.6 }]}
-            >
-              <Text style={styles.applyTxt}>{t("shift_detail.apply_now")}</Text>
-              {applying ? (
-                <ActivityIndicator color="#F7F4EE" size="small" />
-              ) : (
-                <Feather name="arrow-right" size={20} color="#F7F4EE" />
-              )}
-            </Pressable>
+              style={[styles.applyBtn, isDesktop && desktopButtonStyle]}
+            />
           )
         )}
       </StickyFooter>
@@ -587,6 +533,7 @@ function OwnerAction({
   color,
   bg,
   isDesktop,
+  compact,
   onPress,
 }: {
   icon: keyof typeof Feather.glyphMap;
@@ -594,17 +541,18 @@ function OwnerAction({
   color: string;
   bg: string;
   isDesktop: boolean;
+  compact?: boolean;
   onPress: () => void;
 }) {
   return (
     <Pressable
-      style={[styles.ownerTile, isDesktop && desktopButtonStyle, { backgroundColor: bg, borderColor: color }]}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={[styles.ownerTile, isDesktop && desktopButtonStyle, compact && styles.ownerTileIcon, { backgroundColor: bg, borderColor: color }]}
       onPress={onPress}
     >
       <Feather name={icon} size={19} color={color} />
-      <Text style={[styles.ownerTileLbl, { color }]} numberOfLines={1}>
-        {label}
-      </Text>
+      {compact ? null : <Text style={[styles.ownerTileLbl, { color }]} numberOfLines={1}>{label}</Text>}
     </Pressable>
   );
 }
@@ -621,13 +569,18 @@ function KV({
   icon,
   label,
   children,
+  last = false,
 }: {
   icon: keyof typeof Feather.glyphMap;
   label: string;
   children: React.ReactNode;
+  last?: boolean;
 }) {
+  if (children === null || children === undefined || (typeof children === "string" && !children.trim())) {
+    return null;
+  }
   return (
-    <View style={styles.kv}>
+    <View style={[styles.kv, !last && styles.kvDivider]}>
       <View style={styles.kvIcon}>
         <Feather name={icon} size={14} color="#0E1A24" />
       </View>
@@ -640,7 +593,7 @@ function KV({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F1EFE8" },
+  safe: { flex: 1, backgroundColor: TAVORIA.color.paperDeep },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -652,7 +605,8 @@ const styles = StyleSheet.create({
 
   scroll: { paddingHorizontal: 14, paddingBottom: 20 },
   scrollDesktop: { paddingHorizontal: 24, paddingBottom: 20 },
-  detailGrid: { alignItems: "flex-start", flexDirection: "row", gap: 18 },
+  detailGrid: { alignItems: "flex-start", flexDirection: "row", gap: 24, maxWidth: 1180, alignSelf: "center", width: "100%" },
+  mediaColumn: { flex: 1, minWidth: 0 },
 
   loadingWrap: { flex: 1, justifyContent: "center", alignItems: "center" },
   errorWrap: {
@@ -672,7 +626,7 @@ const styles = StyleSheet.create({
   backPrimaryBtn: {
     alignSelf: "center",
     marginTop: 16,
-    backgroundColor: "#F0531C",
+    backgroundColor: TAVORIA.color.orange,
     paddingVertical: 14,
     paddingHorizontal: 28,
     borderRadius: 999,
@@ -681,7 +635,7 @@ const styles = StyleSheet.create({
   backPrimaryTxt: { color: "white", fontWeight: "800", fontSize: 15 },
 
   hero: {
-    borderRadius: 18,
+    borderRadius: TAVORIA.radius.large,
     overflow: "hidden",
     backgroundColor: "#0E1A24",
     marginBottom: 14,
@@ -710,12 +664,12 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    backgroundColor: "white",
-    borderRadius: 18,
-    padding: 18,
+    backgroundColor: TAVORIA.color.white,
+    borderRadius: TAVORIA.radius.medium,
+    padding: 20,
     gap: 14,
     borderWidth: 0.5,
-    borderColor: "rgba(0,0,0,0.08)",
+    borderColor: TAVORIA.color.border,
   },
   cardDesktop: { flex: 1, minWidth: 0 },
   venueName: {
@@ -732,7 +686,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   tag: {
-    backgroundColor: "#F1EFE8",
+    backgroundColor: TAVORIA.color.paperDeep,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
@@ -746,7 +700,7 @@ const styles = StyleSheet.create({
   metaTxt: { fontSize: 12, color: "#6B7280" },
 
   paySection: {
-    backgroundColor: "#FFF4EE",
+    backgroundColor: TAVORIA.color.orangeSoft,
     padding: 14,
     borderRadius: 14,
     marginVertical: 4,
@@ -769,7 +723,8 @@ const styles = StyleSheet.create({
   payLockedDetail: { alignItems: "center", flexDirection: "row", gap: 7, marginTop: 5 },
   payLockedDetailTxt: { color: "#C2410C", fontSize: 15, fontWeight: "800" },
 
-  kv: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
+  kv: { flexDirection: "row", gap: 12, alignItems: "flex-start", paddingVertical: 12 },
+  kvDivider: { borderBottomColor: TAVORIA.color.border, borderBottomWidth: StyleSheet.hairlineWidth },
   kvIcon: {
     width: 32,
     height: 32,
@@ -814,55 +769,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",
   },
-  applyBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#F0531C",
-    borderRadius: 999,
-    paddingVertical: 18,
-  },
+  applyBtn: { minWidth: 220 },
   applicationStatusBtn: { backgroundColor: "#6B7280" },
   contactBtn: { backgroundColor: "#0E1A24" },
-  applyTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "800" },
 
-  // Live / Paused status pill in the header
-  statusPillWrap: { alignItems: "center", flexDirection: "row", gap: 8 },
-  statusPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  statusLive: {
-    backgroundColor: "#EAF3DE",
-    borderColor: "#3B6D11",
-  },
-  statusPaused: {
-    backgroundColor: "#F1EFE8",
-    borderColor: "rgba(11,15,26,0.20)",
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 999,
-  },
-  statusDotLive: { backgroundColor: "#3B6D11" },
-  statusDotPaused: { backgroundColor: "#6B7280" },
-  statusTxt: { fontSize: 12, fontWeight: "800" },
-  statusTxtLive: { color: "#3B6D11" },
-  statusTxtPaused: { color: "#6B7280" },
-  statusHint: {
-    fontSize: 10,
-    color: "#9CA3AF",
-    letterSpacing: 0.1,
-  },
-
-  // Owner bottom action bar — 4 colored squared tiles
+  // Owner bottom action bar.
   ownerBar: {
     flexDirection: "column",
     gap: 8,
@@ -875,11 +786,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 8,
-    minHeight: 56,
+    height: 48,
+    maxHeight: 48,
     paddingHorizontal: 16,
-    paddingVertical: 18,
     width: "100%",
   },
+  ownerTileIcon: { height: 44, maxHeight: 44, paddingHorizontal: 0, width: 44 },
   ownerTileLbl: {
     fontSize: 16,
     fontWeight: "800",

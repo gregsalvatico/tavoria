@@ -7,7 +7,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Image,
   Platform,
   Pressable,
   RefreshControl,
@@ -22,27 +21,9 @@ import { getCurrentUserContext, getCurrentWorkerContactAccessForVenue, getVenueB
 import { localizeRoles } from "../lib/positions";
 import ContactPersonModal from "../components/ContactPersonModal";
 import { t } from "../lib/i18n";
-import { mapsUrl, websiteLabel, websiteUrl } from "../lib/contact";
-import { openExternalLink } from "../lib/externalLinks";
-
-const VENUE_TYPE_PHOTOS: Record<string, any> = {
-  cafe: require("../assets/venue-cafe.png"),
-  bar: require("../assets/venue-bar.png"),
-  restaurant: require("../assets/venue-restaurant.png"),
-  hotel: require("../assets/venue-hotel.png"),
-  club: require("../assets/venue-club.png"),
-  beach_club: require("../assets/venue-beach.png"),
-};
-
-const DAY_LBL: Record<string, string> = {
-  mon: "Mon",
-  tue: "Tue",
-  wed: "Wed",
-  thu: "Thu",
-  fri: "Fri",
-  sat: "Sat",
-  sun: "Sun",
-};
+import VenueProfileHeader from "../components/VenueProfileHeader";
+import { ListRow, ListSurface } from "../components/PagePrimitives";
+import { TAVORIA } from "../lib/designTokens";
 
 type Venue = {
   id: string;
@@ -52,6 +33,8 @@ type Venue = {
   address?: string;
   venue_style?: string;
   photo_url?: string;
+  photo_urls?: (string | null)[];
+  video_urls?: (string | null)[];
   pay_schedule?: string;
   email?: string;
   phone?: string;
@@ -88,7 +71,7 @@ export default function VenueBoard() {
 
   const load = useCallback(async () => {
     if (!venueId) {
-      setErrorMsg("No venue specified.");
+      setErrorMsg(t("shift_detail.default_venue"));
       setLoading(false);
       return;
     }
@@ -102,7 +85,7 @@ export default function VenueBoard() {
       setShifts((data.shifts ?? []) as ShiftRow[]);
       setContactAccess(access);
     } catch (e: any) {
-      setErrorMsg(e?.message ?? "Could not load venue.");
+      setErrorMsg(e?.message ?? t("shift_detail.load_error"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -133,17 +116,11 @@ export default function VenueBoard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [venueId]);
 
-  const photo = venue?.photo_url
-    ? { uri: venue.photo_url }
-    : VENUE_TYPE_PHOTOS[(venue?.type || "cafe").toLowerCase()] ??
-      VENUE_TYPE_PHOTOS.cafe;
   const contactsUnlocked = !!contactAccess;
   const contactEmail = contactsUnlocked && venue?.contact_email_enabled !== false ? venue?.email : undefined;
   const contactPhone = contactsUnlocked && venue?.contact_phone_enabled !== false ? venue?.phone : undefined;
   const visitAddress = contactsUnlocked && venue?.contact_in_person_enabled === true ? venue?.address : undefined;
   const hasContactMethod = !!(contactEmail || contactPhone || visitAddress);
-  const venueWebsite = websiteUrl(venue?.website_url);
-  const venueWebsiteLabel = websiteLabel(venue?.website_url);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -184,63 +161,7 @@ export default function VenueBoard() {
           </View>
         ) : (
           <>
-            {/* Venue hero */}
-            <View style={styles.hero}>
-              <Image source={photo} style={styles.heroImg} />
-              <View style={styles.heroOverlay} />
-              <View style={styles.heroTextWrap}>
-                <Text style={styles.heroName} numberOfLines={1}>
-                  {venue?.name ?? "Venue"}
-                </Text>
-                <View style={styles.heroMetaRow}>
-                  {venue?.type && (
-                    <Text style={styles.heroMeta}>{venue.type}</Text>
-                  )}
-                  {venue?.city && (
-                    <>
-                      <Text style={styles.heroMetaDot}>·</Text>
-                      <Feather
-                        name="map-pin"
-                        size={12}
-                        color="rgba(255,255,255,0.85)"
-                      />
-                      <Text style={styles.heroMeta}>{venue.city}</Text>
-                    </>
-                  )}
-                </View>
-              </View>
-            </View>
-
-            {(venue?.address || venueWebsite) ? (
-              <View style={styles.venueLinksCard}>
-                {venue?.address ? (
-                  <Pressable
-                    style={styles.venueLinkRow}
-                    onPress={() => void openExternalLink(mapsUrl(venue.address!), t("external_link.maps"))}
-                  >
-                    <View style={styles.venueLinkIcon}><Feather name="map-pin" size={16} color="#F0531C" /></View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.venueLinkLabel}>{t("venue_card.directions")}</Text>
-                      <Text style={styles.venueLinkText} numberOfLines={1}>{venue.address}</Text>
-                    </View>
-                    <Feather name="arrow-up-right" size={17} color="#F0531C" />
-                  </Pressable>
-                ) : null}
-                {venueWebsite ? (
-                  <Pressable
-                    style={[styles.venueLinkRow, venue?.address && styles.venueLinkDivider]}
-                    onPress={() => void openExternalLink(venueWebsite, t("venue_card.website"))}
-                  >
-                    <View style={styles.venueLinkIcon}><Feather name="globe" size={16} color="#F0531C" /></View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.venueLinkLabel}>{t("venue_card.website")}</Text>
-                      <Text style={styles.venueLinkText} numberOfLines={1}>{venueWebsiteLabel}</Text>
-                    </View>
-                    <Feather name="arrow-up-right" size={17} color="#F0531C" />
-                  </Pressable>
-                ) : null}
-              </View>
-            ) : null}
+            <VenueProfileHeader venue={venue ?? {}} />
 
             <Pressable
               style={[styles.contactCard, contactsUnlocked ? styles.contactCardOpen : styles.contactCardLocked]}
@@ -251,38 +172,37 @@ export default function VenueBoard() {
                 <Feather name={contactsUnlocked ? "unlock" : "lock"} size={16} color={contactsUnlocked ? "#F0531C" : "#854F0B"} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.contactTitle}>{contactsUnlocked ? "Venue contact details" : "Contact details locked"}</Text>
+                <Text style={styles.contactTitle}>{contactsUnlocked ? t("shift_detail.venue_contact_details") : t("shift_detail.venue_contact_details_locked")}</Text>
                 <Text style={styles.contactText}>
                   {contactsUnlocked
                     ? hasContactMethod
                       ? [contactEmail, contactPhone, visitAddress].filter(Boolean).join(" · ")
-                      : "This venue has not enabled a contact method yet."
-                    : "Apply, then wait for the venue to request an interview or hire you."}
+                      : t("shift_detail.contact_none")
+                    : t("shift_detail.contact_details_locked_sub")}
                 </Text>
               </View>
               {contactsUnlocked && hasContactMethod ? <Feather name="chevron-right" size={18} color="#F0531C" /> : null}
             </Pressable>
 
             <Text style={styles.sectionTitle}>
-              {shifts.length > 0
-                ? `${shifts.length} shift${shifts.length === 1 ? "" : "s"} available`
-                : "No shifts right now"}
+              {t("venue_shifts.title")}
             </Text>
 
             {shifts.length === 0 ? (
               <View style={styles.emptyWrap}>
                 <Feather name="clock" size={32} color="#9CA3AF" />
                 <Text style={styles.emptyTxt}>
-                  {venue?.name ?? "This venue"} isn't hiring at the moment.{" "}
-                  Pull down to refresh.
+                  {venue?.name ?? t("shift_detail.default_venue")} · {t("venue_shifts.empty_sub")}
                 </Text>
               </View>
             ) : (
-              <View style={isDesktop && styles.desktopGrid}>
-                {shifts.map((s) => (
-                  <ShiftRowItem key={s.id} row={s} router={router} isDesktop={isDesktop} />
-                ))}
-              </View>
+              <ListSurface>
+                <View style={isDesktop && styles.desktopGrid}>
+                  {shifts.map((s, index) => (
+                    <ShiftRowItem key={s.id} row={s} router={router} last={index === shifts.length - 1} />
+                  ))}
+                </View>
+              </ListSurface>
             )}
           </>
         )}
@@ -294,7 +214,10 @@ export default function VenueBoard() {
         email={contactEmail}
         phone={contactPhone}
         visitAddress={visitAddress}
-        initialMessage={`Hi ${venue?.name ?? ""}, Iâ€™m following up about a shift on Tavoria.`.trim()}
+        initialMessage={t("shift_detail.follow_up_message", {
+          venue: venue?.name ?? t("shift_detail.default_venue"),
+          role: t("shift_detail.default_shift"),
+        })}
       />
     </SafeAreaView>
   );
@@ -303,18 +226,18 @@ export default function VenueBoard() {
 function ShiftRowItem({
   row,
   router,
-  isDesktop,
+  last,
 }: {
   row: ShiftRow;
   router: ReturnType<typeof useRouter>;
-  isDesktop: boolean;
+  last: boolean;
 }) {
   const isUrgent = row.start_when === "now" || row.start_when === "asap";
-  const roleStr = localizeRoles(row.roles ?? []).slice(0, 2).join(" · ") || "Shift";
+  const roleStr = localizeRoles(row.roles ?? []).slice(0, 2).join(" · ") || t("shift_detail.default_shift");
   const payStr =
-    row.pay_amount && row.pay_unit ? `€${row.pay_amount}/${row.pay_unit}` : "—";
+    row.pay_amount && row.pay_unit ? `€${row.pay_amount}/${row.pay_unit}` : t("shift_detail.pay_discussed");
   const whenStr = (() => {
-    if (isUrgent) return row.start_when === "now" ? "Now" : "ASAP";
+    if (isUrgent) return row.start_when === "now" ? t("shift_detail.need_now_banner") : t("shift_filters.asap");
     if (row.start_date) {
       const d = new Date(row.start_date);
       const today = new Date();
@@ -322,18 +245,19 @@ function ShiftRowItem({
         d.getFullYear() === today.getFullYear() &&
         d.getMonth() === today.getMonth() &&
         d.getDate() === today.getDate();
-      if (sameDay) return "Today";
+      if (sameDay) return t("shift_filters.today");
       return d.toLocaleDateString([], { day: "numeric", month: "short" });
     }
-    return (row.days ?? []).map((d) => DAY_LBL[d] || d).join(" · ") || "—";
+    return (row.days ?? []).map(dayLabel).join(" · ") || "—";
   })();
 
   return (
-    <Pressable
+    <ListRow
+      label={roleStr}
+      last={last}
       onPress={() =>
         router.push({ pathname: "/shift-detail", params: { id: row.id } })
       }
-      style={[styles.row, isDesktop && styles.rowDesktop]}
     >
       {isUrgent && (
         <View style={styles.urgentDot}>
@@ -350,12 +274,17 @@ function ShiftRowItem({
         </View>
       </View>
       <Feather name="chevron-right" size={18} color="#9CA3AF" />
-    </Pressable>
+    </ListRow>
   );
 }
 
+function dayLabel(day: string) {
+  const value = t(`shift_detail.days_short.${day}`);
+  return value && !value.includes(".") ? value : day;
+}
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F1EFE8" },
+  safe: { flex: 1, backgroundColor: TAVORIA.color.paperDeep },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -367,8 +296,8 @@ const styles = StyleSheet.create({
   iconBtn: { padding: 4, width: 32, alignItems: "center" },
 
   scroll: { paddingHorizontal: 14, paddingBottom: 20 },
-  scrollDesktop: { paddingHorizontal: 24 },
-  desktopGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  scrollDesktop: { alignSelf: "center", maxWidth: 1180, paddingHorizontal: 24, width: "100%" },
+  desktopGrid: { width: "100%" },
 
   loadingWrap: { paddingVertical: 60, alignItems: "center" },
   fullWidthState: { width: "100%" },
@@ -423,7 +352,7 @@ const styles = StyleSheet.create({
   venueLinkText: { color: "#0E1A24", fontSize: 13, fontWeight: "700", marginTop: 2 },
 
   contactCard: { alignItems: "center", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 10, marginBottom: 16, padding: 12 },
-  contactCardOpen: { backgroundColor: "#FFF4EE", borderColor: "#F7C7AB" },
+  contactCardOpen: { backgroundColor: TAVORIA.color.orangeSoft, borderColor: "#F7C7AB" },
   contactCardLocked: { backgroundColor: "#EAE7DF", borderColor: "#DED8CC" },
   contactIcon: { alignItems: "center", borderRadius: 9, height: 34, justifyContent: "center", width: 34 },
   contactIconOpen: { backgroundColor: "#FFE1CE" },
@@ -442,19 +371,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
 
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: "white",
-    padding: 14,
-    borderRadius: 14,
-    marginBottom: 8,
-    borderWidth: 0.5,
-    borderColor: "rgba(0,0,0,0.08)",
-    position: "relative",
-  },
-  rowDesktop: { marginBottom: 0, width: "48.8%" },
   urgentDot: {
     width: 22,
     height: 22,
@@ -463,8 +379,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  role: {
-    fontFamily: "InstrumentSerif_400Regular", fontSize: 15, fontWeight: "400", color: "#0E1A24" },
+  role: { color: TAVORIA.color.navy, fontSize: 16, fontWeight: "700" },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",

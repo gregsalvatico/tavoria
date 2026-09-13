@@ -17,6 +17,8 @@ export type VenueProfile = {
   interviewLocationOptions?: string[];
   photoId?: string;
   photoUrl?: string; // Supabase Storage public URL (real uploaded photo)
+  photoUrls?: string[];
+  videoUrls?: string[];
   roles?: string[]; // positions this venue typically hires for
   payScheduleId?: PayScheduleId;
   payScheduleLabel?: string; // display label (incl. the custom-typed text)

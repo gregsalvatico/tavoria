@@ -86,6 +86,8 @@ export default function CountryPicker({
           keyExtractor={(c) => c.code}
           contentContainerStyle={styles.listContent}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
           renderItem={({ item }) => {
             const on = selectedCode === item.code;
             return (

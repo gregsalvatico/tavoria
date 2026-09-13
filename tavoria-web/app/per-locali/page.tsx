@@ -8,7 +8,7 @@ import StepCard from "@/components/StepCard";
 export const metadata: Metadata = {
   title: "Per locali — Assumi camerieri, baristi e cuochi in 24 ore",
   description:
-    "Pubblica un turno in 2 minuti. Stampa il QR. I candidati si registrano col tuo telefono. Vedi i video. Assumi entro la giornata. Gratis fino al 2027.",
+    "Pubblica un turno in 2 minuti. Stampa il QR. Vedi i video dei candidati. 30 giorni gratis, poi 19 € al mese.",
 };
 
 const STEPS = [
@@ -43,8 +43,8 @@ const BENEFITS = [
     body: "Verifichiamo documento d'identità e diritto al lavoro in Italia. Nessuna sorpresa.",
   },
   {
-    title: "Tutto incluso fino al 2027",
-    body: "Gratis fino al 2027. Tavoria Pro è in arrivo.",
+    title: "Un prezzo semplice",
+    body: "30 giorni gratis, poi 19 € al mese. Il piano gratuito resta disponibile per pubblicare turni e ricevere fino a 3 candidature al mese.",
   },
   {
     title: "Pronto in 24 ore",
@@ -166,7 +166,7 @@ export default function PerLocali() {
               Inizia gratis →
             </Button>
             <p className="text-sm text-mute">
-              Gratis fino al 2027. Tavoria Pro è in arrivo.
+              30 giorni gratis, poi 19 € al mese. I primi 100 Locali Fondatori restano gratis per sempre.
             </p>
           </div>
         </Section>

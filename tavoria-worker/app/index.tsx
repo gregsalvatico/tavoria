@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { Link, useFocusEffect, useRouter } from "expo-router";
+import { Link, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { clearVenueProfile } from "../lib/venueProfile";
@@ -26,7 +26,6 @@ import {
   type WorkerStatusCounts,
 } from "../lib/db";
 import { downloadVenueQRPoster } from "../lib/qrPoster";
-import { initProEligibility, isProEligible } from "../lib/proEligibility";
 import { getVenueProfile } from "../lib/venueProfile";
 import { openExternalLink } from "../lib/externalLinks";
 import SignedInHome from "../components/SignedInHome";
@@ -40,17 +39,19 @@ import {
 } from "../lib/homeContextCache";
 
 const WORKER_LAST_SEEN_KEY = "gigi.worker.apps_last_seen";
-import { initI18n, LANGUAGES, Language, setLanguage, t } from "../lib/i18n";
+import { getCurrentLang, initI18n, LANGUAGES, Language, setLanguage, t } from "../lib/i18n";
 import { colors } from "../lib/theme";
 
 const EMPTY_HOME_CONTEXT: HomeContext = { hasVenue: false, hasWorker: false };
 
 export default function Welcome() {
   const router = useRouter();
+  const { role: roleParam } = useLocalSearchParams<{ role?: string }>();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width >= 1024;
+  const selectedRole = roleParam === "worker" || roleParam === "venue" ? roleParam : undefined;
   // Bump on language change to force re-render
-  const [lang, setLang] = useState<Language>("en");
+  const [lang, setLang] = useState<Language>(() => getCurrentLang());
   const [pickerOpen, setPickerOpen] = useState(false);
   const [ctx, setCtx] = useState<HomeContext>(
     () => getCachedHomeContext() ?? EMPTY_HOME_CONTEXT
@@ -77,9 +78,6 @@ export default function Welcome() {
 
   useEffect(() => {
     initI18n().then((l) => setLang(l));
-    // Hydrate the "have we seen this user for 7 days yet" flag so the
-    // PRO upsell / lock UI knows whether to render.
-    initProEligibility();
   }, []);
 
   // Keep an already-mounted home screen in sync with sign-in screens and
@@ -363,10 +361,10 @@ export default function Welcome() {
     <>
       <SignedInHome
       ctx={ctx}
+      activeRole={selectedRole}
       lang={lang}
       pendingCount={pendingCount}
       workerCounts={workerCounts}
-      proEligible={isProEligible()}
       onChangeLanguage={async (language) => {
         await setLanguage(language);
         setLang(language);
@@ -551,7 +549,7 @@ export default function Welcome() {
               </View>
               <View style={styles.continueRow}>
                 <Pressable
-                  onPress={() => router.push("/discover")}
+                  onPress={() => router.push("/")}
                   style={[styles.continueBtn, styles.continueBtnPrimary]}
                 >
                   <Feather name="search" size={14} color="white" />
@@ -577,7 +575,7 @@ export default function Welcome() {
             <>
               {/* Browse tiles — square, same size as worker/venue tiles below */}
               <View style={[styles.splitRow, styles.firstSplitRow]}>
-                <Link href="/discover" asChild>
+                <Link href="/" asChild>
                   <Pressable style={styles.tileWorker}>
                     <Text style={styles.splitEmoji}>📍</Text>
                     <Text style={styles.splitTitle} numberOfLines={1}>
@@ -800,56 +798,6 @@ export default function Welcome() {
                 </Text>
               </Pressable>
 
-              {/* Tavoria Pro upsell — hidden in the first 7 days so brand-new
-                  venues don't see a paywall before they've found their footing.
-                  The /venue-pro page itself remains accessible by deep link. */}
-              {isProEligible() && (
-                <Pressable
-                  style={styles.proCard}
-                  onPress={() => router.push("/venue-pro")}
-                >
-                  <View style={styles.proCardHeader}>
-                    <View style={styles.proCardBadge}>
-                      <Feather name="star" size={12} color="white" />
-                      <Text style={styles.proCardKicker}>
-                        {t("venue_pro.kicker")}
-                      </Text>
-                    </View>
-                    <Feather
-                      name="chevron-right"
-                      size={20}
-                      color="rgba(255,255,255,0.8)"
-                    />
-                  </View>
-                  <Text style={styles.proCardTitle}>
-                    {t("venue_pro.title")}
-                  </Text>
-                  <Text style={styles.proCardSub}>{t("venue_pro.sub")}</Text>
-                  <View style={styles.proBullets}>
-                    <ProBullet text={t("venue_pro.bullet1")} />
-                    <ProBullet text={t("venue_pro.bullet2")} />
-                    <ProBullet text={t("venue_pro.bullet3")} />
-                  </View>
-                </Pressable>
-              )}
-
-              {/* Tiny free-tier reassurance below */}
-              <View style={styles.freeCard}>
-                <View style={styles.freeKickerRow}>
-                  <Feather name="check-circle" size={14} color="#3B6D11" />
-                  <Text style={styles.freeKicker}>
-                    {t("venue_pro.free_kicker")}
-                  </Text>
-                </View>
-                <Text style={styles.freeTitle}>
-                  {t("venue_pro.free_title")}
-                </Text>
-                <View style={{ marginTop: 6 }}>
-                  <FreeBullet text={t("venue_pro.free_b1")} />
-                  <FreeBullet text={t("venue_pro.free_b2")} />
-                  <FreeBullet text={t("venue_pro.free_b3")} />
-                </View>
-              </View>
             </>
           )}
 
@@ -904,26 +852,6 @@ export default function Welcome() {
       </Modal>
 
     </SafeAreaView>
-  );
-}
-
-function ProBullet({ text }: { text: string }) {
-  return (
-    <View style={styles.proBulletRow}>
-      <View style={styles.proBulletDot}>
-        <Feather name="check" size={11} color="#F0531C" />
-      </View>
-      <Text style={styles.proBulletTxt}>{text}</Text>
-    </View>
-  );
-}
-
-function FreeBullet({ text }: { text: string }) {
-  return (
-    <View style={styles.freeBulletRow}>
-      <Feather name="check" size={11} color="#3B6D11" />
-      <Text style={styles.freeBulletTxt}>{text}</Text>
-    </View>
   );
 }
 
@@ -1451,111 +1379,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   qrPillTxt: { color: "white", fontWeight: "700", fontSize: 15 },
-
-  // Tavoria Pro upsell card — orange-filled, sits below Print QR
-  proCard: {
-    backgroundColor: "#0E1A24",
-    borderRadius: 18,
-    padding: 18,
-    marginTop: 12,
-    gap: 6,
-  },
-  proCardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 4,
-  },
-  proCardBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: "#F0531C",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  proCardKicker: {
-    color: "white",
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 1.2,
-  },
-  proCardTitle: {
-    fontFamily: "InstrumentSerif_400Regular",
-    color: "white",
-    fontSize: 18,
-    fontWeight: "400",
-    letterSpacing: -0.3,
-    lineHeight: 23,
-  },
-  proCardSub: {
-    color: "rgba(255,255,255,0.75)",
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 2,
-    marginBottom: 8,
-  },
-  proBullets: { gap: 8, marginBottom: 12 },
-  proBulletRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  proBulletDot: {
-    width: 18,
-    height: 18,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,90,31,0.18)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  proBulletTxt: { color: "white", fontSize: 13, fontWeight: "600" },
-  proCta: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    backgroundColor: "#F7F4EE",
-    paddingVertical: 14,
-    borderRadius: 999,
-    marginTop: 4,
-  },
-  proCtaTxt: { color: "#0E1A24", fontSize: 14, fontWeight: "800" },
-  proPrice: {
-    color: "rgba(255,255,255,0.55)",
-    fontSize: 11,
-    textAlign: "center",
-    marginTop: 6,
-  },
-
-  // Free-tier reassurance card — light green, below the Pro upsell
-  freeCard: {
-    backgroundColor: "#EAF3DE",
-    borderRadius: 14,
-    padding: 14,
-    marginTop: 10,
-    borderWidth: 0.5,
-    borderColor: "rgba(59,109,17,0.20)",
-  },
-  freeKickerRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  freeKicker: {
-    color: "#3B6D11",
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 1.2,
-  },
-  freeTitle: {
-    fontFamily: "InstrumentSerif_400Regular",
-    color: "#3B6D11",
-    fontSize: 15,
-    fontWeight: "400",
-    marginTop: 4,
-    letterSpacing: -0.2,
-  },
-  freeBulletRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 3,
-  },
-  freeBulletTxt: { color: "#3B6D11", fontSize: 12, fontWeight: "600" },
 
   // QR modal — door-sticker preview + share
   qrSheet: {

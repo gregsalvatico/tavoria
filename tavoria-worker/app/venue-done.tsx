@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
+import ActionButton from "../components/ActionButton";
 
 export default function VenueDone() {
   const router = useRouter();
@@ -136,25 +137,25 @@ export default function VenueDone() {
       </View>
 
       <StickyFooter desktopRow fullBleed>
-          <Pressable
-            style={[styles.cta, isDesktop && desktopButtonStyle]}
+          <ActionButton
+            label={t("venue_done.post_shift")}
+            icon="arrow-right"
             onPress={() => router.replace("/venue-photo")}
-          >
-            <Text style={styles.ctaTxt}>{t("venue_done.post_shift")}</Text>
-            <Feather name="arrow-right" size={20} color="#F7F4EE" />
-          </Pressable>
-          <Pressable
+            style={styles.cta}
+          />
+          <ActionButton
+            label="View applicants"
+            icon="inbox"
+            variant="secondary"
             onPress={() => router.push("/venue-inbox")}
-            style={[styles.secondaryAction, isDesktop && styles.secondaryActionDesktop]}
-          >
-            <Feather name="inbox" size={16} color="#0E1A24" />
-            <Text style={{ color: "#0E1A24", fontSize: 14, fontWeight: "700" }}>
-              View applicants
-            </Text>
-          </Pressable>
-          <Pressable style={[styles.secondaryLater, isDesktop && styles.secondaryLaterDesktop]} onPress={() => router.replace("/")}>
-            <Text style={styles.secondaryTxt}>I'll do it later</Text>
-          </Pressable>
+            style={styles.secondaryAction}
+          />
+          <ActionButton
+            label="I'll do it later"
+            variant="quiet"
+            onPress={() => router.replace("/")}
+            style={styles.secondaryLater}
+          />
       </StickyFooter>
     </SafeAreaView>
   );
@@ -275,7 +276,10 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: "#0E1A24",
     borderRadius: 999,
-    paddingVertical: 18,
+    height: 44,
+    maxHeight: 44,
+    minHeight: 44,
+    paddingHorizontal: 16,
   },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
   secondaryAction: { alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "center", paddingVertical: 10 },

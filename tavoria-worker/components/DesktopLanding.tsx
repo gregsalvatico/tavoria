@@ -165,10 +165,12 @@ function DesktopAction({
           <Feather name={icon} size={17} color={primary ? "#F7F4EE" : accent} />
         </View>
         <View style={styles.actionCopy}>
-          <Text style={primary ? styles.actionLabelPrimary : link ? styles.actionLabelLink : styles.actionLabel}>{label}</Text>
+          <View style={styles.actionLabelRow}>
+            <Text style={primary ? styles.actionLabelPrimary : link ? styles.actionLabelLink : styles.actionLabel}>{label}</Text>
+            <Feather name="arrow-up-right" size={18} color={primary ? "#F7F4EE" : "#6B7280"} />
+          </View>
           <Text style={primary ? styles.actionDescriptionPrimary : link ? styles.actionDescriptionLink : styles.actionDescription}>{description}</Text>
         </View>
-        <Feather name="arrow-up-right" size={18} color={primary ? "#F7F4EE" : "#6B7280"} />
       </Pressable>
     </Link>
   );
@@ -266,6 +268,7 @@ const styles = StyleSheet.create({
   actionIcon: { alignItems: "center", borderRadius: 9, height: 34, justifyContent: "center", width: 34 },
   actionIconLink: { alignItems: "center", height: 34, justifyContent: "center", width: 34 },
   actionCopy: { flex: 1, minWidth: 0 },
+  actionLabelRow: { alignItems: "center", flexDirection: "row", gap: 5 },
   actionLabel: { color: "#0E1A24", fontSize: 14, fontWeight: "800" },
   actionLabelPrimary: { color: "#F7F4EE", fontSize: 14, fontWeight: "800" },
   actionLabelLink: { color: "#6B7280", fontSize: 13, fontWeight: "600" },

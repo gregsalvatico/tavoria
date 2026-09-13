@@ -13,11 +13,17 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { updateShift } from "../lib/db";
+import { updateShift, updateShiftStatus } from "../lib/db";
 import { STANDARD_CONTRACT_TYPES, normalizeContractType } from "../lib/contractTypes";
 import { t } from "../lib/i18n";
-import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import { supabase } from "../lib/supabase";
+import ActionButton from "../components/ActionButton";
+import { RequirementFields } from "../components/TalentFields";
+import StickyFooter from "../components/StickyFooter";
+import { PageContainer, PageHeader } from "../components/PagePrimitives";
+import { useIsDesktop } from "../lib/responsive";
+import { TAVORIA } from "../lib/designTokens";
+import type { WorkerRequirements } from "../lib/workerMatching";
 
 const UNITS = ["hour", "day", "week", "month"] as const;
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, index) => {
@@ -30,6 +36,7 @@ export default function ShiftEdit() {
   const router = useRouter();
   const isDesktop = useIsDesktop();
   const [loading, setLoading] = useState(true);
+  const [requirements, setRequirements] = useState<WorkerRequirements>({});
   const [saving, setSaving] = useState(false);
   const [contract, setContract] = useState<string>("part_time");
   const [customContract, setCustomContract] = useState("");
@@ -37,13 +44,15 @@ export default function ShiftEdit() {
   const [end, setEnd] = useState("");
   const [pay, setPay] = useState("");
   const [unit, setUnit] = useState<(typeof UNITS)[number]>("hour");
+  const [shiftStatus, setShiftStatus] = useState<"live" | "paused">("live");
+  const [statusSaving, setStatusSaving] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     (async () => {
       const { data, error } = await supabase
         .from("shifts")
-        .select("contract_type, hours_start, hours_end, pay_amount, pay_unit")
+        .select("*")
         .eq("id", id)
         .single();
       if (error) {
@@ -52,11 +61,13 @@ export default function ShiftEdit() {
         return;
       }
       const knownContract = normalizeContractType(data.contract_type);
+      setRequirements(data.worker_requirements ?? {});
       setContract(knownContract ?? "other");
       setCustomContract(knownContract ? "" : data.contract_type ?? "");
       setStart(data.hours_start ?? "");
       setEnd(data.hours_end ?? "");
       setPay(data.pay_amount?.toString() ?? "");
+      setShiftStatus(data.status === "paused" ? "paused" : "live");
       if (UNITS.includes(data.pay_unit as (typeof UNITS)[number])) {
         setUnit(data.pay_unit as (typeof UNITS)[number]);
       }
@@ -69,9 +80,26 @@ export default function ShiftEdit() {
     return (
       Number.isFinite(payAmount) &&
       payAmount >= 0 &&
+      (requirements.minimumExperience === undefined || Number.isFinite(requirements.minimumExperience) && requirements.minimumExperience >= 0 && requirements.minimumExperience <= 80) &&
       (contract !== "other" || customContract.trim().length > 0)
     );
-  }, [contract, customContract, pay]);
+  }, [contract, customContract, pay, requirements]);
+
+  const toggleStatus = async () => {
+    if (!id || statusSaving) return;
+    const previous = shiftStatus;
+    const next = previous === "live" ? "paused" : "live";
+    setShiftStatus(next);
+    setStatusSaving(true);
+    try {
+      await updateShiftStatus(id, next);
+    } catch (error: any) {
+      setShiftStatus(previous);
+      Alert.alert(t("shift_detail.status_update_error_title"), error?.message ?? t("shift_detail.try_again"));
+    } finally {
+      setStatusSaving(false);
+    }
+  };
 
   const save = async () => {
     if (!id || !canSave) return;
@@ -79,6 +107,7 @@ export default function ShiftEdit() {
     setSaving(true);
     try {
       await updateShift(id, {
+        worker_requirements: requirements,
         contract_type: contract === "other" ? customContract.trim() : contract,
         hours_start: start || undefined,
         hours_end: end || undefined,
@@ -95,24 +124,49 @@ export default function ShiftEdit() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
-          <Feather name="chevron-left" size={26} color="#0E1A24" />
-        </Pressable>
-        <Text style={styles.title}>{t("shift_edit.title")}</Text>
-        <View style={styles.back} />
-      </View>
+      <PageContainer>
+        <PageHeader
+          title={t("shift_edit.title")}
+          left={<Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}><Feather name="chevron-left" size={26} color="#0E1A24" /></Pressable>}
+        />
+      </PageContainer>
 
       {loading ? (
         <View style={styles.loading}><ActivityIndicator color="#F0531C" size="large" /></View>
       ) : (
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           showsHorizontalScrollIndicator={false}
         >
           <Text style={styles.intro}>{t("shift_edit.intro")}</Text>
+
+          <View style={[styles.statusCard, shiftStatus === "live" ? styles.statusCardLive : styles.statusCardPaused]}>
+            <View style={styles.statusCopy}>
+              <Text style={styles.statusLabel}>{shiftStatus === "live" ? t("shift_owner.live") : t("shift_owner.paused")}</Text>
+              <Text style={styles.statusHint}>
+                {t(shiftStatus === "live" ? "shift_owner.tap_to_pause" : "shift_owner.tap_to_resume")}
+              </Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ busy: statusSaving }}
+              disabled={statusSaving}
+              onPress={() => void toggleStatus()}
+              style={({ hovered, pressed }) => [
+                styles.statusToggle,
+                shiftStatus === "live" ? styles.statusToggleLive : styles.statusTogglePaused,
+                hovered && styles.statusToggleHovered,
+                pressed && styles.statusTogglePressed,
+              ]}
+            >
+              <View style={[styles.statusDot, shiftStatus === "live" ? styles.statusDotLive : styles.statusDotPaused]} />
+              <Text style={[styles.statusToggleText, shiftStatus === "live" ? styles.statusToggleTextLive : styles.statusToggleTextPaused]}>
+                {shiftStatus === "live" ? t("shift_owner.live") : t("shift_owner.paused")}
+              </Text>
+            </Pressable>
+          </View>
 
           <Text style={styles.label}>{t("shift_edit.contract")}</Text>
           <View style={styles.optionGrid}>
@@ -163,17 +217,14 @@ export default function ShiftEdit() {
             ))}
           </View>
 
-          <Pressable
-            style={[styles.save, isDesktop && desktopButtonStyle, (!canSave || saving) && styles.saveDisabled]}
-            onPress={save}
-            disabled={!canSave || saving}
-          >
-            <Feather name="check" size={18} color="white" />
-            <Text style={styles.saveText}>{t("shift_edit.save")}</Text>
-            {saving ? <ActivityIndicator color="white" size="small" /> : null}
-          </Pressable>
+          <RequirementFields value={requirements} onChange={setRequirements} />
         </ScrollView>
       )}
+      {!loading ? (
+        <StickyFooter desktopRow>
+          <ActionButton label={t("shift_edit.save")} icon="check" loading={saving} disabled={!canSave} onPress={save} />
+        </StickyFooter>
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -229,30 +280,45 @@ function Field({ label, ...props }: { label: string; value: string; onChangeText
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F1EFE8" },
-  header: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12 },
+  safe: { flex: 1, backgroundColor: TAVORIA.color.paperDeep },
+  header: { alignItems: "center", borderBottomColor: TAVORIA.color.border, borderBottomWidth: StyleSheet.hairlineWidth, flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 12 },
   back: { alignItems: "center", height: 32, justifyContent: "center", width: 32 },
-  title: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 24 },
+  title: { color: TAVORIA.color.navy, fontFamily: "InstrumentSerif_400Regular", fontSize: 24 },
   loading: { alignItems: "center", flex: 1, justifyContent: "center" },
-  content: { padding: 18, paddingBottom: 36 },
-  intro: { color: "#5D6670", fontSize: 14, lineHeight: 20, marginBottom: 22 },
-  label: { color: "#0E1A24", fontSize: 12, fontWeight: "800", marginBottom: 7 },
+  content: { alignSelf: "center", paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24, width: "100%" },
+  contentDesktop: { maxWidth: 840, paddingHorizontal: 24 },
+  intro: { color: TAVORIA.color.muted, fontSize: 14, lineHeight: 20, marginBottom: 22 },
+  statusCard: { alignItems: "center", borderRadius: TAVORIA.radius.medium, borderWidth: 1, flexDirection: "row", gap: 14, justifyContent: "space-between", marginBottom: 24, padding: 14 },
+  statusCardLive: { backgroundColor: "#EAF3DE", borderColor: "rgba(59,109,17,0.28)" },
+  statusCardPaused: { backgroundColor: TAVORIA.color.paper, borderColor: TAVORIA.color.borderStrong },
+  statusCopy: { flex: 1, minWidth: 0 },
+  statusLabel: { color: TAVORIA.color.navy, fontSize: 14, fontWeight: "800" },
+  statusHint: { color: TAVORIA.color.muted, fontSize: 12, lineHeight: 17, marginTop: 3 },
+  statusToggle: { alignItems: "center", borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, minHeight: 38, paddingHorizontal: 12 },
+  statusToggleLive: { backgroundColor: "#F5FAEE", borderColor: "#3B6D11" },
+  statusTogglePaused: { backgroundColor: TAVORIA.color.paperDeep, borderColor: TAVORIA.color.borderStrong },
+  statusToggleHovered: { backgroundColor: "rgba(14,26,36,0.08)" },
+  statusTogglePressed: { opacity: 0.72 },
+  statusDot: { borderRadius: 999, height: 8, width: 8 },
+  statusDotLive: { backgroundColor: "#3B6D11" },
+  statusDotPaused: { backgroundColor: "#6B7280" },
+  statusToggleText: { fontSize: 12, fontWeight: "800" },
+  statusToggleTextLive: { color: "#3B6D11" },
+  statusToggleTextPaused: { color: TAVORIA.color.muted },
+  label: { color: TAVORIA.color.navy, fontSize: 12, fontWeight: "800", marginBottom: 7 },
   optionGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 18 },
-  choice: { alignItems: "center", backgroundColor: "white", borderColor: "rgba(14,26,36,0.12)", borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 44, paddingHorizontal: 12, paddingVertical: 9 },
-  choiceOn: { backgroundColor: "#FFF0E7", borderColor: "#F0531C" },
-  choiceText: { color: "#46505A", fontSize: 13, fontWeight: "700" },
+  choice: { alignItems: "center", backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.small, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 44, paddingHorizontal: 12, paddingVertical: 9 },
+  choiceOn: { backgroundColor: TAVORIA.color.orangeSoft, borderColor: TAVORIA.color.orange },
+  choiceText: { color: TAVORIA.color.ink, fontSize: 13, fontWeight: "700" },
   choiceTextOn: { color: "#C2410C" },
   field: { marginBottom: 18 },
-  input: { backgroundColor: "white", borderColor: "rgba(14,26,36,0.12)", borderRadius: 13, borderWidth: 1, color: "#0E1A24", fontSize: 16, minHeight: 52, paddingHorizontal: 14 },
+  input: { backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.small, borderWidth: 1, color: TAVORIA.color.navy, fontSize: 16, minHeight: 50, paddingHorizontal: 14 },
   timeRow: { flexDirection: "row", gap: 10, marginBottom: 18 },
   timeField: { flex: 1 },
-  timeSelect: { alignItems: "center", backgroundColor: "white", borderColor: "rgba(14,26,36,0.12)", borderRadius: 13, borderWidth: 1, flexDirection: "row", justifyContent: "space-between", minHeight: 52, paddingHorizontal: 14 },
+  timeSelect: { alignItems: "center", backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.small, borderWidth: 1, flexDirection: "row", justifyContent: "space-between", minHeight: 50, paddingHorizontal: 14 },
   timeValue: { color: "#0E1A24", fontFamily: "DMMono_500Medium", fontSize: 16 },
   timePlaceholder: { color: "#9CA3AF" },
   unitRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  save: { alignItems: "center", backgroundColor: "#F0531C", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", marginTop: 28, minHeight: 54 },
-  saveDisabled: { opacity: 0.42 },
-  saveText: { color: "white", fontSize: 15, fontWeight: "800" },
   modalBackdrop: { backgroundColor: "rgba(14,26,36,0.42)", flex: 1, justifyContent: "flex-end" },
   timeSheet: { backgroundColor: "#F7F4EE", borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "72%", padding: 18 },
   sheetHead: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", marginBottom: 14 },

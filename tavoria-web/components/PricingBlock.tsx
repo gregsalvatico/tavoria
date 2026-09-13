@@ -1,18 +1,18 @@
 import Button from "./Button";
 
 const STAFF_ROWS = [
-  "Tavoria gratis fino al 2027",
+  "Tavoria sempre gratis",
   "Candidatura video in 30 secondi",
   "Contatto diretto col locale",
-  "Tutte le funzioni incluse fino al 2027",
+  "Nessuna commissione o trattenuta",
 ];
 
 const VENUE_ROWS = [
-  "Annunci illimitati",
-  "QR poster brandizzato",
+  "30 giorni gratis, senza carta all'iscrizione",
+  "Pubblica turni e ricevi fino a 3 candidature al mese gratis",
   "Video di ogni candidato",
-  "Verifica identità + diritto al lavoro",
-  "Tavoria Pro in arrivo",
+  "Pausa o disdetta libera",
+  "QR personalizzato incluso",
 ];
 
 function Check({ className = "" }: { className?: string }) {
@@ -62,11 +62,11 @@ export default function PricingBlock() {
           <span className="font-serif text-[72px] font-medium leading-none text-navy tnum sm:text-[88px]">
             Gratis
           </span>
-          <span className="font-serif text-2xl italic text-navy/70">fino al 2027.</span>
+            <span className="font-serif text-2xl italic text-navy/70">sempre.</span>
         </div>
 
         <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-mute">
-          Tavoria è gratis fino al 2027, senza costi o abbonamenti.
+          Per chi cerca lavoro, Tavoria è sempre gratis.
         </p>
 
         <ul className="mt-10 space-y-0">
@@ -106,15 +106,15 @@ export default function PricingBlock() {
 
         <div className="mt-8 flex items-baseline gap-3">
           <span className="font-serif text-[72px] font-medium leading-none text-cream tnum sm:text-[88px]">
-            Pro
+            19 €
           </span>
           <span className="font-serif text-xl italic text-cream/70">
-            in arrivo.
+            al mese.
           </span>
         </div>
 
         <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-cream/75">
-          Gratis fino al 2027. Tavoria Pro è in arrivo.
+          30 giorni gratis. I primi 100 Locali Fondatori restano gratis per sempre.
         </p>
 
         <ul className="mt-10 space-y-0">

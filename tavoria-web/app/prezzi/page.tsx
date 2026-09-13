@@ -5,18 +5,18 @@ import Button from "@/components/Button";
 import Section, { Divider } from "@/components/Section";
 
 export const metadata: Metadata = {
-  title: "Tavoria — Gratis fino al 2027",
+  title: "Tavoria — 19 € al mese per i locali",
   description:
-    "Tavoria è gratis fino al 2027. Tavoria Pro è in arrivo.",
+    "30 giorni gratis per i locali, poi 19 € al mese. Il piano gratuito resta disponibile.",
 };
 
 const VENUE_INCLUDED = [
   "QR personalizzato per il tuo locale",
-  "Turni illimitati",
-  "Candidature illimitate",
+  "Pubblica turni gratis",
+  "Fino a 3 candidature al mese gratis",
   "Video di tutti i candidati",
-  "Verifica identità e diritto al lavoro",
-  "Contatto diretto con gli assunti",
+  "30 giorni gratis, senza carta all'iscrizione",
+  "Pausa o disdetta libera",
 ];
 
 const STAFF_INCLUDED = [
@@ -24,7 +24,7 @@ const STAFF_INCLUDED = [
   "Candidature illimitate",
   "Notifiche quando ti scelgono",
   "Contatto diretto col locale",
-  "Tutte le funzioni incluse fino al 2027",
+  "Sempre gratis per chi cerca lavoro",
 ];
 
 export default function Prezzi() {
@@ -37,10 +37,10 @@ export default function Prezzi() {
           eyebrow="Tavoria"
           heading={
             <>
-              Gratis fino al 2027. <em className="italic">Per tutti.</em>
+              Un prezzo chiaro. <em className="italic">Più candidati.</em>
             </>
           }
-          lede="Gratis fino al 2027. Tavoria Pro è in arrivo."
+          lede="30 giorni gratis, poi 19 € al mese per i locali. Il piano gratuito resta sempre disponibile."
           centered
         />
 
@@ -56,10 +56,10 @@ export default function Prezzi() {
                 Tutto incluso.
               </p>
               <p className="mt-2 font-serif text-2xl italic text-navy/80">
-                Fino al 2027.
+                Sempre.
               </p>
               <p className="mt-6 text-base leading-relaxed text-mute">
-                Crea il tuo profilo, candidati e parla con i locali: è tutto incluso fino al 2027.
+                Crea il tuo profilo, candidati e parla con i locali: per chi cerca lavoro è sempre gratis.
               </p>
               <ul className="mt-8 space-y-3">
                 {STAFF_INCLUDED.map((item) => (
@@ -104,17 +104,17 @@ export default function Prezzi() {
             {/* Venue card */}
             <div className="relative rounded-3xl bg-navy p-10 text-cream shadow-xl">
               <span className="absolute -top-3 left-10 rounded-full bg-orange px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
-                GRATIS FINO AL 2027
+                30 GIORNI GRATIS
               </span>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brass">
                 Per i locali
               </p>
-              <p className="mt-6 font-serif text-5xl leading-none">Tutto incluso.</p>
+              <p className="mt-6 font-serif text-5xl leading-none">19 € al mese.</p>
               <p className="mt-2 font-serif text-xl italic text-cream/80">
-                Fino al 2027.
+                Dopo 30 giorni gratis.
               </p>
               <p className="mt-6 text-base leading-relaxed text-cream/80">
-                Gratis fino al 2027. Tavoria Pro è in arrivo.
+                Nessuna carta all&apos;iscrizione. I primi 100 Locali Fondatori restano gratis per sempre.
               </p>
               <ul className="mt-8 space-y-3">
                 {VENUE_INCLUDED.map((item) => (
@@ -167,10 +167,10 @@ export default function Prezzi() {
           heading="Oggi è tutto incluso."
         >
           <div className="grid gap-8 md:grid-cols-2">
-            <Info title="Fino a quando Tavoria è gratis?" body="Per tutti fino al 2027: staff e locali possono usare Tavoria senza costi." />
-            <Info title="Cosa succede dopo il 2027?" body="Tavoria Pro è in arrivo. Condivideremo gli eventuali cambiamenti prima che entrino in vigore." />
-            <Info title="Posso usare Tavoria già oggi?" body="Sì. Tutte le funzioni disponibili oggi sono incluse fino al 2027." />
-            <Info title="Ci sono pagamenti attivi?" body="No. Non ci sono pagamenti o abbonamenti attivi in questo momento." />
+            <Info title="Quanto costa per un locale?" body="Dopo 30 giorni gratis, Tavoria Pro costa 19 € al mese. Il piano gratuito resta disponibile." />
+            <Info title="Cosa include il piano gratuito?" body="Puoi pubblicare turni, ricevere fino a 3 candidature al mese e usare il QR del tuo locale senza pagare." />
+            <Info title="Serve una carta all'iscrizione?" body="No. La carta viene richiesta solo quando scegli di attivare Tavoria Pro dopo la prova gratuita." />
+            <Info title="Posso mettere in pausa o disdire?" body="Sì. Puoi mettere in pausa per uno o due mesi oppure disdire liberamente." />
           </div>
         </Section>
       </main>

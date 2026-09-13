@@ -22,9 +22,10 @@ import { t } from "../lib/i18n";
 import { getVenueProfile, patchVenueProfile } from "../lib/venueProfile";
 import { localizeRoles } from "../lib/positions";
 import AppBottomNav from "../components/AppBottomNav";
-import { mapsUrl, websiteLabel, websiteUrl } from "../lib/contact";
-import { openExternalLink } from "../lib/externalLinks";
-import { desktopButtonStyle } from "../lib/responsive";
+import { ListRow, ListSurface, PageContainer } from "../components/PagePrimitives";
+import VenueProfileHeader from "../components/VenueProfileHeader";
+import VenueScreenHeader from "../components/VenueScreenHeader";
+import { TAVORIA } from "../lib/designTokens";
 
 const VENUE_TYPE_PHOTOS: Record<string, any> = {
   cafe: require("../assets/venue-cafe.png"),
@@ -33,16 +34,6 @@ const VENUE_TYPE_PHOTOS: Record<string, any> = {
   hotel: require("../assets/venue-hotel.png"),
   club: require("../assets/venue-club.png"),
   beach_club: require("../assets/venue-beach.png"),
-};
-
-const DAY_LBL: Record<string, string> = {
-  mon: "Mon",
-  tue: "Tue",
-  wed: "Wed",
-  thu: "Thu",
-  fri: "Fri",
-  sat: "Sat",
-  sun: "Sun",
 };
 
 type ShiftRow = {
@@ -73,6 +64,9 @@ type VenueRow = {
   address?: string;
   website_url?: string;
   photo_url?: string;
+  photo_urls?: (string | null)[];
+  video_urls?: (string | null)[];
+  venue_style?: string;
 };
 
 export default function VenueShifts() {
@@ -94,6 +88,8 @@ export default function VenueShifts() {
           address: cached.address,
           website_url: cached.websiteUrl,
           photo_url: cached.photoUrl,
+          photo_urls: cached.photoUrls,
+          video_urls: cached.videoUrls,
         }
       : null;
   });
@@ -112,6 +108,9 @@ export default function VenueShifts() {
           address: remoteVenue.address as string | undefined,
           website_url: remoteVenue.website_url as string | undefined,
           photo_url: remoteVenue.photo_url as string | undefined,
+          photo_urls: remoteVenue.photo_urls as (string | null)[] | undefined,
+          video_urls: remoteVenue.video_urls as (string | null)[] | undefined,
+          venue_style: remoteVenue.venue_style as string | undefined,
         };
         setVenue(nextVenue);
         patchVenueProfile({
@@ -127,7 +126,7 @@ export default function VenueShifts() {
       const rows = await getCurrentVenueShifts(localVenueId);
       setShifts(rows as unknown as ShiftRow[]);
     } catch (e: any) {
-      setErrorMsg(e?.message ?? "Could not load shifts.");
+      setErrorMsg(e?.message ?? t("shift_detail.load_error"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -142,6 +141,15 @@ export default function VenueShifts() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+      <PageContainer>
+        <VenueScreenHeader
+          title={t("home_in.my_shifts")}
+          active="shifts"
+          onRefresh={() => { setRefreshing(true); void load(); }}
+          refreshable={!loading}
+          refreshing={refreshing}
+        />
+      </PageContainer>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
@@ -168,7 +176,7 @@ export default function VenueShifts() {
           </View>
         ) : (
           <>
-            {venue ? <VenueSummary venue={venue} isDesktop={isDesktop} onEdit={() => router.push("/venue-edit")} /> : null}
+            {venue ? <VenueSummary venue={venue} onEdit={() => router.push("/venue-edit")} /> : null}
             <Pressable
               onPress={() => router.push("/venue-photo")}
               style={styles.postShiftCard}
@@ -178,10 +186,12 @@ export default function VenueShifts() {
                 <Feather name="plus" size={19} color="#F0531C" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.postShiftTitle}>{t("home_in.post_shift")}</Text>
-                <Text style={styles.postShiftText}>Add a new opening for your venue</Text>
+                <View style={styles.postShiftTitleRow}>
+                  <Text style={styles.postShiftTitle}>{t("home_in.post_shift")}</Text>
+                  <Feather name="arrow-up-right" size={16} color="#F0531C" />
+                </View>
+                <Text style={styles.postShiftText}>{t("venue_shifts.empty_sub")}</Text>
               </View>
-              <Feather name="arrow-up-right" size={19} color="#F0531C" />
             </Pressable>
 
             {shifts.length === 0 ? (
@@ -190,9 +200,9 @@ export default function VenueShifts() {
                 <Text style={styles.emptyInlineTitle}>{t("venue_shifts.empty_title")}</Text>
               </View>
             ) : (
-              <View style={isDesktop && styles.desktopGrid}>
-                {shifts.map((s) => <ShiftRowItem key={s.id} row={s} router={router} isDesktop={isDesktop} />)}
-              </View>
+              <ListSurface style={styles.shiftList}>
+                {shifts.map((s, index) => <ShiftRowItem key={s.id} row={s} router={router} isDesktop={isDesktop} last={index === shifts.length - 1} />)}
+              </ListSurface>
             )}
           </>
         )}
@@ -202,72 +212,20 @@ export default function VenueShifts() {
   );
 }
 
-function VenueSummary({ venue, isDesktop, onEdit }: { venue: VenueRow; isDesktop: boolean; onEdit: () => void }) {
-  const image = venue.photo_url
-    ? { uri: venue.photo_url }
-    : VENUE_TYPE_PHOTOS[(venue.type || "cafe").toLowerCase()] ?? VENUE_TYPE_PHOTOS.cafe;
-  const venueWebsite = websiteUrl(venue.website_url);
-  const venueWebsiteLabel = websiteLabel(venue.website_url);
-
-  return (
-    <>
-    <View style={styles.hero}>
-      <Image source={image} style={styles.heroImg} resizeMode="cover" />
-      <View style={styles.heroOverlay} />
-      <View style={styles.heroTextWrap}>
-        <Text style={styles.heroName} numberOfLines={1}>{venue.name || "Your venue"}</Text>
-        <View style={styles.heroMetaRow}>
-          {venue.type ? <Text style={styles.heroMeta}>{venue.type}</Text> : null}
-          {venue.type && venue.city ? <Text style={styles.heroMetaDot}>·</Text> : null}
-          {venue.city ? (
-            <>
-              <Feather name="map-pin" size={12} color="rgba(255,255,255,0.85)" />
-              <Text style={styles.heroMeta}>{venue.city}</Text>
-            </>
-          ) : null}
-        </View>
-      </View>
-    </View>
-      {(venue.address || venueWebsite) ? (
-        <View style={styles.venueLinksCard}>
-          {venue.address ? (
-            <Pressable style={styles.venueLinkRow} onPress={() => void openExternalLink(mapsUrl(venue.address!), t("external_link.maps"))}>
-              <View style={styles.venueLinkIcon}><Feather name="map-pin" size={16} color="#F0531C" /></View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.venueLinkLabel}>{t("venue_card.directions")}</Text>
-                <Text style={styles.venueLinkText} numberOfLines={1}>{venue.address}</Text>
-              </View>
-              <Feather name="arrow-up-right" size={17} color="#F0531C" />
-            </Pressable>
-          ) : null}
-          {venueWebsite ? (
-            <Pressable style={[styles.venueLinkRow, venue.address && styles.venueLinkDivider]} onPress={() => void openExternalLink(venueWebsite, t("venue_card.website"))}>
-              <View style={styles.venueLinkIcon}><Feather name="globe" size={16} color="#F0531C" /></View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.venueLinkLabel}>{t("venue_card.website")}</Text>
-                <Text style={styles.venueLinkText} numberOfLines={1}>{venueWebsiteLabel}</Text>
-              </View>
-              <Feather name="arrow-up-right" size={17} color="#F0531C" />
-            </Pressable>
-          ) : null}
-        </View>
-      ) : null}
-      <Pressable style={[styles.editVenueButton, isDesktop && desktopButtonStyle]} onPress={onEdit}>
-        <Feather name="edit-2" size={15} color="#0E1A24" />
-        <Text style={styles.editVenueText}>Edit profile</Text>
-      </Pressable>
-    </>
-  );
+function VenueSummary({ venue, onEdit }: { venue: VenueRow; onEdit: () => void }) {
+  return <VenueProfileHeader venue={venue} onEdit={onEdit} />;
 }
 
 function ShiftRowItem({
   row,
   router,
   isDesktop,
+  last,
 }: {
   row: ShiftRow;
   router: ReturnType<typeof useRouter>;
   isDesktop: boolean;
+  last: boolean;
 }) {
   const photo = row.venue?.photo_url
     ? { uri: row.venue.photo_url }
@@ -276,13 +234,13 @@ function ShiftRowItem({
 
   const isUrgent =
     row.start_when === "now" || row.start_when === "asap";
-  const roleStr = localizeRoles(row.roles ?? []).slice(0, 2).join(" · ") || "Shift";
+  const roleStr = localizeRoles(row.roles ?? []).slice(0, 2).join(" · ") || t("shift_detail.default_shift");
   const payStr =
     row.pay_amount && row.pay_unit
       ? `€${row.pay_amount}/${row.pay_unit}`
-      : "—";
+      : t("shift_detail.pay_discussed");
   const whenStr = (() => {
-    if (isUrgent) return row.start_when === "now" ? "Now" : "ASAP";
+    if (isUrgent) return row.start_when === "now" ? t("shift_detail.need_now_banner") : t("shift_filters.asap");
     if (row.start_date) {
       const d = new Date(row.start_date);
       const today = new Date();
@@ -290,30 +248,31 @@ function ShiftRowItem({
         d.getFullYear() === today.getFullYear() &&
         d.getMonth() === today.getMonth() &&
         d.getDate() === today.getDate();
-      if (sameDay) return "Today";
+      if (sameDay) return t("shift_filters.today");
       return d.toLocaleDateString([], {
         day: "numeric",
         month: "short",
       });
     }
-    return (row.days ?? []).map((d) => DAY_LBL[d] || d).join(" · ") || "—";
+    return (row.days ?? []).map(dayLabel).join(" · ") || "—";
   })();
 
   return (
-    <Pressable
+    <ListRow
+      label={roleStr}
+      last={last}
       onPress={() =>
         router.push({ pathname: "/shift-detail", params: { id: row.id } })
       }
-      style={[styles.row, isDesktop && styles.rowDesktop]}
     >
-      <Image source={photo} style={styles.thumb} resizeMode="cover" />
+      <Image source={photo} style={[styles.thumb, isDesktop && styles.thumbDesktop]} resizeMode="cover" />
       {isUrgent && (
         <View style={styles.urgentDot}>
           <Feather name="zap" size={10} color="white" />
         </View>
       )}
-      <View style={{ flex: 1 }}>
-        <Text style={styles.role} numberOfLines={1}>
+      <View style={styles.rowBody}>
+        <Text style={[styles.role, isDesktop && styles.roleDesktop]} numberOfLines={1}>
           {roleStr}
         </Text>
         <View style={styles.metaRow}>
@@ -324,15 +283,19 @@ function ShiftRowItem({
         </View>
       </View>
       <Feather name="chevron-right" size={18} color="#9CA3AF" />
-    </Pressable>
+    </ListRow>
   );
 }
 
+function dayLabel(day: string) {
+  const value = t(`shift_detail.days_short.${day}`);
+  return value && !value.includes(".") ? value : day;
+}
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F1EFE8" },
-  scroll: { paddingBottom: 20, paddingHorizontal: 14, paddingTop: 10 },
-  scrollDesktop: { paddingHorizontal: 24 },
-  desktopGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  safe: { flex: 1, backgroundColor: TAVORIA.color.paperDeep },
+  scroll: { paddingBottom: 20, paddingHorizontal: 16, paddingTop: 10 },
+  scrollDesktop: { alignSelf: "center", maxWidth: 1180, paddingHorizontal: 24, width: "100%" },
 
   loadingWrap: { paddingVertical: 60, alignItems: "center" },
   fullWidthState: { width: "100%" },
@@ -354,27 +317,17 @@ const styles = StyleSheet.create({
   venueLinkText: { color: "#0E1A24", fontSize: 13, fontWeight: "700", marginTop: 2 },
   editVenueButton: { alignItems: "center", backgroundColor: "white", borderColor: "rgba(14,26,36,0.14)", borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, justifyContent: "center", marginBottom: 12, minHeight: 46, paddingHorizontal: 16 },
   editVenueText: { color: "#0E1A24", fontSize: 13, fontWeight: "800" },
-  postShiftCard: { alignItems: "center", backgroundColor: "#FFF8F4", borderColor: "#F0531C", borderRadius: 14, borderStyle: "dashed", borderWidth: 1.5, flexDirection: "row", gap: 11, marginBottom: 18, padding: 12 },
-  postShiftIcon: { alignItems: "center", backgroundColor: "#FFF0E7", borderRadius: 12, height: 44, justifyContent: "center", width: 44 },
-  postShiftTitle: { color: "#0E1A24", fontSize: 15, fontWeight: "800" },
+  postShiftCard: { alignItems: "center", backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.medium, borderWidth: 1, flexDirection: "row", gap: 11, marginBottom: 18, minHeight: 68, paddingHorizontal: 14 },
+  postShiftIcon: { alignItems: "center", backgroundColor: "#FFE1CE", borderRadius: TAVORIA.radius.small, height: 44, justifyContent: "center", width: 44 },
+  postShiftTitle: { color: TAVORIA.color.navy, fontSize: 15, fontWeight: "800" },
+  postShiftTitleRow: { alignItems: "center", flexDirection: "row", gap: 5 },
   postShiftText: { color: "#6B7280", fontSize: 11, marginTop: 3 },
+  shiftList: { marginBottom: 20 },
   emptyInline: { alignItems: "center", backgroundColor: "white", borderColor: "rgba(14,26,36,0.08)", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 11, padding: 14 },
   emptyInlineTitle: { color: "#0E1A24", fontSize: 14, fontWeight: "800" },
 
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: "white",
-    padding: 12,
-    borderRadius: 14,
-    marginBottom: 8,
-    borderWidth: 0.5,
-    borderColor: "rgba(0,0,0,0.08)",
-    position: "relative",
-  },
-  rowDesktop: { marginBottom: 0, width: "48.8%" },
-  thumb: { width: 60, height: 60, borderRadius: 12 },
+  thumb: { backgroundColor: "#E5E5E0", borderRadius: 14, height: 72, width: 64 },
+  thumbDesktop: { borderRadius: 14, height: 72, width: 64 },
   urgentDot: {
     position: "absolute",
     top: 6,
@@ -387,8 +340,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 5,
   },
-  role: {
-    fontFamily: "InstrumentSerif_400Regular", fontSize: 15, fontWeight: "400", color: "#0E1A24" },
+  rowBody: { flex: 1, gap: 5, minWidth: 0 },
+  role: { color: TAVORIA.color.navy, fontSize: 16, fontWeight: "700" },
+  roleDesktop: { fontSize: 16 },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",

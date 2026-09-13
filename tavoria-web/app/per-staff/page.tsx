@@ -8,7 +8,7 @@ import StepCard from "@/components/StepCard";
 export const metadata: Metadata = {
   title: "Per staff — Trova lavoro in sala, bar o cucina a Milano",
   description:
-    "Niente CV. Niente settimane di attesa. Scansiona un QR, registra 30 secondi di video, ti chiamano lo stesso giorno. Gratis fino al 2027.",
+    "Niente CV. Niente settimane di attesa. Scansiona un QR, registra 30 secondi di video, ti chiamano lo stesso giorno. Sempre gratis.",
 };
 
 const STEPS = [
@@ -31,8 +31,8 @@ const STEPS = [
 
 const PERKS = [
   {
-    title: "Gratis fino al 2027",
-    body: "Crea il profilo e trova lavoro senza costi fino al 2027.",
+    title: "Sempre gratis",
+    body: "Crea il profilo e trova lavoro senza costi.",
   },
   {
     title: "Niente CV",
@@ -150,7 +150,7 @@ export default function PerStaff() {
               Crea il mio profilo →
             </Button>
             <p className="text-sm text-mute">
-              Gratis fino al 2027. Solo persone reali, solo lavoro reale.
+              Sempre gratis. Solo persone reali, solo lavoro reale.
             </p>
           </div>
         </Section>

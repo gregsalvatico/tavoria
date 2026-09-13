@@ -4,6 +4,8 @@ import { useState } from "react";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
+import ActionButton from "../components/ActionButton";
+import { FlowTopBar } from "../components/PagePrimitives";
 import { patchVenueProfile } from "../lib/venueProfile";
 import {
   Image,
@@ -83,27 +85,20 @@ export default function VenueType() {
   const router = useRouter();
   const isDesktop = useIsDesktop();
   const [picked, setPicked] = useState<string | null>(null);
-
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => {
-            if (router.canGoBack()) { router.back(); return; }
-            router.replace("/");
-          }}
-          hitSlop={12}
-          style={styles.iconBtn}
-        >
-          <Feather name="chevron-left" size={26} color="#0E1A24" />
-        </Pressable>
-        <ProgressDots step={0} total={4} />
-        <View style={{ width: 32 }} />
-      </View>
+      <FlowTopBar
+        onBack={() => {
+          if (router.canGoBack()) { router.back(); return; }
+          router.replace("/");
+        }}
+        step={0}
+        total={4}
+      />
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[styles.container, isDesktop && styles.containerDesktop]}
         showsVerticalScrollIndicator={false}
       >
         <Text style={[styles.sub, { textAlign: "center", marginTop: 4 }]}>
@@ -157,18 +152,17 @@ export default function VenueType() {
         </View>
       </ScrollView>
       <StickyFooter desktopRow fullBleed backgroundColor="#F7F4EE">
-        <Pressable
+        <ActionButton
+          label={t("common.continue")}
+          icon="arrow-right"
           disabled={!picked}
           onPress={() => {
             const chosen = TYPES.find((x) => x.id === picked);
             if (chosen) patchVenueProfile({ type: chosen.label });
             router.push("/venue-info");
           }}
-          style={[styles.cta, isDesktop && desktopButtonStyle, !picked && styles.ctaDisabled]}
-        >
-          <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
-          <Feather name="arrow-right" size={20} color="#F7F4EE" />
-        </Pressable>
+          style={styles.fullWidthButton}
+        />
       </StickyFooter>
     </SafeAreaView>
   );
@@ -209,7 +203,8 @@ const styles = StyleSheet.create({
   },
   progDotActive: { backgroundColor: "#0E1A24" },
 
-  container: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 },
+  container: { flexGrow: 1, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 },
+  containerDesktop: { alignSelf: "center", maxWidth: 840, paddingHorizontal: 24, width: "100%" },
   h1: {
     fontFamily: "InstrumentSerif_400Regular",
     fontSize: 30,
@@ -308,9 +303,13 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: "#F0531C",
     borderRadius: 999,
-    paddingVertical: 18,
+    height: 44,
+    maxHeight: 44,
+    minHeight: 44,
+    paddingHorizontal: 16,
     width: "100%",
   },
   ctaDisabled: { backgroundColor: "rgba(11,15,26,0.15)" },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
+  fullWidthButton: { width: "100%" },
 });

@@ -3,6 +3,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Modal,
   Platform,
@@ -18,20 +19,30 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   getDiscoverShifts,
   getDiscoverWorkers,
+  getDiscoverShiftsPage,
   getAppliedShiftIdsForCurrentWorker,
   getAppliedWorkerIdsForVenue,
+  type DiscoverCursor,
   type WorkerStatusCounts,
 } from "../lib/db";
 import { LANGUAGES, type Language, t } from "../lib/i18n";
 import { localizeRoles } from "../lib/positions";
 import { openExternalLink } from "../lib/externalLinks";
 import AppBottomNav from "./AppBottomNav";
-import FilterChips from "./FilterChips";
+import WorkerDirectory from "./WorkerDirectory";
+import FilterChips, { FilterToggleChip } from "./FilterChips";
+import { FilterBar, ListRow, ListSurface, PageContainer, PageHeader, RefreshIconButton } from "./PagePrimitives";
+import SheetModal from "./SheetModal";
+import PreviewMedia from "./PreviewMedia";
 import {
   matchesShiftTime,
   getShiftTimeFilters,
   type ShiftTimeFilter,
 } from "../lib/shiftFilters";
+import { TAVORIA } from "../lib/designTokens";
+import { getAccountMenuSections } from "../lib/accountNavigation";
+import { applyToShift } from "../lib/applyShift";
+import ActionButton from "./ActionButton";
 
 const VENUE_TYPE_PHOTOS: Record<string, number> = {
   cafe: require("../assets/venue-cafe.png"),
@@ -59,12 +70,15 @@ type AccountContext = {
 
 type ShiftRow = {
   id: string;
+  venue_id?: string;
   roles?: string[];
   pay_amount?: number;
   pay_unit?: string;
   days?: string[];
   start_when?: string;
   start_date?: string;
+  hours_start?: string;
+  hours_end?: string;
   status?: string;
   venue?: {
     id?: string;
@@ -72,6 +86,8 @@ type ShiftRow = {
     type?: string;
     city?: string;
     photo_url?: string;
+    photo_urls?: (string | null)[];
+    video_urls?: (string | null)[];
   };
 };
 
@@ -92,10 +108,10 @@ type CandidateFilter = "all" | "applied" | "not_applied";
 
 type Props = {
   ctx: AccountContext;
+  activeRole?: "worker" | "venue";
   lang: Language;
   pendingCount: number;
   workerCounts: WorkerStatusCounts;
-  proEligible: boolean;
   onChangeLanguage: (language: Language) => Promise<void>;
   onPrintQr: () => Promise<void>;
   onShare: () => void | Promise<void>;
@@ -104,10 +120,10 @@ type Props = {
 
 export default function SignedInHome({
   ctx,
+  activeRole,
   lang,
   pendingCount,
   workerCounts,
-  proEligible,
   onChangeLanguage,
   onPrintQr,
   onShare,
@@ -129,16 +145,24 @@ export default function SignedInHome({
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
   const [candidateFilter, setCandidateFilter] = useState<CandidateFilter>("all");
   const [appliedWorkerIds, setAppliedWorkerIds] = useState<Set<string>>(new Set());
+  const [selectedShift, setSelectedShift] = useState<ShiftRow | null>(null);
+  const [applyingShift, setApplyingShift] = useState(false);
+  const [shiftCursor, setShiftCursor] = useState<DiscoverCursor | null>(null);
+  const [loadingMoreShifts, setLoadingMoreShifts] = useState(false);
+  const [shiftLoadMoreError, setShiftLoadMoreError] = useState("");
 
-  const venueMode = ctx.hasVenue;
+  const venueMode = activeRole === "venue" || (activeRole !== "worker" && ctx.hasVenue);
   const displayName = venueMode
     ? ctx.venueName || t("home_in.continue_venue")
     : ctx.workerName || t("home_in.continue_worker");
   const city = venueMode ? ctx.venueCity : ctx.workerCity;
   const photoUrl = venueMode ? ctx.venuePhotoUrl : ctx.workerPhotoUrl;
+  const accountMenu = getAccountMenuSections(venueMode ? "venue" : "worker");
 
   const load = useCallback(async () => {
+    if (venueMode) return;
     setErrorMsg(null);
+    setShiftLoadMoreError("");
     try {
       if (venueMode) {
         const [result, appliedWorkerIds] = await Promise.all([
@@ -149,19 +173,38 @@ export default function SignedInHome({
         setAppliedWorkerIds(new Set(appliedWorkerIds));
       } else {
         const [result, applied] = await Promise.all([
-          getDiscoverShifts(),
+          getDiscoverShiftsPage(),
           getAppliedShiftIdsForCurrentWorker().catch(() => []),
         ]);
-        setRows(result as ShiftRow[]);
+        setRows(result.rows as ShiftRow[]);
+        setShiftCursor(result.nextCursor);
         setAppliedIds(new Set(applied));
       }
     } catch (error: any) {
-      setErrorMsg(error?.message ?? "Could not load shifts.");
+      setErrorMsg(error?.message ?? t("shift_detail.load_error"));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, [ctx.venueId, venueMode]);
+
+  const loadMoreShifts = useCallback(async () => {
+    if (venueMode || loading || loadingMoreShifts || !shiftCursor) return;
+    setLoadingMoreShifts(true);
+    setShiftLoadMoreError("");
+    try {
+      const page = await getDiscoverShiftsPage(shiftCursor);
+      setRows((current) => {
+        const existing = new Set(current.map((row) => row.id));
+        return [...current, ...((page.rows as ShiftRow[]).filter((row) => !existing.has(row.id)))];
+      });
+      setShiftCursor(page.nextCursor);
+    } catch (error: any) {
+      setShiftLoadMoreError(error?.message ?? t("shift_detail.load_error"));
+    } finally {
+      setLoadingMoreShifts(false);
+    }
+  }, [loading, loadingMoreShifts, shiftCursor, venueMode]);
 
   useFocusEffect(
     useCallback(() => {
@@ -172,6 +215,36 @@ export default function SignedInHome({
   const go = (path: string) => {
     setDrawerOpen(false);
     router.push(path as never);
+  };
+
+  const applySelectedShift = async () => {
+    if (!selectedShift) return;
+    setApplyingShift(true);
+    try {
+      const result = await applyToShift(selectedShift);
+      if (result.kind === "existing") {
+        setAppliedIds((current) => new Set(current).add(selectedShift.id));
+        return;
+      }
+      setSelectedShift(null);
+      if (result.kind === "created") {
+        router.replace({ pathname: "/applied", params: { venueName: result.venueName } });
+        return;
+      }
+      router.push({
+        pathname: "/signup",
+        params: {
+          next: "apply",
+          shiftId: result.shiftId,
+          venueId: result.venueId,
+          venueName: result.venueName,
+        },
+      });
+    } catch (error: any) {
+      Alert.alert(t("shift_detail.apply_error_title"), error?.message ?? t("shift_detail.apply_error_body"));
+    } finally {
+      setApplyingShift(false);
+    }
   };
 
   const visibleRows = useMemo(() => {
@@ -217,75 +290,100 @@ export default function SignedInHome({
     </View>
   );
 
+  const shiftPreview = <ShiftPreview
+    row={selectedShift}
+    desktop={isDesktop}
+    applied={selectedShift ? appliedIds.has(selectedShift.id) : false}
+    applying={applyingShift}
+    onClose={() => setSelectedShift(null)}
+    onApply={() => void applySelectedShift()}
+    onOpen={() => {
+      if (!selectedShift) return;
+      const id = selectedShift.id;
+      setSelectedShift(null);
+      router.push({ pathname: "/shift-detail", params: { id } });
+    }}
+  />;
+
+  if (venueMode) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#F7F7F2" }}>
+        <WorkerDirectory embedded />
+        <AppBottomNav role="venue" active="home" badge={pendingCount} />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={[styles.safe, isDesktop && styles.safeDesktop]} edges={["top", "bottom"]}>
-      <View style={[styles.header, isDesktop && styles.headerDesktop]}>
-        {isDesktop ? <View style={{ width: 44 }} /> : (
-          <Pressable
-            onPress={() => setDrawerOpen(true)}
-            hitSlop={8}
-            accessibilityLabel="Open account menu"
-          >
-            {avatar}
-          </Pressable>
-        )}
-        <Text style={styles.wordmark}>
-          <Text style={styles.accent}>T</Text>avoria<Text style={styles.accent}>.</Text>
-        </Text>
-        <View style={{ width: 44 }} />
-      </View>
+      <View style={[styles.workspace, isDesktop && styles.workspaceDesktop]}>
+      <View style={[styles.mainColumn, isDesktop && styles.mainColumnDesktop]}>
+      <PageContainer>
+        <PageHeader
+          title={t("home_in.browse_shifts")}
+          left={
+            <Pressable
+              onPress={() => setDrawerOpen(true)}
+              hitSlop={10}
+              accessibilityLabel="Open account menu"
+              accessibilityRole="button"
+              style={({ hovered, pressed }) => [
+                styles.headerIconButton,
+                hovered && styles.headerIconButtonHovered,
+                pressed && styles.headerIconButtonPressed,
+              ]}
+            >
+              <Feather name="menu" size={21} color={TAVORIA.color.navy} />
+            </Pressable>
+          }
+          right={null}
+        />
+      </PageContainer>
 
-      <View style={[styles.feedHeading, isDesktop && styles.feedHeadingDesktop]}>
-        <View>
-          <Text style={styles.feedKicker}>
-            {venueMode ? t("auth_pin.role_venue") : t("auth_pin.role_worker")}
-          </Text>
-          <Text style={styles.feedTitle}>
-            {venueMode ? t("home_in.browse_workers") : t("home_in.browse_shifts")}
-          </Text>
-        </View>
-        <View style={styles.headingActions}>
-          {!venueMode ? (
+      {venueMode ? <WorkerDirectory embedded /> : <>
+      <FilterBar
+        trailing={
+          <View style={styles.filterActions}>
             <QuickFilter
               active={hideApplied}
               icon="check-circle"
               label={t("shift_filters.hide_applied")}
               onPress={() => setHideApplied((value) => !value)}
+              desktop={isDesktop}
             />
-          ) : null}
-          <Pressable
-            onPress={() => {
-              setRefreshing(true);
-              void load();
-            }}
-            style={styles.refreshBtn}
-            hitSlop={8}
-          >
-            <Feather name="refresh-cw" size={18} color="#0E1A24" />
-          </Pressable>
-        </View>
-      </View>
-
-      {venueMode ? (
-        <FilterChips
-          options={candidateFilterOptions}
-          value={candidateFilter}
-          onChange={setCandidateFilter}
-          desktop={isDesktop}
-        />
-      ) : (
+            {!loading ? (
+              <RefreshIconButton
+                label={t("talent.retry")}
+                loading={refreshing}
+                onPress={() => {
+                  setRefreshing(true);
+                  void load();
+                }}
+              />
+            ) : null}
+          </View>
+        }
+      >
         <FilterChips
           options={getShiftTimeFilters()}
           value={timeFilter}
           onChange={setTimeFilter}
           desktop={isDesktop}
+          contained
         />
-      )}
+      </FilterBar>
 
       <ScrollView
         style={styles.feed}
         contentContainerStyle={[styles.feedContent, isDesktop && styles.feedContentDesktop]}
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={250}
+        onScroll={(event) => {
+          const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+          if (contentOffset.y + layoutMeasurement.height >= contentSize.height - 480) {
+            void loadMoreShifts();
+          }
+        }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -303,7 +401,7 @@ export default function SignedInHome({
         ) : errorMsg ? (
           <View style={styles.stateWrap}>
             <Feather name="alert-circle" size={30} color="#B91C1C" />
-            <Text style={styles.stateTitle}>Could not load shifts</Text>
+            <Text style={styles.stateTitle}>{t("shift_detail.load_error")}</Text>
             <Text style={styles.stateText}>{errorMsg}</Text>
           </View>
         ) : venueMode && candidateRows.length === 0 ? (
@@ -319,8 +417,8 @@ export default function SignedInHome({
             <View style={styles.emptyIcon}>
               <Feather name="users" size={28} color="#F0531C" />
             </View>
-            <Text style={styles.stateTitle}>No workers in this filter</Text>
-            <Text style={styles.stateText}>Try another filter to see more candidates.</Text>
+            <Text style={styles.stateTitle}>{t("talent.filteredTitle")}</Text>
+            <Text style={styles.stateText}>{t("talent.filteredSub")}</Text>
           </View>
         ) : !venueMode && visibleRows.length === 0 ? (
           <View style={styles.stateWrap}>
@@ -328,54 +426,66 @@ export default function SignedInHome({
               <Feather name="briefcase" size={28} color="#F0531C" />
             </View>
             <Text style={styles.stateTitle}>
-              {venueMode ? t("venue_shifts.empty_title") : "No shifts right now"}
+              {venueMode ? t("venue_shifts.empty_title") : t("home_in.no_shifts_title")}
             </Text>
             <Text style={styles.stateText}>
               {venueMode
-                ? "Open the account menu to post your first shift."
-                : "Pull down to refresh. New shifts appear here."}
+                ? t("venue_shifts.empty_sub")
+                : t("home_in.no_shifts_sub")}
             </Text>
           </View>
         ) : venueMode ? (
+          <ListSurface>
           <View style={isDesktop && styles.desktopGrid}>
-            {visibleCandidateRows.map((worker) => (
+            {visibleCandidateRows.map((worker, index) => (
               <HomeCandidateRow
                 key={worker.id}
                 worker={worker}
+                last={index === visibleCandidateRows.length - 1}
                 onOpen={() =>
                   router.push({ pathname: "/candidate", params: { workerId: worker.id } })
                 }
-                isDesktop={isDesktop}
               />
             ))}
           </View>
+          </ListSurface>
         ) : (
-          <View style={isDesktop && styles.desktopGrid}>
-            {visibleRows.map((row) => (
-              <HomeShiftRow
-                key={row.id}
-                row={row}
-                venueMode={venueMode}
-                onOpen={() => {
-                  router.push({ pathname: "/shift-detail", params: { id: row.id } });
-                }}
-                onOpenVenue={() => {
-                  if (row.venue?.id) {
-                    router.push({ pathname: "/venue-board", params: { venueId: row.venue.id } });
-                  }
-                }}
-                isDesktop={isDesktop}
-              />
-            ))}
-          </View>
+          <ListSurface>
+            <View style={isDesktop && styles.desktopGrid}>
+              {visibleRows.map((row, index) => (
+                <HomeShiftRow
+                  key={row.id}
+                  row={row}
+                  last={index === visibleRows.length - 1}
+                  venueMode={venueMode}
+                  onOpen={() => {
+                    setSelectedShift(row);
+                  }}
+                  onOpenVenue={() => {
+                    if (row.venue?.id) {
+                      router.push({ pathname: "/venue-board", params: { venueId: row.venue.id } });
+                    }
+                  }}
+                />
+              ))}
+            </View>
+          </ListSurface>
         )}
+        {loadingMoreShifts ? <ActivityIndicator color="#F0531C" style={styles.loadMore} /> : null}
+        {shiftLoadMoreError ? <Pressable style={styles.loadMoreRetry} onPress={() => void loadMoreShifts()}><Text style={styles.loadMoreRetryText}>{t("talent.retry")}</Text></Pressable> : null}
       </ScrollView>
 
+      </>}
+      </View>
+      {isDesktop ? shiftPreview : null}
+      </View>
       <AppBottomNav
         role={venueMode ? "venue" : "worker"}
         active="home"
         badge={venueMode ? pendingCount : workerCounts.newTotal}
       />
+
+      {!isDesktop ? shiftPreview : null}
 
       <Modal
         visible={drawerOpen}
@@ -406,57 +516,24 @@ export default function SignedInHome({
               {ctx.hasVenue && (
                 <DrawerSection>
                   <DrawerAction icon="printer" label={t("home_in.print_qr")} onPress={() => { setDrawerOpen(false); void onPrintQr(); }} />
-                  <DrawerAction icon="share-2" label={t("home_in.share_gigi")} onPress={() => { setDrawerOpen(false); void onShare(); }} />
-                  <DrawerAction icon="compass" label={t("how_it_works.drawer_title")} detail={t("how_it_works.drawer_venue_detail")} onPress={() => go("/how-it-works?role=venue")} />
+                  {accountMenu.roleActions.map((item) => <DrawerAction key={item.id} icon={item.icon} label={t(item.labelKey)} detail={item.detailKey ? t(item.detailKey) : undefined} onPress={() => { setDrawerOpen(false); if (item.id === "share") void onShare(); }} />)}
                 </DrawerSection>
               )}
 
               {ctx.hasWorker && (
                 <DrawerSection>
                   <DrawerAction icon="maximize" label={t("home.scan_qr")} onPress={() => go("/scan")} />
-                  <DrawerAction icon="share-2" label={t("home_in.share_profile")} onPress={() => { setDrawerOpen(false); void onShare(); }} />
-                  <DrawerAction icon="compass" label={t("how_it_works.drawer_title")} detail={t("how_it_works.drawer_worker_detail")} onPress={() => go("/how-it-works?role=worker")} />
+                  {accountMenu.roleActions.map((item) => <DrawerAction key={item.id} icon={item.icon} label={t(item.labelKey)} detail={item.detailKey ? t(item.detailKey) : undefined} onPress={() => { setDrawerOpen(false); if (item.id === "share") void onShare(); }} />)}
                 </DrawerSection>
               )}
 
-              {ctx.hasVenue && proEligible && (
-                <Pressable style={styles.proCard} onPress={() => go("/venue-pro")}>
-                  <View style={styles.proTopRow}>
-                    <View style={styles.proBadge}>
-                      <Feather name="star" size={11} color="#F7F4EE" />
-                      <Text style={styles.proBadgeText}>{t("venue_pro.kicker")}</Text>
-                    </View>
-                    <Feather name="arrow-up-right" size={18} color="#F0531C" />
-                  </View>
-                  <Text style={styles.proTitle}>{t("venue_pro.title")}</Text>
-                  <Text style={styles.proText}>{t("venue_pro.sub")}</Text>
-                </Pressable>
-              )}
-
               <DrawerSection>
-                <DrawerAction
-                  icon="globe"
-                  label={t("language.pick")}
-                  detail={lang.toUpperCase()}
-                  onPress={() => {
-                    setDrawerOpen(false);
-                    setLanguageOpen(true);
-                  }}
-                />
-                <DrawerAction
-                  icon="key"
-                  label={t("change_pin.drawer")}
-                  detail={t("change_pin.drawer_detail")}
-                  onPress={() => go("/change-pin")}
-                />
-                <DrawerAction
-                  icon="mail"
-                  label={t("team_contact.title")}
-                  onPress={() => {
-                    setDrawerOpen(false);
-                    setContactOpen(true);
-                  }}
-                />
+                {accountMenu.commonActions.map((item) => <DrawerAction key={item.id} icon={item.icon} label={t(item.labelKey)} detail={item.id === "language" ? lang.toUpperCase() : item.detailKey ? t(item.detailKey) : undefined} onPress={() => {
+                  setDrawerOpen(false);
+                  if (item.id === "language") setLanguageOpen(true);
+                  else if (item.id === "change_pin") go("/change-pin");
+                  else setContactOpen(true);
+                }} />)}
                 <DrawerAction icon="log-out" label={t("common.sign_out")} danger onPress={() => { setDrawerOpen(false); void onSignOut(); }} />
               </DrawerSection>
             </ScrollView>
@@ -560,18 +637,15 @@ function QuickFilter({
   icon,
   label,
   onPress,
+  desktop,
 }: {
   active: boolean;
   icon: keyof typeof Feather.glyphMap;
   label: string;
   onPress: () => void;
+  desktop: boolean;
 }) {
-  return (
-    <Pressable style={[styles.quickFilter, active && styles.quickFilterActive]} onPress={onPress}>
-      <Feather name={active ? "check" : icon} size={12} color={active ? "white" : "#46505A"} />
-      <Text style={[styles.quickFilterLabel, active && styles.quickFilterLabelActive]}>{label}</Text>
-    </Pressable>
-  );
+  return <FilterToggleChip label={label} active={active} icon={icon} onPress={onPress} desktop={desktop} />;
 }
 
 function DrawerAction({
@@ -590,7 +664,14 @@ function DrawerAction({
   onPress: () => void;
 }) {
   return (
-    <Pressable style={styles.drawerAction} onPress={onPress}>
+    <Pressable
+      style={({ hovered, pressed }) => [
+        styles.drawerAction,
+        hovered && styles.drawerActionHovered,
+        pressed && styles.drawerActionPressed,
+      ]}
+      onPress={onPress}
+    >
       <View style={[styles.drawerActionIcon, danger && styles.drawerActionIconDanger]}>
         <Feather name={icon} size={17} color={danger ? "#B91C1C" : "#0E1A24"} />
       </View>
@@ -611,11 +692,11 @@ function DrawerAction({
 function HomeCandidateRow({
   worker,
   onOpen,
-  isDesktop,
+  last,
 }: {
   worker: WorkerRow;
   onOpen: () => void;
-  isDesktop: boolean;
+  last: boolean;
 }) {
   const name = [worker.first_name, worker.last_name].filter(Boolean).join(" ") || "Candidate";
   const roles = localizeRoles((worker.positions ?? []).slice(0, 2)).join(" · ") || "Hospitality";
@@ -624,7 +705,7 @@ function HomeCandidateRow({
     .join(" · ");
 
   return (
-    <Pressable style={[styles.candidateCard, isDesktop && styles.candidateCardDesktop]} onPress={onOpen}>
+    <ListRow label={name} last={last} onPress={onOpen}>
       {worker.photo_url ? (
         <Image source={{ uri: worker.photo_url }} style={styles.candidateAvatar} resizeMode="cover" />
       ) : (
@@ -641,7 +722,7 @@ function HomeCandidateRow({
         {meta ? <Text style={styles.candidateMeta} numberOfLines={1}>{meta}</Text> : null}
       </View>
       <Feather name="chevron-right" size={19} color="#A0A5AB" />
-    </Pressable>
+    </ListRow>
   );
 }
 
@@ -650,13 +731,13 @@ function HomeShiftRow({
   venueMode,
   onOpen,
   onOpenVenue,
-  isDesktop,
+  last,
 }: {
   row: ShiftRow;
   venueMode: boolean;
   onOpen: () => void;
   onOpenVenue: () => void;
-  isDesktop: boolean;
+  last: boolean;
 }) {
   const photo = row.venue?.photo_url
     ? { uri: row.venue.photo_url }
@@ -669,7 +750,7 @@ function HomeShiftRow({
     : "Pay discussed later";
 
   return (
-    <Pressable style={[styles.shiftCard, isDesktop && styles.shiftCardDesktop]} onPress={onOpen}>
+    <ListRow label={row.venue?.name || roles} last={last} onPress={onOpen}>
       <Image source={photo} style={styles.shiftImage} resizeMode="cover" />
       <View style={styles.shiftBody}>
         <View style={styles.shiftTopLine}>
@@ -713,7 +794,82 @@ function HomeShiftRow({
         ) : null}
       </View>
       <Feather name="chevron-right" size={19} color="#A0A5AB" />
-    </Pressable>
+    </ListRow>
+  );
+}
+
+function ShiftPreview({
+  row,
+  desktop,
+  applied,
+  applying,
+  onClose,
+  onApply,
+  onOpen,
+}: {
+  row: ShiftRow | null;
+  desktop: boolean;
+  applied: boolean;
+  applying: boolean;
+  onClose: () => void;
+  onOpen: () => void;
+  onApply: () => void;
+}) {
+  if (!row) return null;
+  const photos: (string | null)[] = [row.venue?.photo_url ?? null, ...(row.venue?.photo_urls ?? [])];
+  const videos: (string | null)[] = [...(row.venue?.video_urls ?? [])];
+  const roles = localizeRoles((row.roles ?? []).slice(0, 3)).join(" · ") || t("shift_detail.default_shift");
+  const pay = row.pay_amount ? `€${row.pay_amount}${row.pay_unit ? `/${shortUnit(row.pay_unit)}` : ""}` : t("shift_detail.pay_discussed");
+  const when = formatWhen(row);
+  const hours = row.hours_start && row.hours_end ? `${row.hours_start} – ${row.hours_end}` : null;
+  return (
+    <SheetModal
+      visible
+      desktop={desktop}
+      onClose={onClose}
+      title={roles}
+      headerAction={
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={t("shift_detail.view_full_shift")}
+          hitSlop={6}
+          onPress={onOpen}
+          style={styles.previewHeaderLink}
+        >
+          <Text style={styles.previewHeaderLinkText}>{t("shift_detail.view_full_shift")}</Text>
+          <Feather name="arrow-up-right" size={14} color={TAVORIA.color.orange} />
+        </Pressable>
+      }
+    >
+      <PreviewMedia photos={photos} videos={videos} placeholderSource={venueFallback(row.venue?.type)} />
+      <Text style={styles.previewVenue}>{row.venue?.name || t("shift_detail.default_venue")}</Text>
+      {row.venue?.city ? <Text style={styles.previewMeta}>{row.venue.city}</Text> : null}
+      <View style={styles.previewFacts}>
+        <PreviewFact icon="credit-card" label={t("shift_detail.pay_label")} value={pay} />
+        <PreviewFact icon="calendar" label={t("shift_detail.days")} value={when} />
+        {hours ? <PreviewFact icon="clock" label={t("shift_detail.hours")} value={hours} /> : null}
+      </View>
+      <ActionButton
+        label={applied ? t("shift_detail.application_pending") : t("shift_detail.apply_now")}
+        icon={applied ? "check-circle" : "arrow-right"}
+        loading={applying}
+        disabled={applied}
+        onPress={onApply}
+        style={[styles.previewPrimary, applied && styles.previewActionDisabled]}
+      />
+    </SheetModal>
+  );
+}
+
+function PreviewFact({ icon, label, value }: { icon: keyof typeof Feather.glyphMap; label: string; value: string }) {
+  return (
+    <View style={styles.previewFact}>
+      <Feather name={icon} size={15} color={TAVORIA.color.muted} />
+      <View style={styles.previewFactBody}>
+        <Text style={styles.previewFactLabel}>{label}</Text>
+        <Text style={styles.previewFactValue}>{value}</Text>
+      </View>
+    </View>
   );
 }
 
@@ -732,32 +888,31 @@ function shortUnit(unit: string) {
 }
 
 function formatWhen(row: ShiftRow) {
-  if (row.start_when === "now") return "Now";
-  if (row.start_when === "asap") return "ASAP";
+  if (row.start_when === "now") return t("shift_detail.need_now_banner");
+  if (row.start_when === "asap") return t("shift_filters.asap");
   if (row.start_date) {
     return new Date(row.start_date).toLocaleDateString([], {
       day: "numeric",
       month: "short",
     });
   }
-  return row.days?.slice(0, 3).map((day) => day.slice(0, 3)).join(" · ") || "Flexible";
+  return row.days?.slice(0, 3).map((day) => day.slice(0, 3)).join(" · ") || t("shift_detail.hours_flexible");
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#F7F4EE" },
-  safeDesktop: { backgroundColor: "#F1EFE8" },
-  header: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-  },
-  headerDesktop: { paddingHorizontal: 24 },
+  safe: { flex: 1, backgroundColor: TAVORIA.color.paper },
+  safeDesktop: { backgroundColor: TAVORIA.color.paperDeep },
+  workspace: { flex: 1, minHeight: 0 },
+  workspaceDesktop: { flexDirection: "row", marginVertical: -TAVORIA.space.lg },
+  mainColumn: { flex: 1, minWidth: 0 },
+  mainColumnDesktop: { paddingVertical: TAVORIA.space.lg },
+  headerIconButton: { alignItems: "center", borderRadius: 10, height: 36, justifyContent: "center", width: 36 },
+  headerIconButtonHovered: { backgroundColor: "rgba(14,26,36,0.07)" },
+  headerIconButtonPressed: { opacity: 0.72 },
   avatar: {
     alignItems: "center",
-    backgroundColor: "#FFE9DB",
-    borderColor: "rgba(14,26,36,0.12)",
+    backgroundColor: TAVORIA.color.orangeSoft,
+    borderColor: TAVORIA.color.border,
     borderRadius: 999,
     borderWidth: 1,
     height: 44,
@@ -766,44 +921,25 @@ const styles = StyleSheet.create({
     width: 44,
   },
   avatarImage: { height: "100%", width: "100%" },
-  avatarInitial: { color: "#F0531C", fontFamily: "InstrumentSerif_400Regular", fontSize: 24 },
-  wordmark: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 30, letterSpacing: -0.8 },
-  accent: { color: "#F0531C" },
-  feedHeading: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingBottom: 14,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-  },
-  feedHeadingDesktop: { paddingHorizontal: 24 },
-  feedHeadingFiltered: { paddingBottom: 4 },
-  feedKicker: { color: "#F0531C", fontSize: 10, fontWeight: "800", letterSpacing: 1.1, textTransform: "uppercase" },
-  feedTitle: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 31, lineHeight: 35, marginTop: 2 },
-  headingActions: { alignItems: "center", flexDirection: "row", gap: 7 },
-  refreshBtn: { alignItems: "center", backgroundColor: "white", borderRadius: 999, height: 38, justifyContent: "center", width: 38 },
+  avatarInitial: { color: TAVORIA.color.orange, fontFamily: "InstrumentSerif_400Regular", fontSize: 24 },
   feed: { flex: 1 },
-  feedContent: { gap: 10, paddingBottom: 28, paddingHorizontal: 16 },
-  feedContentDesktop: { paddingHorizontal: 24 },
-  desktopGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  quickFilters: { flexDirection: "row", flexWrap: "wrap", gap: 7, paddingBottom: 10, paddingHorizontal: 16 },
-  quickFilter: { alignItems: "center", backgroundColor: "white", borderColor: "rgba(14,26,36,0.12)", borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 },
-  quickFilterActive: { backgroundColor: "#F0531C", borderColor: "#F0531C" },
-  quickFilterLabel: { color: "#46505A", fontSize: 11, fontWeight: "700" },
-  quickFilterLabelActive: { color: "white" },
+  feedContent: { gap: 0, paddingBottom: 28, paddingHorizontal: 16 },
+  feedContentDesktop: { alignSelf: "center", maxWidth: 1180, paddingHorizontal: 24, width: "100%" },
+  desktopGrid: { width: "100%" },
+  filterActions: { alignItems: "center", flexDirection: "row", gap: 8 },
+  loadMore: { paddingVertical: 18 },
+  loadMoreRetry: { alignItems: "center", paddingVertical: 12 },
+  loadMoreRetryText: { color: TAVORIA.color.orange, fontSize: 13, fontWeight: "700" },
   stateWrap: { alignItems: "center", minHeight: 310, justifyContent: "center", paddingHorizontal: 28 },
   emptyIcon: { alignItems: "center", backgroundColor: "#FFF0E7", borderRadius: 999, height: 64, justifyContent: "center", marginBottom: 14, width: 64 },
   stateTitle: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 23, marginTop: 12, textAlign: "center" },
   stateText: { color: "#6B7280", fontSize: 14, lineHeight: 20, marginTop: 6, textAlign: "center" },
-  shiftCard: { alignItems: "center", backgroundColor: "white", borderColor: "rgba(14,26,36,0.08)", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 12, padding: 12 },
-  shiftCardDesktop: { width: "48.8%" },
-  shiftImage: { borderRadius: 12, height: 60, width: 60 },
+  shiftImage: { borderRadius: 14, height: 72, width: 64 },
   shiftBody: { flex: 1, minWidth: 0 },
   shiftTopLine: { alignItems: "center", flexDirection: "row", gap: 8 },
-  shiftVenue: { color: "#0E1A24", flex: 1, fontSize: 16, fontWeight: "700" },
-  shiftVenueLink: { alignItems: "center", flex: 1, flexDirection: "row", gap: 4, minWidth: 0 },
-  shiftRoles: { color: "#46505A", fontSize: 13, marginTop: 2 },
+  shiftVenue: { color: "#0E1A24", flexShrink: 1, fontSize: 17, fontWeight: "700" },
+  shiftVenueLink: { alignItems: "center", flexDirection: "row", flexShrink: 1, gap: 4, minWidth: 0 },
+  shiftRoles: { color: "#46505A", fontSize: 14, marginTop: 3 },
   shiftMeta: { alignItems: "center", flexDirection: "row", marginTop: 6 },
   shiftPay: { color: "#F0531C", fontSize: 12, fontWeight: "800" },
   shiftDot: { color: "#C4C7CB", marginHorizontal: 6 },
@@ -812,16 +948,25 @@ const styles = StyleSheet.create({
   shiftStatus: { color: "#0F6E56", fontSize: 9, fontWeight: "800", letterSpacing: 0.8, marginTop: 4 },
   urgentBadge: { alignItems: "center", backgroundColor: "#FDECEC", borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 7, paddingVertical: 4 },
   urgentText: { color: "#B91C1C", fontSize: 9, fontWeight: "800" },
-  candidateCard: { alignItems: "center", backgroundColor: "white", borderColor: "rgba(14,26,36,0.08)", borderRadius: 18, borderWidth: 1, flexDirection: "row", gap: 12, padding: 11 },
-  candidateCardDesktop: { width: "48.8%" },
-  candidateAvatar: { borderRadius: 14, height: 64, width: 64 },
+  candidateAvatar: { borderRadius: TAVORIA.radius.medium, height: 72, width: 64 },
   candidateAvatarEmpty: { alignItems: "center", backgroundColor: "#FFE9DB", justifyContent: "center" },
-  candidateInitial: { color: "#F0531C", fontFamily: "InstrumentSerif_400Regular", fontSize: 27 },
+  candidateInitial: { color: TAVORIA.color.orange, fontFamily: "InstrumentSerif_400Regular", fontSize: 27 },
   candidateBody: { flex: 1, minWidth: 0 },
   candidateNameRow: { alignItems: "center", flexDirection: "row", gap: 6 },
-  candidateName: { color: "#0E1A24", flexShrink: 1, fontSize: 16, fontWeight: "700" },
-  candidateRoles: { color: "#46505A", fontSize: 13, marginTop: 3 },
-  candidateMeta: { color: "#8A8F98", fontSize: 11, marginTop: 5 },
+  candidateName: { color: "#0E1A24", flexShrink: 1, fontSize: 17, fontWeight: "700" },
+  candidateRoles: { color: "#46505A", fontSize: 14, marginTop: 3 },
+  candidateMeta: { color: "#8A8F98", fontSize: 12, marginTop: 5 },
+  previewVenue: { color: TAVORIA.color.navy, fontSize: 18, fontWeight: "700", marginTop: 14 },
+  previewMeta: { color: TAVORIA.color.muted, fontSize: 13, marginTop: 4 },
+  previewFacts: { borderBottomColor: TAVORIA.color.border, borderBottomWidth: StyleSheet.hairlineWidth, borderTopColor: TAVORIA.color.border, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: "row", flexWrap: "wrap", marginTop: 16, paddingVertical: 4 },
+  previewFact: { alignItems: "flex-start", flexDirection: "row", gap: 8, minWidth: 150, paddingVertical: 10, width: "50%" },
+  previewFactBody: { flex: 1, minWidth: 0 },
+  previewFactLabel: { color: TAVORIA.color.muted, fontFamily: "DMMono_500Medium", fontSize: 9, letterSpacing: 0.6, textTransform: "uppercase" },
+  previewFactValue: { color: TAVORIA.color.navy, fontSize: 13, fontWeight: "700", marginTop: 3 },
+  previewHeaderLink: { alignItems: "center", flexDirection: "row", gap: 4, minHeight: 36, paddingHorizontal: 4 },
+  previewHeaderLinkText: { color: TAVORIA.color.orange, fontSize: 11, fontWeight: "800" },
+  previewPrimary: { backgroundColor: TAVORIA.color.orange, height: 48, maxHeight: 48, minHeight: 48, marginTop: 16, width: "100%" },
+  previewActionDisabled: { opacity: 0.58 },
   drawerRoot: { flex: 1, flexDirection: "row" },
   drawer: { backgroundColor: "#F7F4EE", maxWidth: 380, width: "86%" },
   drawerBackdrop: { backgroundColor: "rgba(14,26,36,0.46)", flex: 1 },
@@ -835,20 +980,14 @@ const styles = StyleSheet.create({
   drawerSection: { marginTop: 12 },
   drawerSectionCard: { backgroundColor: "white", borderColor: "rgba(14,26,36,0.08)", borderRadius: 17, borderWidth: 1, overflow: "hidden" },
   drawerAction: { alignItems: "center", borderBottomColor: "rgba(14,26,36,0.07)", borderBottomWidth: 1, flexDirection: "row", gap: 11, minHeight: 58, paddingHorizontal: 12, paddingVertical: 9 },
+  drawerActionHovered: { backgroundColor: "#F1EFE8" },
+  drawerActionPressed: { opacity: 0.72 },
   drawerActionIcon: { alignItems: "center", backgroundColor: "#F1EEE8", borderRadius: 10, height: 34, justifyContent: "center", width: 34 },
   drawerActionIconDanger: { backgroundColor: "#FDECEC" },
   drawerActionLabel: { color: "#0E1A24", fontSize: 14, fontWeight: "700" },
   drawerActionDetail: { color: "#8A8F98", fontSize: 11, marginTop: 2 },
   drawerBadge: { alignItems: "center", backgroundColor: "#F0531C", borderRadius: 999, justifyContent: "center", minWidth: 22, paddingHorizontal: 6, paddingVertical: 3 },
   drawerBadgeText: { color: "white", fontSize: 10, fontWeight: "800" },
-  proCard: { backgroundColor: "#FFF0E7", borderColor: "rgba(240,83,28,0.26)", borderRadius: 19, borderWidth: 1, marginTop: 18, padding: 16 },
-  proTopRow: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
-  proBadge: { alignItems: "center", backgroundColor: "#F0531C", borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 9, paddingVertical: 5 },
-  proBadgeText: { color: "#F7F4EE", fontSize: 9, fontWeight: "800", letterSpacing: 0.8 },
-  proTitle: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 22, lineHeight: 25, marginTop: 12 },
-  proText: { color: "#5C6670", fontSize: 12, lineHeight: 17, marginTop: 5 },
-  proIncluded: { alignItems: "center", borderTopColor: "rgba(14,26,36,0.08)", borderTopWidth: 1, flexDirection: "row", gap: 6, marginTop: 12, paddingTop: 10 },
-  proIncludedText: { color: "#0F6E56", flex: 1, fontSize: 11, fontWeight: "700" },
   languageBackdrop: { backgroundColor: "rgba(14,26,36,0.46)", flex: 1 },
   languageSheet: { backgroundColor: "white", borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: 28, paddingHorizontal: 20, paddingTop: 12 },
   sheetHandle: { alignSelf: "center", backgroundColor: "#D7D9DC", borderRadius: 999, height: 4, marginBottom: 16, width: 36 },

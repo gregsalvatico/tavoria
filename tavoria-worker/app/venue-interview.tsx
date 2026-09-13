@@ -17,8 +17,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { updateVenue } from "../lib/db";
 import { t } from "../lib/i18n";
-import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
+import { FlowTopBar } from "../components/PagePrimitives";
+import { useIsDesktop } from "../lib/responsive";
+import ActionButton from "../components/ActionButton";
 import {
   InterviewQuestion,
   localizeQuestions,
@@ -127,14 +129,13 @@ export default function VenueInterview() {
         </View>
 
         <StickyFooter desktopRow fullBleed>
-          <Pressable
-            style={[styles.cta, isDesktop && desktopButtonStyle, busy && { opacity: 0.6 }]}
-            disabled={busy}
+          <ActionButton
+            label={t("common.continue")}
+            icon="arrow-right"
+            loading={busy}
             onPress={onSaveAndContinue}
-          >
-            <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
-            <Feather name="arrow-right" size={20} color="#F7F4EE" />
-          </Pressable>
+            style={styles.cta}
+          />
         </StickyFooter>
       </SafeAreaView>
     );
@@ -143,25 +144,15 @@ export default function VenueInterview() {
   // ----- QUESTION -----
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => {
-            if (step !== 0) { setStep(step - 1); return; }
-            if (router.canGoBack()) { router.back(); return; }
-            router.replace("/venue-bonus");
-          }}
-          hitSlop={12}
-          style={styles.iconBtn}
-        >
-          <Feather name="chevron-left" size={26} color="#0E1A24" />
-        </Pressable>
-        <Text style={styles.progressTxt}>
-          {step + 1} {t("worker_personality.of")} {total}
-        </Text>
-        <Pressable onPress={onSkip} hitSlop={8}>
-          <Text style={styles.skipTopTxt}>{t("interview_ui.skip")}</Text>
-        </Pressable>
-      </View>
+      <FlowTopBar
+        onBack={() => {
+          if (step !== 0) { setStep(step - 1); return; }
+          if (router.canGoBack()) { router.back(); return; }
+          router.replace("/venue-bonus");
+        }}
+        center={<Text style={styles.progressTxt}>{step + 1} {t("worker_personality.of")} {total}</Text>}
+        right={<Pressable onPress={onSkip} hitSlop={8}><Text style={styles.skipTopTxt}>{t("interview_ui.skip")}</Text></Pressable>}
+      />
 
       <View style={styles.progressTrack}>
         <View
@@ -174,7 +165,7 @@ export default function VenueInterview() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
         showsVerticalScrollIndicator={false}
       >
         {/* Framing banner — different from worker side */}
@@ -260,7 +251,8 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
 
-  scroll: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 28 },
+  scroll: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 28 },
+  scrollDesktop: { alignSelf: "center", maxWidth: 840, paddingHorizontal: 24, width: "100%" },
 
   framingBanner: {
     flexDirection: "row",
@@ -395,16 +387,5 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",
   },
-  cta: {
-    alignSelf: "center",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#F0531C",
-    borderRadius: 999,
-    paddingVertical: 18,
-    width: "100%",
-  },
-  ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
+  cta: { width: "100%" },
 });

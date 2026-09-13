@@ -17,6 +17,7 @@ import { supabase } from "../lib/supabase";
 import { t } from "../lib/i18n";
 import { getVenueProfile, patchVenueProfile } from "../lib/venueProfile";
 import StickyFooter from "../components/StickyFooter";
+import ActionButton from "../components/ActionButton";
 
 export default function VenueBonus() {
   const router = useRouter();
@@ -187,12 +188,12 @@ export default function VenueBonus() {
 
       </ScrollView>
       <StickyFooter fullBleed>
-        <Pressable
+        <ActionButton
+          label={t("venue_bonus.save_finish")}
+          variant="quiet"
           onPress={() => router.replace("/")}
           style={styles.skipBtn}
-        >
-          <Text style={styles.skipBtnTxt}>{t("venue_bonus.save_finish")}</Text>
-        </Pressable>
+        />
       </StickyFooter>
     </SafeAreaView>
   );

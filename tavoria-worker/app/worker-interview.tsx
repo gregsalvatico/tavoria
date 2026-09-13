@@ -16,8 +16,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
-import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
+import { FlowTopBar } from "../components/PagePrimitives";
+import { useIsDesktop } from "../lib/responsive";
+import ActionButton from "../components/ActionButton";
 import {
   InterviewQuestion,
   getQuestionsByIds,
@@ -134,10 +136,7 @@ export default function WorkerInterview() {
         </View>
 
         <StickyFooter desktopRow fullBleed>
-          <Pressable style={[styles.cta, isDesktop && desktopButtonStyle]} onPress={onSaveAndContinue}>
-            <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
-            <Feather name="arrow-right" size={20} color="#F7F4EE" />
-          </Pressable>
+          <ActionButton label={t("common.continue")} icon="arrow-right" onPress={onSaveAndContinue} style={styles.cta} />
         </StickyFooter>
       </SafeAreaView>
     );
@@ -146,23 +145,14 @@ export default function WorkerInterview() {
   // ----- QUESTION SCREEN -----
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => {
-            if (step !== 0) { setStep(step - 1); return; }
-            if (router.canGoBack()) { router.back(); return; }
-            router.replace("/worker-bonus");
-          }}
-          hitSlop={12}
-          style={styles.iconBtn}
-        >
-          <Feather name="chevron-left" size={26} color="#0E1A24" />
-        </Pressable>
-        <Text style={styles.progressTxt}>
-          {step + 1} {t("worker_personality.of")} {total}
-        </Text>
-        <View style={{ width: 32 }} />
-      </View>
+      <FlowTopBar
+        onBack={() => {
+          if (step !== 0) { setStep(step - 1); return; }
+          if (router.canGoBack()) { router.back(); return; }
+          router.replace("/worker-bonus");
+        }}
+        center={<Text style={styles.progressTxt}>{step + 1} {t("worker_personality.of")} {total}</Text>}
+      />
 
       {/* Progress bar */}
       <View style={styles.progressTrack}>
@@ -176,7 +166,7 @@ export default function WorkerInterview() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.roleChip}>
@@ -244,7 +234,8 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
 
-  scroll: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 28 },
+  scroll: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 28 },
+  scrollDesktop: { alignSelf: "center", maxWidth: 840, paddingHorizontal: 24, width: "100%" },
 
   roleChip: {
     alignSelf: "flex-start",
@@ -350,16 +341,5 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",
   },
-  cta: {
-    alignSelf: "center",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#F0531C",
-    borderRadius: 999,
-    paddingVertical: 18,
-    width: "100%",
-  },
-  ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
+  cta: { width: "100%" },
 });

@@ -15,6 +15,8 @@ import { updateCurrentWorker } from "../lib/db";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
+import ActionButton from "../components/ActionButton";
+import { FlowTopBar } from "../components/PagePrimitives";
 import { getWorkerProfile, patchWorkerProfile } from "../lib/workerProfile";
 
 type Option = {
@@ -272,31 +274,21 @@ export default function WorkerPersonality() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => {
-            if (done) setDone(false);
-            else if (step > 0) {
-              setStep(step - 1);
-              setPicks(picks.slice(0, -1));
-            } else if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace("/worker-bonus");
-            }
-          }}
-          hitSlop={12}
-          style={styles.iconBtn}
-        >
-          <Feather name="chevron-left" size={26} color="#0E1A24" />
-        </Pressable>
-        <View style={styles.dotsRow}>
-          <View style={[styles.dot, styles.dotOn]} />
-          <View style={styles.dot} />
-          <View style={styles.dot} />
-        </View>
-        <View style={{ width: 32 }} />
-      </View>
+      <FlowTopBar
+        onBack={() => {
+          if (done) setDone(false);
+          else if (step > 0) {
+            setStep(step - 1);
+            setPicks(picks.slice(0, -1));
+          } else if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace("/worker-bonus");
+          }
+        }}
+        step={0}
+        total={3}
+      />
 
       {!done ? (
         <>
@@ -324,7 +316,7 @@ export default function WorkerPersonality() {
           >
             <ScrollView
               style={{ flex: 1 }}
-              contentContainerStyle={styles.scroll}
+          contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.scenarioBox}>
@@ -456,10 +448,12 @@ export default function WorkerPersonality() {
 
       {done && (
         <StickyFooter desktopRow fullBleed>
-          <Pressable onPress={onSave} style={[styles.cta, isDesktop && desktopButtonStyle]}>
-            <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
-            <Feather name="arrow-right" size={20} color="#F7F4EE" />
-          </Pressable>
+          <ActionButton
+            label={t("common.continue")}
+            icon="arrow-right"
+            onPress={onSave}
+            style={styles.fullWidthButton}
+          />
         </StickyFooter>
       )}
     </SafeAreaView>
@@ -506,7 +500,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
 
-  scroll: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 14 },
+  scroll: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14 },
+  scrollDesktop: { alignSelf: "center", maxWidth: 840, paddingHorizontal: 24, width: "100%" },
 
   scenarioBox: {
     flexDirection: "row",
@@ -697,8 +692,12 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: "#F0531C",
     borderRadius: 999,
-    paddingVertical: 18,
+    height: 44,
+    maxHeight: 44,
+    minHeight: 44,
+    paddingHorizontal: 16,
     width: "100%",
   },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
+  fullWidthButton: { width: "100%" },
 });

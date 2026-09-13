@@ -116,7 +116,7 @@ export default async function VenueDetail({
       {/* Preferred interview answers (for matching) */}
       {(venue.preferred_interview_answers ?? []).length > 0 && (
         <Section
-          title={`Ideal candidate profile (${(venue.preferred_interview_answers as any[]).length} answers)`}
+          title={`Ideal candidate profile (${(venue.preferred_interview_answers as Array<{ q_id: string; q_text: string; role: string; a_id: string; a_text: string }>).length} answers)`}
         >
           <p className="text-xs text-stone-500 mb-4">
             Venue picked these as their perfect candidate&apos;s answers.
@@ -162,15 +162,13 @@ export default async function VenueDetail({
         ) : (
           <ul className="divide-y divide-stone-100">
             {apps.map((a) => {
-              const w = (a as any).worker as
-                | {
-                    id: string;
-                    first_name: string;
-                    last_name: string;
-                    photo_url?: string;
-                    interview_answers?: Array<{ q_id: string; a_id: string }>;
-                  }
-                | null;
+              const w = (a as unknown as { worker: {
+                id: string;
+                first_name: string;
+                last_name: string;
+                photo_url?: string;
+                interview_answers?: Array<{ q_id: string; a_id: string }>;
+              } | null }).worker;
               const match = computeMatch(
                 venue.preferred_interview_answers as
                   | Array<{ q_id: string; a_id: string }>

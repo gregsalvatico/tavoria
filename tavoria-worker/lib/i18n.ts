@@ -5,12 +5,14 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Localization from "expo-localization";
 import { I18n } from "i18n-js";
+import { useEffect, useState } from "react";
 
 import en from "./locales/en";
 import it from "./locales/it";
 import fr from "./locales/fr";
 import es from "./locales/es";
 import zh from "./locales/zh";
+import talent from "./locales/talent";
 
 export type Language = "en" | "it" | "fr" | "es" | "zh";
 
@@ -23,8 +25,9 @@ export const LANGUAGES: { code: Language; label: string; flag: string }[] = [
 ];
 
 const STORAGE_KEY = "gigi.language";
+const languageListeners = new Set<(language: Language) => void>();
 
-export const i18n = new I18n({ en, it, fr, es, zh });
+export const i18n = new I18n({ en: { ...en, talent: talent.en }, it: { ...it, talent: talent.it }, fr: { ...fr, talent: talent.fr }, es: { ...es, talent: talent.es }, zh: { ...zh, talent: talent.zh } });
 i18n.defaultLocale = "en";
 i18n.enableFallback = true;
 // Never leak i18n-js's internal `[missing "..." value]` diagnostic into the
@@ -38,6 +41,7 @@ export async function initI18n(): Promise<Language> {
     const stored = await AsyncStorage.getItem(STORAGE_KEY);
     if (stored && LANGUAGES.some((l) => l.code === stored)) {
       i18n.locale = stored;
+      notifyLanguageChange(stored as Language);
       return stored as Language;
     }
   } catch {}
@@ -46,15 +50,36 @@ export async function initI18n(): Promise<Language> {
   const supported = LANGUAGES.find((l) => l.code === device);
   const lang: Language = supported ? (device as Language) : "en";
   i18n.locale = lang;
+  notifyLanguageChange(lang);
   return lang;
 }
 
 // Change language at runtime and persist
 export async function setLanguage(lang: Language): Promise<void> {
   i18n.locale = lang;
+  notifyLanguageChange(lang);
   try {
     await AsyncStorage.setItem(STORAGE_KEY, lang);
   } catch {}
+}
+
+function notifyLanguageChange(language: Language) {
+  languageListeners.forEach((listener) => listener(language));
+}
+
+export function subscribeToLanguage(listener: (language: Language) => void) {
+  languageListeners.add(listener);
+  return () => {
+    languageListeners.delete(listener);
+  };
+}
+
+export function useLanguage(): Language {
+  const [language, setLanguageState] = useState<Language>(getCurrentLang);
+
+  useEffect(() => subscribeToLanguage(setLanguageState), []);
+
+  return language;
 }
 
 // Short alias — `t("home.title")` etc.

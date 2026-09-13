@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
+import ActionButton from "../components/ActionButton";
 
 export default function WorkerDone() {
   const router = useRouter();
@@ -93,19 +94,18 @@ export default function WorkerDone() {
       </View>
 
       <StickyFooter desktopRow fullBleed>
-          <Pressable
-            style={[styles.cta, isDesktop && desktopButtonStyle]}
+          <ActionButton
+            label={t("worker_done.preview")}
+            icon="eye"
             onPress={() => router.push("/candidate")}
-          >
-            <Feather name="eye" size={18} color="#F7F4EE" />
-            <Text style={styles.ctaTxt}>{t("worker_done.preview")}</Text>
-          </Pressable>
-          <Pressable
-            style={[styles.secondaryBtn, isDesktop && desktopButtonStyle]}
+            style={[styles.fullWidthButton, isDesktop && desktopButtonStyle]}
+          />
+          <ActionButton
+            label={t("worker_done.discover")}
+            variant="secondary"
             onPress={() => router.replace("/")}
-          >
-            <Text style={styles.secondaryBtnTxt}>{t("worker_done.discover")}</Text>
-          </Pressable>
+            style={[styles.fullWidthButton, isDesktop && desktopButtonStyle]}
+          />
       </StickyFooter>
     </SafeAreaView>
   );
@@ -115,6 +115,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F1EFE8" },
   container: { flex: 1, paddingHorizontal: 24, paddingTop: 12 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  fullWidthButton: { width: "100%" },
 
   checkCircle: {
     width: 110,
@@ -188,7 +189,10 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: "#F0531C",
     borderRadius: 999,
-    paddingVertical: 18,
+    height: 44,
+    maxHeight: 44,
+    minHeight: 44,
+    paddingHorizontal: 16,
   },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
   secondaryBtn: {

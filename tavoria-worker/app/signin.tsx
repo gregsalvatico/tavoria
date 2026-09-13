@@ -5,7 +5,6 @@ import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -22,12 +21,15 @@ import { getCurrentUserContext } from "../lib/db";
 import { setCachedHomeContext } from "../lib/homeContextCache";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
+import ActionButton from "../components/ActionButton";
 import {
   forgetAccount,
   getSavedAccounts,
   rememberAccount,
+  type AccountRole,
   type SavedAccount,
 } from "../lib/savedAccounts";
+import { supabase } from "../lib/supabase";
 
 export default function SignIn() {
   const router = useRouter();
@@ -44,6 +46,7 @@ export default function SignIn() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [pinError, setPinError] = useState(false);
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>([]);
+  const [selectedRole, setSelectedRole] = useState<AccountRole | null>(null);
   const pinInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
@@ -52,6 +55,9 @@ export default function SignIn() {
       setSavedAccounts(accounts);
       if (accounts[0]) {
         setUsername(accounts[0].username);
+        if (accounts[0].roles.length === 1) {
+          setSelectedRole(accounts[0].roles[0]);
+        }
       }
     })();
   }, []);
@@ -59,6 +65,7 @@ export default function SignIn() {
   const chooseAccount = (account: SavedAccount) => {
     setUsername(account.username);
     setPin("");
+    setSelectedRole(account.roles.length === 1 ? account.roles[0] : null);
     setErrorMsg(null);
     setPinError(false);
   };
@@ -85,6 +92,13 @@ export default function SignIn() {
         pin,
       });
       const context = await getCurrentUserContext().catch(() => null);
+      const hasSelectedRole = selectedRole === "venue"
+        ? context?.hasVenue
+        : context?.hasWorker;
+      if (!hasSelectedRole) {
+        await supabase.auth.signOut();
+        throw new Error(t("auth_pin.role_unavailable"));
+      }
       const roles = [
         ...(context?.hasWorker ? (["worker"] as const) : []),
         ...(context?.hasVenue ? (["venue"] as const) : []),
@@ -102,7 +116,7 @@ export default function SignIn() {
       if (next === "venue-board" && venueId) {
         router.replace({ pathname: "/venue-board", params: { venueId } });
       } else {
-        router.replace("/");
+        router.replace({ pathname: "/", params: { role: selectedRole } });
       }
     } catch (e: any) {
       const message = e?.message ?? t("auth_pin.err_signin");
@@ -115,7 +129,8 @@ export default function SignIn() {
     }
   };
 
-  const canSubmit = username.trim().length > 0 && /^\d{4}$/.test(pin);
+  const canSubmit =
+    selectedRole !== null && username.trim().length > 0 && /^\d{4}$/.test(pin);
 
   return (
     <SafeAreaView
@@ -154,6 +169,39 @@ export default function SignIn() {
             {t("auth_pin.sign_in_title").slice(1)}
           </Text>
           <Text style={styles.h2}>{t("auth_pin.sign_in_sub_fresh")}</Text>
+
+          <View style={styles.rolePicker}>
+            <Text style={styles.rolePickerLabel}>{t("auth_pin.sign_in_as")}</Text>
+            <View style={styles.roleOptions}>
+              {(["worker", "venue"] as const).map((role) => {
+                const selected = selectedRole === role;
+                return (
+                  <Pressable
+                    key={role}
+                    onPress={() => {
+                      setSelectedRole(role);
+                      setErrorMsg(null);
+                    }}
+                    style={[styles.roleOption, selected && styles.roleOptionSelected]}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
+                  >
+                    <View style={[styles.roleOptionIcon, selected && styles.roleOptionIconSelected]}>
+                      <Feather
+                        name={role === "worker" ? "user" : "home"}
+                        size={16}
+                        color={selected ? "#F0531C" : "#6B7280"}
+                      />
+                    </View>
+                    <Text style={[styles.roleOptionText, selected && styles.roleOptionTextSelected]}>
+                      {t(role === "worker" ? "auth_pin.role_worker" : "auth_pin.role_venue")}
+                    </Text>
+                    {selected ? <Feather name="check" size={16} color="#F0531C" /> : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
 
           {savedAccounts.length > 0 && (
             <View style={styles.savedAccounts}>
@@ -281,18 +329,14 @@ export default function SignIn() {
 
         <StickyFooter>
           <View style={styles.bottomInner}>
-            <Pressable
-              disabled={busy || !canSubmit}
+            <ActionButton
+              label={t("auth_pin.sign_in_cta")}
+              icon="arrow-right"
+              loading={busy}
+              disabled={!canSubmit}
               onPress={onSignIn}
-              style={[styles.cta, isDesktop && desktopButtonStyle, (!canSubmit || busy) && styles.ctaDisabled]}
-            >
-              <Text style={styles.ctaTxt}>{t("auth_pin.sign_in_cta")}</Text>
-              {busy ? (
-                <ActivityIndicator color="#F7F4EE" size="small" />
-              ) : (
-                <Feather name="arrow-right" size={20} color="#F7F4EE" />
-              )}
-            </Pressable>
+              style={[styles.cta, isDesktop && desktopButtonStyle]}
+            />
           </View>
         </StickyFooter>
       </KeyboardAvoidingView>
@@ -329,6 +373,41 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlign: "center",
   },
+
+  rolePicker: { marginTop: 22 },
+  rolePickerLabel: {
+    color: "#6B7280",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    marginBottom: 7,
+  },
+  roleOptions: { flexDirection: "row", gap: 8 },
+  roleOption: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(14,26,36,0.10)",
+    borderRadius: 12,
+    borderWidth: 1,
+    flex: 1,
+    flexDirection: "row",
+    gap: 8,
+    minHeight: 54,
+    paddingHorizontal: 11,
+  },
+  roleOptionSelected: { backgroundColor: "#FFF8F4", borderColor: "#F0531C" },
+  roleOptionIcon: {
+    alignItems: "center",
+    backgroundColor: "#F7F4EE",
+    borderRadius: 8,
+    height: 30,
+    justifyContent: "center",
+    width: 30,
+  },
+  roleOptionIconSelected: { backgroundColor: "#FFEFE6" },
+  roleOptionText: { color: "#46505A", flex: 1, fontSize: 13, fontWeight: "700" },
+  roleOptionTextSelected: { color: "#0E1A24" },
 
   savedAccounts: { gap: 8, marginTop: 22 },
   savedAccountsLabel: {
@@ -424,17 +503,6 @@ const styles = StyleSheet.create({
   },
   bottomInner: { alignItems: "center", alignSelf: "center", maxWidth: 690, width: "100%" },
   cta: {
-    alignSelf: "center",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#F0531C",
-    borderRadius: 999,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
     width: "100%",
   },
-  ctaDisabled: { backgroundColor: "rgba(11,15,26,0.15)" },
-  ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
 });

@@ -1,0 +1,50 @@
+/** Shared visual tokens for the Tavoria interface. */
+export const TAVORIA = {
+  color: {
+    paper: "#F7F4EE",
+    paperDeep: "#F1EFE8",
+    navy: "#0E1A24",
+    orange: "#F0531C",
+    orangeSoft: "#FFF0E7",
+    ink: "#263542",
+    muted: "#626B78",
+    border: "rgba(14,26,36,0.12)",
+    borderStrong: "rgba(14,26,36,0.18)",
+    white: "#FFFFFF",
+    success: "#477354",
+    error: "#B42318",
+  },
+  radius: {
+    small: 10,
+    medium: 14,
+    large: 18,
+    pill: 999,
+  },
+  space: {
+    xxs: 4,
+    xs: 8,
+    sm: 12,
+    md: 16,
+    lg: 24,
+    xl: 32,
+  },
+  control: {
+    minHeight: 44,
+    compactHeight: 36,
+  },
+  type: {
+    display: "InstrumentSerif_400Regular",
+    body: "HankenGrotesk_400Regular",
+    medium: "HankenGrotesk_500Medium",
+    semibold: "HankenGrotesk_600SemiBold",
+    bold: "HankenGrotesk_700Bold",
+    label: "DMMono_500Medium",
+  },
+  surface: {
+    page: "#F1EFE8",
+    grouped: "#FFFFFF",
+    selected: "#FFF0E7",
+    disabled: "#E9E7E1",
+    destructive: "#FDECEC",
+  },
+} as const;

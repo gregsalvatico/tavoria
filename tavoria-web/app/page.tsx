@@ -22,8 +22,8 @@ type Faq = { q: string; a: string };
 
 const FAQS: Faq[] = [
   {
-    q: "Tavoria è gratis?",
-    a: "Sì. Tavoria è gratis fino al 2027. Tavoria Pro è in arrivo.",
+    q: "Quanto costa Tavoria per un locale?",
+    a: "Dopo 30 giorni gratis, Tavoria Pro costa 19 € al mese. Il piano gratuito resta disponibile: puoi pubblicare turni, ricevere fino a 3 candidature al mese e usare il QR del tuo locale.",
   },
   {
     q: "Come funziona il QR?",
@@ -434,10 +434,10 @@ export default function Home() {
               }}
             >
               <span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}>
-                <span style={{ color: "#1F9D6B" }}>✓</span> Gratis per tutti fino al 2027
+                <span style={{ color: "#1F9D6B" }}>✓</span> 30 giorni gratis per i locali
               </span>
               <span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}>
-                <span style={{ color: "#1F9D6B" }}>✓</span> Tavoria Pro in arrivo
+                <span style={{ color: "#1F9D6B" }}>✓</span> 19 € al mese dopo la prova
               </span>
               <span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}>
                 <span style={{ color: "#1F9D6B" }}>✓</span> GDPR · server UE
@@ -1865,7 +1865,7 @@ export default function Home() {
                 margin: "0 0 14px",
               }}
             >
-              Gratis fino al 2027. <span style={{ fontStyle: "italic" }}>Per tutti.</span>
+              Un prezzo chiaro. <span style={{ fontStyle: "italic" }}>Più candidati.</span>
             </h2>
             <p
               style={{
@@ -1875,7 +1875,7 @@ export default function Home() {
                 margin: 0,
               }}
             >
-              Gratis fino al 2027. Tavoria Pro è in arrivo.
+              30 giorni gratis, poi 19 € al mese per i locali. Il piano gratuito resta sempre disponibile.
             </p>
           </div>
           <div
@@ -1919,7 +1919,7 @@ export default function Home() {
                 <span style={{ fontFamily: FONT_SERIF, fontSize: 54, lineHeight: 1 }}>
                   Gratis
                 </span>
-                <span style={{ fontSize: 15, color: "#5C6670" }}>fino al 2027</span>
+                <span style={{ fontSize: 15, color: "#5C6670" }}>sempre</span>
               </div>
               <p
                 style={{
@@ -1929,7 +1929,7 @@ export default function Home() {
                   lineHeight: 1.5,
                 }}
               >
-                Tavoria è gratuito fino al 2027.
+                Per chi cerca lavoro, Tavoria è sempre gratis.
               </p>
               <div
                 style={{
@@ -1994,7 +1994,7 @@ export default function Home() {
                   borderRadius: 999,
                 }}
               >
-                  GRATIS FINO AL 2027
+                  30 GIORNI GRATIS
               </span>
               <div
                 style={{
@@ -2017,10 +2017,10 @@ export default function Home() {
                 }}
               >
                 <span style={{ fontFamily: FONT_SERIF, fontSize: 54, lineHeight: 1 }}>
-                  Pro
+                  19 €
                 </span>
                 <span style={{ fontSize: 15, color: "rgba(247,244,238,0.7)" }}>
-                  in arrivo
+                  al mese
                 </span>
               </div>
               <p
@@ -2031,7 +2031,7 @@ export default function Home() {
                   lineHeight: 1.5,
                 }}
               >
-                Gratis fino al 2027. Tavoria Pro è in arrivo.
+                Nessuna carta all&apos;iscrizione. I primi 100 Locali Fondatori restano gratis per sempre.
               </p>
               <div
                 style={{
@@ -2042,16 +2042,16 @@ export default function Home() {
                 }}
               >
                 <div style={{ display: "flex", gap: 10, fontSize: 14.5 }}>
-                  <span style={{ color: "#F0531C" }}>✓</span> Annunci illimitati
+                  <span style={{ color: "#F0531C" }}>✓</span> Pubblica turni gratis
                 </div>
                 <div style={{ display: "flex", gap: 10, fontSize: 14.5 }}>
-                  <span style={{ color: "#F0531C" }}>✓</span> Poster QR personalizzato
+                  <span style={{ color: "#F0531C" }}>✓</span> Fino a 3 candidature al mese gratis
                 </div>
                 <div style={{ display: "flex", gap: 10, fontSize: 14.5 }}>
                   <span style={{ color: "#F0531C" }}>✓</span> Video da ogni candidato
                 </div>
                 <div style={{ display: "flex", gap: 10, fontSize: 14.5 }}>
-                  <span style={{ color: "#F0531C" }}>✓</span> Tavoria Pro in arrivo
+                  <span style={{ color: "#F0531C" }}>✓</span> Pausa o disdetta libera
                 </div>
               </div>
               <a
@@ -2424,7 +2424,7 @@ export default function Home() {
             }}
           >
             Pubblica un turno in due minuti. Stampa il QR. Assumi entro la
-            giornata. Gratis fino al 2027.
+            giornata. 30 giorni gratis, poi 19 € al mese.
           </p>
           <div
             style={{

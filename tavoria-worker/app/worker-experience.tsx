@@ -2,7 +2,6 @@ import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -26,6 +25,10 @@ import { updateCurrentWorker, upsertWorker } from "../lib/db";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
+import ActionButton from "../components/ActionButton";
+import { FlowTopBar } from "../components/PagePrimitives";
+import { PreferenceFields, validPreferences } from "../components/TalentFields";
+import type { JobPreferences } from "../lib/workerMatching";
 
 const EXPERIENCE = [
   { id: 0, labelKey: "worker_experience.exp_new" },
@@ -61,6 +64,7 @@ export default function WorkerExperience() {
   const isVenueBoardFlow = next === "venue-board" && !!venueId;
   const isEditMode = mode === "edit";
   const existing = getWorkerProfile();
+  const [preferences, setPreferences] = useState<JobPreferences>(existing?.jobPreferences ?? {});
   const knownLanguageCodes = new Set(LANGUAGES.map((language) => language.code));
 
   const [years, setYears] = useState<number | null>(() => existing?.yearsExperience ?? null);
@@ -85,6 +89,7 @@ export default function WorkerExperience() {
   const [countryPickerOpen, setCountryPickerOpen] = useState(false);
 
   const onContinue = async () => {
+    if (!validPreferences(preferences)) { setErrorMsg(t("talent.invalid")); return; }
     setErrorMsg(null);
     setBusy(true);
     const allLanguages = [...languages, ...otherLangs];
@@ -93,6 +98,7 @@ export default function WorkerExperience() {
         ? t(EXPERIENCE.find((e) => e.id === years)!.labelKey)
         : undefined;
     patchWorkerProfile({
+      jobPreferences: preferences,
       yearsExperience: years ?? undefined,
       languages: allLanguages,
       city: city.trim(),
@@ -103,6 +109,7 @@ export default function WorkerExperience() {
     const profile = getWorkerProfile();
     try {
       const workerPatch = {
+        job_preferences: preferences,
         first_name: profile?.firstName,
         last_name: profile?.lastName,
         email: profile?.email,
@@ -119,6 +126,7 @@ export default function WorkerExperience() {
       };
       if (isEditMode) {
         await updateCurrentWorker({
+          job_preferences: preferences,
           age_range: profile?.ageRange,
           city: city.trim(),
           country: profile?.country ?? "Italy",
@@ -148,7 +156,7 @@ export default function WorkerExperience() {
       } else if (isEditMode) {
         router.replace("/candidate");
       } else {
-        router.push("/worker-bonus");
+        router.replace("/candidate");
       }
     } catch (e: any) {
       setErrorMsg(e?.message || t("worker_experience.err_save"));
@@ -194,27 +202,18 @@ export default function WorkerExperience() {
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={styles.header}>
-          <Pressable
-            onPress={() => {
-              if (router.canGoBack()) { router.back(); return; }
-              router.replace("/worker-positions");
-            }}
-            hitSlop={12}
-            style={styles.iconBtn}
-          >
-            <Feather name="chevron-left" size={26} color="#0E1A24" />
-          </Pressable>
-          <View style={styles.dotsRow}>
-            <View style={[styles.dot, styles.dotOn]} />
-            <View style={[styles.dot, styles.dotOn]} />
-          </View>
-          <View style={{ width: 32 }} />
-        </View>
+        <FlowTopBar
+          onBack={() => {
+            if (router.canGoBack()) { router.back(); return; }
+            router.replace("/worker-positions");
+          }}
+          step={1}
+          total={2}
+        />
 
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={styles.scroll}
+          contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -371,23 +370,20 @@ export default function WorkerExperience() {
             })}
           </View>
 
+          <PreferenceFields value={preferences} onChange={setPreferences} roles={existing?.positions ?? []} />
           <View style={{ height: 12 }} />
           {errorMsg && <Text style={styles.errorTxt}>{errorMsg}</Text>}
 
         </ScrollView>
         <StickyFooter desktopRow fullBleed>
-          <Pressable
+          <ActionButton
+            label={t("common.continue")}
+            icon="arrow-right"
             disabled={!canContinue || busy}
+            loading={busy}
             onPress={onContinue}
-            style={[styles.cta, isDesktop && desktopButtonStyle, (!canContinue || busy) && styles.ctaDisabled]}
-          >
-            <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
-            {busy ? (
-              <ActivityIndicator color="#F7F4EE" size="small" />
-            ) : (
-              <Feather name="arrow-right" size={20} color="#F7F4EE" />
-            )}
-          </Pressable>
+            style={styles.fullWidthButton}
+          />
         </StickyFooter>
 
         <CountryPicker
@@ -463,7 +459,8 @@ const styles = StyleSheet.create({
   },
   dotOn: { backgroundColor: "#0E1A24" },
 
-  scroll: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 16 },
+  scroll: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
+  scrollDesktop: { alignSelf: "center", maxWidth: 840, paddingHorizontal: 24, width: "100%" },
   h1: {
     fontFamily: "InstrumentSerif_400Regular",
     fontSize: 28,
@@ -723,9 +720,13 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: "#F0531C",
     borderRadius: 999,
-    paddingVertical: 18,
+    height: 44,
+    maxHeight: 44,
+    minHeight: 44,
+    paddingHorizontal: 16,
     width: "100%",
   },
   ctaDisabled: { backgroundColor: "rgba(11,15,26,0.15)" },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
+  fullWidthButton: { width: "100%" },
 });

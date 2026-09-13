@@ -2,7 +2,6 @@ import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -15,6 +14,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
 import { changeUsernamePin } from "../lib/usernameAuth";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import { TAVORIA } from "../lib/designTokens";
+import ActionButton from "../components/ActionButton";
 
 export default function ChangePin() {
   const router = useRouter();
@@ -54,7 +55,14 @@ export default function ChangePin() {
           <Pressable style={styles.back} onPress={() => router.back()} hitSlop={12} accessibilityLabel={t("common.back")}>
             <Feather name="chevron-left" size={26} color="#0E1A24" />
           </Pressable>
-          <Text style={styles.wordmark}><Text style={{ color: "#F0531C" }}>T</Text>avoria.</Text>
+          {isDesktop ? (
+            <Text style={styles.desktopHeaderTitle}>
+              <Text style={{ color: "#F0531C" }}>{t("change_pin.drawer").charAt(0)}</Text>
+              {t("change_pin.drawer").slice(1)}
+            </Text>
+          ) : (
+            <Text style={styles.wordmark}><Text style={{ color: "#F0531C" }}>T</Text>avoria.</Text>
+          )}
           <View style={styles.back} />
         </View>
 
@@ -81,10 +89,14 @@ export default function ChangePin() {
           {currentPin.length === 4 && newPin.length === 4 && currentPin === newPin ? <Text style={styles.error}>{t("change_pin.same_pin")}</Text> : null}
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <Pressable style={[styles.submit, isDesktop && desktopButtonStyle, !canSubmit && styles.submitDisabled]} onPress={() => void submit()} disabled={!canSubmit || saving}>
-            <Text style={styles.submitText}>{t("change_pin.save")}</Text>
-            {saving ? <ActivityIndicator color="white" size="small" /> : null}
-          </Pressable>
+          <ActionButton
+            label={t("change_pin.save")}
+            icon="check"
+            loading={saving}
+            disabled={!canSubmit}
+            onPress={() => void submit()}
+            style={[styles.submit, isDesktop && desktopButtonStyle]}
+          />
           <View style={styles.note}>
             <Feather name="mail" size={15} color="#F0531C" />
             <Text style={styles.noteText}>{t("change_pin.email_note")}</Text>
@@ -114,11 +126,12 @@ function PinField({ label, value, onChangeText }: { label: string; value: string
 }
 
 const styles = StyleSheet.create({
-  safe: { backgroundColor: "#F7F4EE", flex: 1 },
+  safe: { backgroundColor: TAVORIA.color.paperDeep, flex: 1 },
   header: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", minHeight: 58, paddingHorizontal: 16 },
   back: { alignItems: "center", height: 40, justifyContent: "center", width: 40 },
   wordmark: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 27 },
-  content: { flex: 1, paddingHorizontal: 24, paddingTop: 34 },
+  content: { alignSelf: "center", flex: 1, maxWidth: 560, paddingHorizontal: 24, paddingTop: 34, width: "100%" },
+  desktopHeaderTitle: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 29 },
   kicker: { color: "#F0531C", fontFamily: "DMMono_500Medium", fontSize: 11, letterSpacing: 1.3 },
   title: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 36, lineHeight: 40, marginTop: 6 },
   intro: { color: "#5D6670", fontSize: 14, lineHeight: 20, marginBottom: 28, marginTop: 10 },
@@ -130,9 +143,7 @@ const styles = StyleSheet.create({
   successCopy: { flex: 1 },
   successTitle: { color: "#135C3C", fontSize: 13, fontWeight: "800", lineHeight: 18 },
   successText: { color: "#256747", fontSize: 12, lineHeight: 17, marginTop: 2 },
-  submit: { alignItems: "center", alignSelf: "center", backgroundColor: "#F0531C", borderRadius: 999, flexDirection: "row", gap: 8, justifyContent: "center", marginTop: 8, minHeight: 54, width: "100%" },
-  submitDisabled: { opacity: 0.42 },
-  submitText: { color: "white", fontSize: 15, fontWeight: "800" },
+  submit: { alignSelf: "center", marginTop: 8, width: "100%" },
   note: { alignItems: "flex-start", flexDirection: "row", gap: 8, marginTop: 18, paddingHorizontal: 4 },
   noteText: { color: "#6B7280", flex: 1, fontSize: 12, lineHeight: 17 },
 });

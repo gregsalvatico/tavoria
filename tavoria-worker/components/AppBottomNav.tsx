@@ -1,7 +1,8 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
-import { t } from "../lib/i18n";
+import { t, useLanguage } from "../lib/i18n";
+import { TAVORIA } from "../lib/designTokens";
 import VenueQrFab from "./VenueQrFab";
 
 type WorkerTab = "home" | "applications" | "profile";
@@ -13,6 +14,7 @@ type Props =
 
 export default function AppBottomNav(props: Props) {
   const router = useRouter();
+  useLanguage();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width >= 1024;
   const items = props.role === "worker"
@@ -48,7 +50,7 @@ export default function AppBottomNav(props: Props) {
               <Feather
                 name={item.icon as keyof typeof Feather.glyphMap}
                 size={21}
-                color={active ? "#F0531C" : "#68717A"}
+                color={active ? TAVORIA.color.orange : TAVORIA.color.muted}
               />
               {!!item.badge && item.badge > 0 ? (
                 <View style={styles.badge}>
@@ -70,25 +72,26 @@ export default function AppBottomNav(props: Props) {
 const styles = StyleSheet.create({
   root: {
     alignItems: "center",
-    backgroundColor: "white",
-    borderTopColor: "rgba(14,26,36,0.09)",
+    backgroundColor: TAVORIA.color.white,
+    borderTopColor: TAVORIA.color.border,
     borderTopWidth: 1,
     flexDirection: "row",
-    minHeight: 72,
-    paddingBottom: 12,
+    minHeight: 64,
+    zIndex: 20,
+    paddingBottom: 8,
     paddingHorizontal: 12,
-    paddingTop: 12,
+    paddingTop: 8,
   },
   item: {
     alignItems: "center",
     flex: 1,
     gap: 5,
     justifyContent: "center",
-    minHeight: 52,
+    minHeight: 48,
     paddingHorizontal: 4,
   },
-  label: { color: "#68717A", fontSize: 10, fontWeight: "700", textAlign: "center" },
-  labelActive: { color: "#F0531C" },
+  label: { color: TAVORIA.color.muted, fontSize: 10, fontWeight: "700", textAlign: "center" },
+  labelActive: { color: TAVORIA.color.orange },
   badge: {
     alignItems: "center",
     backgroundColor: "#F0531C",

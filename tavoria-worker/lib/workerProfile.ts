@@ -9,6 +9,9 @@ export type InterviewAnswer = {
 };
 
 export type WorkerProfile = {
+  jobPreferences?: import("./workerMatching").JobPreferences;
+  photoUrls?: (string | null)[];
+  videoUrls?: (string | null)[];
   firstName?: string;
   lastName?: string;
   email?: string;

@@ -11,8 +11,8 @@ export const metadata: Metadata = {
 
 const ITEMS = [
   {
-    q: "Tavoria è gratis?",
-    a: "Sì. Tavoria è gratis fino al 2027. Tavoria Pro è in arrivo.",
+    q: "Quanto costa Tavoria per un locale?",
+    a: "Dopo 30 giorni gratis, Tavoria Pro costa 19 € al mese. Il piano gratuito resta disponibile: puoi pubblicare turni, ricevere fino a 3 candidature al mese e usare il QR del tuo locale.",
   },
   {
     q: "Come funziona il QR?",
@@ -39,8 +39,8 @@ const ITEMS = [
     a: "Sì. Pubblichi turni di qualsiasi durata: una serata, un weekend, una stagione, o un contratto a tempo indeterminato. Lo specifichi quando crei l'annuncio.",
   },
   {
-    q: "Cosa succede dopo il 2027?",
-    a: "Tavoria Pro è in arrivo. Condivideremo gli eventuali cambiamenti prima che entrino in vigore.",
+    q: "Posso mettere in pausa l'abbonamento?",
+    a: "Sì. Puoi mettere in pausa per uno o due mesi oppure disdire liberamente.",
   },
 ];
 

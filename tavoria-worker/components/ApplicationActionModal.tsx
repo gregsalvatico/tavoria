@@ -1,6 +1,5 @@
 import { Feather } from "@expo/vector-icons";
 import {
-  ActivityIndicator,
   Modal,
   Pressable,
   ScrollView,
@@ -11,6 +10,8 @@ import {
 } from "react-native";
 import { useEffect, useMemo, useState } from "react";
 import { t } from "../lib/i18n";
+import { TAVORIA } from "../lib/designTokens";
+import ActionButton from "./ActionButton";
 
 export type ApplicationAction = "decline" | "star" | "interview" | "hire";
 export type InterviewSchedule = { scheduledAt: string; location: string };
@@ -91,7 +92,7 @@ export default function ApplicationActionModal({
   return (
     <Modal
       transparent
-      animationType="fade"
+      animationType="none"
       visible={visible}
       onRequestClose={() => {
         if (!loading) onCancel();
@@ -103,6 +104,7 @@ export default function ApplicationActionModal({
           contentContainerStyle={styles.card}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
         >
           <View style={[styles.icon, { backgroundColor: meta.background }]}>
             <Feather name={meta.icon} size={27} color={meta.color} />
@@ -119,7 +121,7 @@ export default function ApplicationActionModal({
               <Text style={styles.formLabel}>{t("candidate_actions.interview_date")}</Text>
               <View style={styles.dateRow}>
                 <View style={styles.dateField}>
-                  <Text style={styles.compactLabel}>Date</Text>
+                      <Text style={styles.compactLabel}>{t("common.date")}</Text>
                   <Pressable
                     style={styles.datePickerButton}
                     onPress={() => {
@@ -133,7 +135,7 @@ export default function ApplicationActionModal({
                   </Pressable>
                 </View>
                 <View style={styles.timeField}>
-                  <Text style={styles.compactLabel}>Time</Text>
+                  <Text style={styles.compactLabel}>{t("common.time")}</Text>
                   <TextInput value={time} onChangeText={setTime} placeholder="10:00" placeholderTextColor="#9CA3AF" style={[styles.formInput, !timeValid && styles.formInputInvalid]} keyboardType="numbers-and-punctuation" />
                 </View>
               </View>
@@ -240,8 +242,10 @@ export default function ApplicationActionModal({
             </View>
           </View>
 
-          <Pressable
-            style={[styles.confirm, { backgroundColor: meta.color }]}
+          <ActionButton
+            label={t(`candidate_actions.confirm_${action}_cta`)}
+            loading={loading}
+            disabled={!interviewValid}
             onPress={() =>
               onConfirm(
                 action === "interview"
@@ -249,16 +253,11 @@ export default function ApplicationActionModal({
                       scheduledAt: parsedInterviewDate.toISOString(),
                       location: interviewLocation,
                     }
-                  : undefined
+                : undefined
               )
             }
-            disabled={loading || !interviewValid}
-          >
-            <Text style={styles.confirmText}>
-              {t(`candidate_actions.confirm_${action}_cta`)}
-            </Text>
-            {loading ? <ActivityIndicator color="white" size="small" /> : null}
-          </Pressable>
+            style={[styles.confirm, { backgroundColor: meta.color }]}
+          />
           <Pressable
             style={styles.cancel}
             onPress={onCancel}
@@ -277,14 +276,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 20,
-    backgroundColor: "rgba(14,26,36,0.58)",
+    backgroundColor: "rgba(14,26,36,0.42)",
   },
   card: {
     width: "100%",
     maxWidth: 430,
     alignSelf: "center",
-    borderRadius: 22,
-    backgroundColor: "#FFFFFF",
+    borderRadius: TAVORIA.radius.large,
+    backgroundColor: TAVORIA.color.paper,
     padding: 22,
   },
   modalScroll: { maxHeight: "92%", width: "100%" },
@@ -314,11 +313,11 @@ const styles = StyleSheet.create({
   dateField: { flex: 1, minWidth: 0 },
   timeField: { flexBasis: 92, flexGrow: 0, flexShrink: 1, minWidth: 0 },
   compactLabel: { color: "#6B7280", fontSize: 10, fontWeight: "800", letterSpacing: 0.5, marginBottom: 5, textTransform: "uppercase" },
-  formInput: { backgroundColor: "#F7F4EE", borderColor: "rgba(14,26,36,0.14)", borderRadius: 12, borderWidth: 1, color: "#0E1A24", fontSize: 14, minHeight: 47, paddingHorizontal: 10 },
+  formInput: { backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.borderStrong, borderRadius: TAVORIA.radius.medium, borderWidth: 1, color: TAVORIA.color.navy, fontSize: 14, minHeight: 47, paddingHorizontal: 10 },
   formInputInvalid: { borderColor: "#B42318", borderWidth: 1.5 },
   validationMessage: { alignItems: "center", flexDirection: "row", gap: 6, marginTop: 9 },
   validationText: { color: "#B42318", flex: 1, fontSize: 12, lineHeight: 17 },
-  datePickerButton: { alignItems: "center", backgroundColor: "#F7F4EE", borderColor: "rgba(14,26,36,0.14)", borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 7, minHeight: 47, paddingHorizontal: 10 },
+  datePickerButton: { alignItems: "center", backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.borderStrong, borderRadius: TAVORIA.radius.medium, borderWidth: 1, flexDirection: "row", gap: 7, minHeight: 47, paddingHorizontal: 10 },
   datePickerText: { color: "#0E1A24", flex: 1, fontSize: 13, fontWeight: "700" },
   calendar: { backgroundColor: "#F7F4EE", borderColor: "rgba(14,26,36,0.12)", borderRadius: 14, borderWidth: 1, marginTop: 9, padding: 10 },
   calendarHeader: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
@@ -358,15 +357,8 @@ const styles = StyleSheet.create({
   workerNoticeBody: { color: "#5D6670", fontSize: 12, lineHeight: 17 },
   confirm: {
     width: "100%",
-    minHeight: 52,
-    borderRadius: 999,
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "center",
-    paddingHorizontal: 18,
+    minHeight: 48,
   },
-  confirmText: { color: "white", fontSize: 15, fontWeight: "700" },
   cancel: {
     width: "100%",
     minHeight: 48,

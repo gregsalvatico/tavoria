@@ -70,12 +70,16 @@ export default function VenueQrFab({ variant = "fab" }: Props) {
     <>
       {variant === "sidebar" ? (
         <Pressable
-          style={styles.sidebarAction}
+          style={({ hovered, pressed }) => [
+            styles.sidebarAction,
+            hovered && styles.sidebarActionHovered,
+            pressed && styles.sidebarActionPressed,
+          ]}
           onPress={() => void loadQr()}
           accessibilityRole="button"
           accessibilityLabel={t("home_in.print_qr")}
         >
-          <Feather name="printer" size={18} color="rgba(247,244,238,0.62)" />
+          <Feather name="printer" size={18} color="rgba(14,26,36,0.62)" />
           <Text style={styles.sidebarActionText}>{t("home_in.print_qr")}</Text>
         </Pressable>
       ) : (
@@ -150,7 +154,9 @@ export default function VenueQrFab({ variant = "fab" }: Props) {
 const styles = StyleSheet.create({
   fab: { alignItems: "center", backgroundColor: "#0E1A24", borderColor: "#F7F4EE", borderRadius: 999, borderWidth: 3, bottom: 94, elevation: 5, height: 54, justifyContent: "center", position: "absolute", right: 18, shadowColor: "#0E1A24", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.22, shadowRadius: 10, width: 54, zIndex: 10 },
   sidebarAction: { alignItems: "center", borderRadius: 10, flexDirection: "row", gap: 12, minHeight: 44, paddingHorizontal: 11 },
-  sidebarActionText: { color: "rgba(247,244,238,0.68)", flex: 1, fontSize: 13, fontWeight: "700" },
+  sidebarActionHovered: { backgroundColor: "rgba(14,26,36,0.07)" },
+  sidebarActionPressed: { opacity: 0.72 },
+  sidebarActionText: { color: "rgba(14,26,36,0.72)", flex: 1, fontSize: 13, fontWeight: "700" },
   backdrop: { alignItems: "center", backgroundColor: "rgba(14,26,36,0.52)", flex: 1, justifyContent: "center", padding: 20 },
   card: { backgroundColor: "#F7F4EE", borderRadius: 20, maxHeight: "92%", maxWidth: 420, width: "100%" },
   cardContent: { padding: 20 },

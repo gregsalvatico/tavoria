@@ -6,7 +6,6 @@ import { Feather } from "@expo/vector-icons";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -20,6 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
+import ActionButton from "../components/ActionButton";
 import {
   generateUsername,
   signUpWithUsernamePin,
@@ -382,18 +382,14 @@ export default function Signup() {
 
         <StickyFooter>
           <View style={styles.bottomInner}>
-            <Pressable
-              disabled={!canContinue || busy}
+            <ActionButton
+              label={t("common.continue")}
+              icon="arrow-right"
+              loading={busy}
+              disabled={!canContinue}
               onPress={onContinue}
-              style={[styles.cta, isDesktop && desktopButtonStyle, (!canContinue || busy) && styles.ctaDisabled]}
-            >
-              <Text style={styles.ctaTxt}>{t("common.continue")}</Text>
-              {busy ? (
-                <ActivityIndicator color="#F7F4EE" size="small" />
-              ) : (
-                <Feather name="arrow-right" size={20} color="#F7F4EE" />
-              )}
-            </Pressable>
+              style={[styles.cta, isDesktop && desktopButtonStyle]}
+            />
           </View>
         </StickyFooter>
       </KeyboardAvoidingView>
@@ -527,22 +523,11 @@ const styles = StyleSheet.create({
   },
   bottomInner: { alignItems: "center", alignSelf: "center", maxWidth: 690, width: "100%" },
   cta: {
-    alignSelf: "center",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#F0531C",
-    borderRadius: 999,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
     width: "100%",
   },
-  ctaDisabled: { backgroundColor: "rgba(11,15,26,0.15)" },
   authSwitch: { alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 18, paddingVertical: 8 },
   authSwitchPrompt: { color: "#6B7280", fontSize: 13 },
   authSwitchLink: { color: "#185FA5", fontSize: 13, fontWeight: "800" },
-  ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
 
   termsRow: {
     flexDirection: "row",

@@ -9,8 +9,10 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import { useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
+import ActionButton from "../components/ActionButton";
+import { t } from "../lib/i18n";
 
 export default function WorkerMedia() {
   const router = useRouter();
@@ -184,13 +186,12 @@ export default function WorkerMedia() {
 
       </ScrollView>
       <StickyFooter desktopRow fullBleed>
-        <Pressable
-          style={[styles.cta, isDesktop && desktopButtonStyle]}
+        <ActionButton
+          label={t("worker_photos.save_live")}
+          icon="arrow-right"
           onPress={() => router.replace("/worker-done")}
-        >
-          <Text style={styles.ctaTxt}>Save and go live</Text>
-          <Feather name="arrow-right" size={20} color="#F7F4EE" />
-        </Pressable>
+          style={styles.fullWidthButton}
+        />
       </StickyFooter>
     </SafeAreaView>
   );
@@ -369,8 +370,12 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: "#F0531C",
     borderRadius: 999,
-    paddingVertical: 18,
+    height: 44,
+    maxHeight: 44,
+    minHeight: 44,
+    paddingHorizontal: 16,
     width: "100%",
   },
   ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
+  fullWidthButton: { width: "100%" },
 });
