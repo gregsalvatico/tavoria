@@ -59,8 +59,8 @@ export default function FilterChips<T extends string>({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={[styles.row, desktop && styles.rowDesktop, contained && styles.rowContained]}
-      style={[styles.scroll, style]}
+      contentContainerStyle={[styles.row, !desktop && styles.rowMobile, desktop && styles.rowDesktop, contained && styles.rowContained]}
+      style={[styles.scroll, !desktop && styles.scrollMobile, style]}
     >
       {options.map((option) => {
         const active = option.id === value;
@@ -93,7 +93,9 @@ export default function FilterChips<T extends string>({
 
 const styles = StyleSheet.create({
   scroll: { flexGrow: 0, maxHeight: 52, width: "100%" },
+  scrollMobile: { maxHeight: 58 },
   row: { gap: 8, paddingBottom: 8, paddingHorizontal: 16, paddingTop: 6 },
+  rowMobile: { paddingBottom: 14 },
   rowDesktop: { paddingHorizontal: 24 },
   rowContained: { paddingHorizontal: 0 },
   chip: {

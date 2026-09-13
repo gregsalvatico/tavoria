@@ -141,6 +141,7 @@ export default function SignedInHome({
   const [refreshing, setRefreshing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [timeFilter, setTimeFilter] = useState<ShiftTimeFilter>("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [hideApplied, setHideApplied] = useState(true);
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
   const [candidateFilter, setCandidateFilter] = useState<CandidateFilter>("all");
@@ -342,15 +343,30 @@ export default function SignedInHome({
 
       {venueMode ? <WorkerDirectory embedded /> : <>
       <FilterBar
+        mobileOpen={filtersOpen}
+        mobileActive={hideApplied || timeFilter !== "all"}
+        mobileLabel={t("talent.filters")}
+        onToggleMobile={() => setFiltersOpen((open) => !open)}
+        mobileExtra={
+          <QuickFilter
+            active={hideApplied}
+            icon="check-circle"
+            label={t("shift_filters.hide_applied")}
+            onPress={() => setHideApplied((value) => !value)}
+            desktop={false}
+          />
+        }
         trailing={
           <View style={styles.filterActions}>
-            <QuickFilter
-              active={hideApplied}
-              icon="check-circle"
-              label={t("shift_filters.hide_applied")}
-              onPress={() => setHideApplied((value) => !value)}
-              desktop={isDesktop}
-            />
+            {isDesktop ? (
+              <QuickFilter
+                active={hideApplied}
+                icon="check-circle"
+                label={t("shift_filters.hide_applied")}
+                onPress={() => setHideApplied((value) => !value)}
+                desktop
+              />
+            ) : null}
             {!loading ? (
               <RefreshIconButton
                 label={t("talent.retry")}
@@ -460,11 +476,6 @@ export default function SignedInHome({
                   venueMode={venueMode}
                   onOpen={() => {
                     setSelectedShift(row);
-                  }}
-                  onOpenVenue={() => {
-                    if (row.venue?.id) {
-                      router.push({ pathname: "/venue-board", params: { venueId: row.venue.id } });
-                    }
                   }}
                 />
               ))}
@@ -700,7 +711,7 @@ function HomeCandidateRow({
 }) {
   const name = [worker.first_name, worker.last_name].filter(Boolean).join(" ") || "Candidate";
   const roles = localizeRoles((worker.positions ?? []).slice(0, 2)).join(" · ") || "Hospitality";
-  const meta = [worker.city, worker.age_range ? `${worker.age_range}y` : null, worker.years_exp]
+  const meta = [worker.city, worker.age_range ? `${worker.age_range}y` : null]
     .filter(Boolean)
     .join(" · ");
 
@@ -730,13 +741,11 @@ function HomeShiftRow({
   row,
   venueMode,
   onOpen,
-  onOpenVenue,
   last,
 }: {
   row: ShiftRow;
   venueMode: boolean;
   onOpen: () => void;
-  onOpenVenue: () => void;
   last: boolean;
 }) {
   const photo = row.venue?.photo_url
@@ -754,22 +763,9 @@ function HomeShiftRow({
       <Image source={photo} style={styles.shiftImage} resizeMode="cover" />
       <View style={styles.shiftBody}>
         <View style={styles.shiftTopLine}>
-          {venueMode || !row.venue?.id ? (
-            <Text style={styles.shiftVenue} numberOfLines={1}>
-              {venueMode ? roles : row.venue?.name || "Venue"}
-            </Text>
-          ) : (
-            <Pressable
-              onPress={(event) => {
-                event.stopPropagation();
-                onOpenVenue();
-              }}
-              style={styles.shiftVenueLink}
-            >
-              <Text style={styles.shiftVenue} numberOfLines={1}>{row.venue.name || "Venue"}</Text>
-              <Feather name="arrow-up-right" size={14} color="#185FA5" />
-            </Pressable>
-          )}
+          <Text style={styles.shiftVenue} numberOfLines={1}>
+            {venueMode ? roles : row.venue?.name || "Venue"}
+          </Text>
           {urgent && (
             <View style={styles.urgentBadge}>
               <Feather name="zap" size={10} color="#B91C1C" />
@@ -786,11 +782,15 @@ function HomeShiftRow({
               <Text style={styles.shiftWhen} numberOfLines={1}>{when}</Text>
             </>
           ) : null}
+          {row.venue?.city ? (
+            <>
+              <Text style={styles.shiftDot}>·</Text>
+              <Text style={styles.shiftWhen} numberOfLines={1}>{row.venue.city}</Text>
+            </>
+          ) : null}
         </View>
         {venueMode && row.status ? (
           <Text style={styles.shiftStatus}>{row.status.toUpperCase()}</Text>
-        ) : row.venue?.city ? (
-          <Text style={styles.shiftCity}>{row.venue.city}</Text>
         ) : null}
       </View>
       <Feather name="chevron-right" size={19} color="#A0A5AB" />
@@ -938,12 +938,11 @@ const styles = StyleSheet.create({
   shiftBody: { flex: 1, minWidth: 0 },
   shiftTopLine: { alignItems: "center", flexDirection: "row", gap: 8 },
   shiftVenue: { color: "#0E1A24", flexShrink: 1, fontSize: 17, fontWeight: "700" },
-  shiftVenueLink: { alignItems: "center", flexDirection: "row", flexShrink: 1, gap: 4, minWidth: 0 },
   shiftRoles: { color: "#46505A", fontSize: 14, marginTop: 3 },
-  shiftMeta: { alignItems: "center", flexDirection: "row", marginTop: 6 },
+  shiftMeta: { alignItems: "center", flexDirection: "row", flexWrap: "wrap", marginTop: 6 },
   shiftPay: { color: "#F0531C", fontSize: 12, fontWeight: "800" },
   shiftDot: { color: "#C4C7CB", marginHorizontal: 6 },
-  shiftWhen: { color: "#6B7280", flex: 1, fontSize: 12 },
+  shiftWhen: { color: "#6B7280", flexShrink: 1, fontSize: 12 },
   shiftCity: { color: "#8A8F98", fontSize: 11, marginTop: 4 },
   shiftStatus: { color: "#0F6E56", fontSize: 9, fontWeight: "800", letterSpacing: 0.8, marginTop: 4 },
   urgentBadge: { alignItems: "center", backgroundColor: "#FDECEC", borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 7, paddingVertical: 4 },

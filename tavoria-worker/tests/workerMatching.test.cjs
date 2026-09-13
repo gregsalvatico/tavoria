@@ -34,4 +34,20 @@ const mediaPool = [
   { ...worker, id: 'none' },
 ];
 assert.deepEqual(rankWorkers(mediaPool, request).map(m => m.worker.id), ['both', 'video', 'photo', 'none']);
-console.log('Matching checks passed: overnight/week boundaries, unknown data, salary units, start dates, complete visibility, media priority, demographic neutrality.');
+const completeProfile = {
+  ...worker,
+  id: 'complete-profile',
+  last_name: 'Rossi',
+  age_range: '26–30',
+  nationality: 'IT',
+  years_exp: '1-2 years',
+  photo_url: 'photo.jpg',
+};
+const sparseProfile = {
+  id: 'sparse-profile',
+  positions: [],
+  languages: [],
+  photo_url: 'photo.jpg',
+};
+assert.deepEqual(rankWorkers([sparseProfile, completeProfile], request).map(m => m.worker.id), ['complete-profile', 'sparse-profile']);
+console.log('Matching checks passed: overnight/week boundaries, unknown data, salary units, start dates, complete visibility, media priority, profile completeness, demographic neutrality.');

@@ -171,9 +171,20 @@ export function rankWorkers(workers: MatchWorker[], request: MatchRequest): Work
     const hasVideo = !!worker.video_url || (worker.video_urls ?? []).some(Boolean);
     return hasPhoto && hasVideo ? 3 : hasVideo ? 2 : hasPhoto ? 1 : 0;
   };
+  const profileDataRank = (worker: MatchWorker) => [
+    worker.last_name?.trim(),
+    worker.city?.trim(),
+    worker.age_range?.trim(),
+    worker.nationality?.trim(),
+    worker.positions?.length,
+    worker.languages?.length,
+    worker.years_exp?.trim(),
+    worker.job_preferences?.days?.length,
+  ].filter(Boolean).length;
   return workers.filter(w => w.job_preferences?.openToWork !== false)
     .map(w => matchWorker(w, request)).sort((a, b) =>
       mediaRank(b.worker) - mediaRank(a.worker) ||
+      profileDataRank(b.worker) - profileDataRank(a.worker) ||
       groups[a.group] - groups[b.group] || b.score - a.score ||
       (Date.parse(b.worker.last_seen_at ?? b.worker.created_at ?? "") || 0) - (Date.parse(a.worker.last_seen_at ?? a.worker.created_at ?? "") || 0) ||
       a.worker.id.localeCompare(b.worker.id));

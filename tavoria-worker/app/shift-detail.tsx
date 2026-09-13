@@ -90,6 +90,7 @@ export default function ShiftDetail() {
   const [application, setApplication] = useState<any | null>(null);
   const [contactOpen, setContactOpen] = useState(false);
   const [hasAccount, setHasAccount] = useState(false);
+  const [heroImageFailed, setHeroImageFailed] = useState(false);
 
   // Determine if the current signed-in user owns the venue that posted this shift
   useEffect(() => {
@@ -144,6 +145,7 @@ export default function ShiftDetail() {
         getCurrentUserContext().catch(() => ({ hasVenue: false, hasWorker: false })),
       ]);
       if (shiftResult.error) throw shiftResult.error;
+      setHeroImageFailed(false);
       setShift(shiftResult.data);
       setApplication(existingApplication);
       setHasAccount(account.hasVenue || account.hasWorker);
@@ -244,6 +246,7 @@ export default function ShiftDetail() {
   const photo = primaryPhotoUrl
     ? { uri: primaryPhotoUrl }
     : venueFallback(v?.type);
+  const heroSource = heroImageFailed ? venueFallback(v?.type) : photo;
 
   const isUrgent =
     shift.start_when === "now" || shift.start_when === "asap";
@@ -302,21 +305,27 @@ export default function ShiftDetail() {
         showsHorizontalScrollIndicator={false}
       >
         <View style={isDesktop && styles.detailGrid}>
-        <View style={styles.mediaColumn}>
-          {/* Hero */}
-          <View style={[styles.hero, isDesktop && styles.heroDesktop]}>
-            <Image source={photo} style={[styles.heroImg, isDesktop && styles.heroImgDesktop]} />
-            {isUrgent && (
-              <View style={styles.urgentBanner}>
-                <Feather name="zap" size={14} color="white" />
-                <Text style={styles.urgentBannerTxt}>
-                  {shift.start_when === "now"
-                    ? t("shift_detail.need_now_banner")
-                    : t("shift_detail.asap_banner")}
-                </Text>
-              </View>
-            )}
-          </View>
+          <View style={[styles.mediaColumn, isDesktop && styles.mediaColumnDesktop]}>
+            {/* Hero */}
+            <View style={[styles.hero, isDesktop && styles.heroDesktop]}>
+              <Image
+                source={heroSource}
+                onError={() => {
+                  if (primaryPhotoUrl) setHeroImageFailed(true);
+                }}
+                style={[styles.heroImg, isDesktop && styles.heroImgDesktop]}
+              />
+              {isUrgent && (
+                <View style={styles.urgentBanner}>
+                  <Feather name="zap" size={14} color="white" />
+                  <Text style={styles.urgentBannerTxt}>
+                    {shift.start_when === "now"
+                      ? t("shift_detail.need_now_banner")
+                      : t("shift_detail.asap_banner")}
+                  </Text>
+                </View>
+              )}
+            </View>
 
           <VenueMediaGallery
             photoUrls={additionalVenuePhotoUrls}
@@ -606,7 +615,8 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 14, paddingBottom: 20 },
   scrollDesktop: { paddingHorizontal: 24, paddingBottom: 20 },
   detailGrid: { alignItems: "flex-start", flexDirection: "row", gap: 24, maxWidth: 1180, alignSelf: "center", width: "100%" },
-  mediaColumn: { flex: 1, minWidth: 0 },
+  mediaColumn: { minWidth: 0, width: "100%" },
+  mediaColumnDesktop: { flex: 1, width: 0 },
 
   loadingWrap: { flex: 1, justifyContent: "center", alignItems: "center" },
   errorWrap: {
@@ -641,7 +651,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     position: "relative",
   },
-  heroDesktop: { flex: 1, height: 360, marginBottom: 0, minWidth: 0 },
+  heroDesktop: { height: 360, marginBottom: 0, minWidth: 0, width: "100%" },
   heroImgDesktop: { height: "100%" },
   heroImg: { width: "100%", height: 220 },
   urgentBanner: {

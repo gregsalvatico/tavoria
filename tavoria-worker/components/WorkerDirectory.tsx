@@ -112,16 +112,22 @@ export default function WorkerDirectory({ embedded = false }: { embedded?: boole
     </PageContainer>
     {!loading && !error ? (
       <FilterBar
+        mobileOpen={filtersOpen}
+        mobileActive={filter !== "all" || Boolean(query || requestId)}
+        mobileLabel={t("talent.filters")}
+        onToggleMobile={() => setFiltersOpen((open) => !open)}
         trailing={
           <View style={styles.filterActions}>
-            <HeaderIconButton
-              label={filtersOpen ? t("talent.close") : t("talent.filters")}
-              onPress={() => setFiltersOpen((open) => !open)}
-              style={[styles.filterToggle, (filtersOpen || query || requestId) && styles.filterToggleActive]}
-            >
-              <Feather name="filter" size={17} color={filtersOpen || query || requestId ? TAVORIA.color.orange : TAVORIA.color.navy} />
-              {query || requestId ? <View style={styles.filterBadge} /> : null}
-            </HeaderIconButton>
+            {isDesktop ? (
+              <HeaderIconButton
+                label={filtersOpen ? t("talent.close") : t("talent.filters")}
+                onPress={() => setFiltersOpen((open) => !open)}
+                style={[styles.filterToggle, (filtersOpen || query || requestId) && styles.filterToggleActive]}
+              >
+                <Feather name="filter" size={17} color={filtersOpen || query || requestId ? TAVORIA.color.orange : TAVORIA.color.navy} />
+                {query || requestId ? <View style={styles.filterBadge} /> : null}
+              </HeaderIconButton>
+            ) : null}
             {/* Keep refresh beside filters so the action group remains one compact control cluster. */}
             {!loading ? (
               <RefreshIconButton
@@ -165,15 +171,13 @@ export default function WorkerDirectory({ embedded = false }: { embedded?: boole
         const w = match.worker;
         const name = [w.first_name, w.last_name].filter(Boolean).join(" ") || t("talent.worker");
         const photo = w.photo_url ?? (w.photo_urls ?? []).find(Boolean);
-        const hasPhoto = !!photo;
         const hasVideo = !!w.video_url || (w.video_urls ?? []).some(Boolean);
         return <ListRow key={w.id} label={name} last={index === matches.length - 1} onPress={() => setSelectedMatch(match)}>
             {photo ? <Image source={{ uri: photo }} style={styles.avatar} /> : <View style={[styles.avatar, styles.placeholder]}><Text style={styles.initial}>{name[0]}</Text></View>}
             <View style={styles.workerBody}>
-              <View style={styles.nameRow}><Text style={styles.name}>{name}</Text>{hasVideo && <Feather name="video" size={15} color="#73776F" />}{hasPhoto && !w.photo_url && <Feather name="image" size={15} color="#73776F" />}{applied.has(w.id) && <Text style={styles.applied}>{t("candidate_filters.applied")}</Text>}</View>
+              <View style={styles.nameRow}><Text style={styles.name}>{name}</Text>{hasVideo && <Feather name="video" size={15} color="#73776F" />}</View>
               <Text style={styles.roles}>{localizeRoles(w.positions).join(" · ")}</Text>
-              <Text style={styles.meta}>{[w.city, w.age_range, w.nationality ? countryNameFromCode(w.nationality) : null, w.years_exp, w.languages?.join(" / ")].filter(Boolean).join(" · ")}</Text>
-              {!!match.reasons.length && <View style={styles.reasons}>{match.reasons.slice(0, 4).map(reason => <Text key={reason} style={[styles.reason, reason.includes("conflict") && { color: "#9C6333" }]}>{t(`talent.${reason}`)}</Text>)}</View>}
+              <Text style={styles.meta}>{[w.city, w.age_range, w.nationality ? countryNameFromCode(w.nationality) : null].filter(Boolean).join(" · ")}</Text>
             </View><Feather name="chevron-right" size={17} color="#8B9088" />
         </ListRow>;
       })}</ListSurface>}
@@ -237,7 +241,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 22 },
   title: { fontFamily: "InstrumentSerif_400Regular", fontSize: 29, fontWeight: "400", color: TAVORIA.color.navy },
   icon: { height: 36, width: 36, alignItems: "center", justifyContent: "center" },
-  filterControlsContainer: { paddingBottom: 0, paddingTop: 0 },
+  filterControlsContainer: { paddingBottom: 8, paddingTop: 0 },
   filterActions: { alignItems: "center", flexDirection: "row", gap: 8 },
   filterToggle: { backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.borderStrong, borderRadius: TAVORIA.radius.medium, borderWidth: 1, position: "relative" },
   filterToggleActive: { backgroundColor: TAVORIA.color.orangeSoft, borderColor: TAVORIA.color.orange },

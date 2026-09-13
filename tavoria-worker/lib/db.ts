@@ -1068,13 +1068,27 @@ export async function getCurrentWorkerDocuments(): Promise<WorkerDocumentRecord[
   const userId = session?.user.id;
   if (!userId) return [];
 
-  const { data, error } = await supabase
+  const selectWithName = "id, document_type, storage_path, original_name, display_name, mime_type, file_size, created_at";
+  const selectLegacy = "id, document_type, storage_path, original_name, mime_type, file_size, created_at";
+  let data: any[] | null;
+  let error: any;
+  ({ data, error } = await supabase
     .from("worker_documents")
-    .select("id, document_type, storage_path, original_name, display_name, mime_type, file_size, created_at")
+    .select(selectWithName)
     .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }));
+  if (error && isMissingFeatureColumn(error)) {
+    ({ data, error } = await supabase
+      .from("worker_documents")
+      .select(selectLegacy)
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false }));
+  }
   if (error) throw error;
-  return (data ?? []) as WorkerDocumentRecord[];
+  return (data ?? []).map((row) => ({
+    ...row,
+    display_name: row.display_name ?? row.original_name ?? null,
+  })) as WorkerDocumentRecord[];
 }
 
 // All applications submitted by the current worker user.
@@ -1379,22 +1393,35 @@ export async function uploadWorkerDocument(input: {
     });
   if (uploadError) throw uploadError;
 
-  const { data: metadata, error: metadataError } = await supabase
+  const documentInsert = {
+    user_id: userId,
+    document_type: documentType,
+    storage_path: path,
+    original_name: originalName,
+    display_name: displayName,
+    mime_type: contentType,
+    file_size: input.fileSize ?? arrayBuffer.byteLength,
+    updated_at: new Date().toISOString(),
+  };
+  const selectWithName = "id, document_type, storage_path, original_name, display_name, mime_type, file_size, created_at";
+  const selectLegacy = "id, document_type, storage_path, original_name, mime_type, file_size, created_at";
+  let { data: metadata, error: metadataError } = await supabase
     .from("worker_documents")
-    .insert(
-      {
-        user_id: userId,
-        document_type: documentType,
-        storage_path: path,
-        original_name: originalName,
-        display_name: displayName,
-        mime_type: contentType,
-        file_size: input.fileSize ?? arrayBuffer.byteLength,
-        updated_at: new Date().toISOString(),
-      },
-    )
-    .select("id, document_type, storage_path, original_name, display_name, mime_type, file_size, created_at")
+    .insert(documentInsert)
+    .select(selectWithName)
     .single();
+  if (metadataError && isMissingFeatureColumn(metadataError)) {
+    const { display_name: _displayName, ...legacyInsert } = documentInsert;
+    ({ data: metadata, error: metadataError } = await supabase
+      .from("worker_documents")
+      .insert(legacyInsert)
+      .select(selectLegacy)
+      .single());
+  }
   if (metadataError) throw metadataError;
-  return metadata as WorkerDocumentRecord;
+  if (!metadata) throw new Error("The document could not be saved.");
+  return {
+    ...metadata,
+    display_name: metadata.display_name ?? displayName,
+  } as WorkerDocumentRecord;
 }

@@ -54,18 +54,47 @@ export function PageHeader({
 export function FilterBar({
   children,
   trailing,
+  mobileOpen = false,
+  mobileActive = false,
+  mobileLabel = "Filters",
+  onToggleMobile,
+  mobileExtra,
   style,
 }: {
   children: ReactNode;
   trailing?: ReactNode;
+  mobileOpen?: boolean;
+  mobileActive?: boolean;
+  mobileLabel?: string;
+  onToggleMobile?: () => void;
+  mobileExtra?: ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
+  const isDesktop = useIsDesktop();
   return (
-    <PageContainer style={[styles.filterBar, style]}>
-      <View style={styles.filterBarRow}>
-        <View style={styles.filterBarContent}>{children}</View>
-        {trailing ? <View style={styles.filterBarTrailing}>{trailing}</View> : null}
-      </View>
+    <PageContainer style={[styles.filterBar, !isDesktop && mobileOpen && styles.filterBarMobileOpen, style]}>
+      {isDesktop ? (
+        <View style={styles.filterBarRow}>
+          <View style={styles.filterBarContent}>{children}</View>
+          {trailing ? <View style={styles.filterBarTrailing}>{trailing}</View> : null}
+        </View>
+      ) : (
+        <>
+          <View style={styles.filterBarMobileRow}>
+            <HeaderIconButton
+              label={mobileLabel}
+              onPress={() => onToggleMobile?.()}
+              style={[styles.mobileFilterButton, mobileOpen && styles.mobileFilterButtonActive]}
+            >
+              <Feather name="filter" size={17} color={mobileOpen || mobileActive ? TAVORIA.color.orange : TAVORIA.color.navy} />
+              {mobileActive ? <View style={styles.mobileFilterBadge} /> : null}
+            </HeaderIconButton>
+            {trailing ? <View style={styles.filterBarTrailing}>{trailing}</View> : null}
+          </View>
+          {mobileOpen ? <View style={styles.filterBarMobileContent}>{children}</View> : null}
+          {mobileOpen && mobileExtra ? <View style={styles.filterBarMobileExtra}>{mobileExtra}</View> : null}
+        </>
+      )}
     </PageContainer>
   );
 }
@@ -259,7 +288,11 @@ const styles = StyleSheet.create({
   titleMobile: { left: 48, position: "absolute", right: 48, textAlign: "center" },
   accent: { color: TAVORIA.color.orange },
   filterBar: { paddingBottom: 0 },
+  filterBarMobileOpen: { paddingBottom: 8 },
   filterBarRow: { alignItems: "center", flexDirection: "row", minWidth: 0, width: "100%" },
+  filterBarMobileRow: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", minHeight: 44, width: "100%" },
+  filterBarMobileContent: { marginTop: 2, width: "100%" },
+  filterBarMobileExtra: { marginTop: 2, width: "100%" },
   filterBarContent: { flex: 1, minWidth: 0 },
   filterBarTrailing: { alignItems: "center", marginLeft: 8 },
   listSurface: {
@@ -301,6 +334,15 @@ const styles = StyleSheet.create({
     borderRadius: TAVORIA.radius.pill,
     borderWidth: 1,
   },
+  mobileFilterButton: {
+    backgroundColor: TAVORIA.color.white,
+    borderColor: TAVORIA.color.borderStrong,
+    borderRadius: TAVORIA.radius.medium,
+    borderWidth: 1,
+    position: "relative",
+  },
+  mobileFilterButtonActive: { backgroundColor: TAVORIA.color.orangeSoft, borderColor: TAVORIA.color.orange },
+  mobileFilterBadge: { backgroundColor: TAVORIA.color.orange, borderColor: TAVORIA.color.white, borderRadius: 999, borderWidth: 2, height: 9, position: "absolute", right: 7, top: 6, width: 9 },
   flowTopBarContainer: { paddingBottom: 0 },
   flowTopBar: {
     alignItems: "center",

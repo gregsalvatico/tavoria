@@ -103,6 +103,7 @@ export default function VenueInbox() {
   const [refreshing, setRefreshing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<ApplicationRow | null>(null);
   const [pendingAction, setPendingAction] = useState<ApplicationAction | null>(null);
   const [outcomeOpen, setOutcomeOpen] = useState(false);
@@ -204,6 +205,10 @@ export default function VenueInbox() {
             />
           </PageContainer>
           <FilterBar
+            mobileOpen={filtersOpen}
+            mobileActive={filter !== "all"}
+            mobileLabel={t("talent.filters")}
+            onToggleMobile={() => setFiltersOpen((open) => !open)}
             trailing={!loading ? (
               <RefreshIconButton
                 label={t("talent.retry")}

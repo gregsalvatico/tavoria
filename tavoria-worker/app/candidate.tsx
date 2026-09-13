@@ -7,7 +7,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -157,10 +156,6 @@ export default function Candidate() {
     }
   };
 
-  const onShare = async () => {
-    try { await Share.share({ message: "Check out my hospitality profile on Tavoria — get hired in minutes, not weeks." }); } catch {}
-  };
-
   return <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
     <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       {isOwnerMode ? (
@@ -169,7 +164,7 @@ export default function Candidate() {
         <VenueScreenHeader title={t("candidate_actions.view_full_profile")} active={incomingAppId ? "inbox" : "candidates"} />
       )}
       <View style={styles.content}>
-        {loading ? <ActivityIndicator color="#F0531C" style={{ marginVertical: 50 }} /> : error ? <View style={{ paddingVertical: 36, gap: 12 }}><Text style={talentStyles.error}>{error}</Text><Pressable onPress={() => router.replace("/candidate" as never)}><Text style={styles.link}>{t("talent.retry")}</Text></Pressable></View> : row ? <WorkerProfileContent row={row} owner={isOwnerMode} /> : null}
+        {loading ? <ActivityIndicator color="#F0531C" style={{ marginVertical: 50 }} /> : error ? <View style={{ paddingVertical: 36, gap: 12 }}><Text style={talentStyles.error}>{error}</Text><Pressable onPress={() => router.replace("/candidate" as never)}><Text style={styles.link}>{t("talent.retry")}</Text></Pressable></View> : row ? <WorkerProfileContent row={row} owner={isOwnerMode} onEdit={() => router.push("/worker-profile-edit" as never)} /> : null}
         {!isOwnerMode && row ? <View style={styles.contact}>
           <Text style={styles.contactTitle}>{t("contact.section_label")}</Text>
           {row.phone && row.phone_visible !== false ? <View style={styles.contactRow}><Feather name="phone" size={16} color="#626760" /><Text style={styles.contactPhone}>{row.phone}</Text><Pressable onPress={() => setContactOpen(true)} style={styles.contactAction}><Text style={styles.contactActionText}>{t("contact_modal.contact_applicant")}</Text></Pressable></View> : <Text style={styles.muted}>{t("contact.no_phone")}</Text>}
@@ -177,10 +172,7 @@ export default function Candidate() {
       </View>
     </ScrollView>
 
-    {!loading && !error ? <StickyFooter desktopRow><View style={[styles.footerActions, isDesktop && styles.footerActionsDesktop]}>{isOwnerMode ? <>
-      <Pressable accessibilityRole="button" accessibilityLabel={t("candidate_actions.edit")} onPress={() => router.push("/worker-profile-edit" as never)} style={styles.editButton}><Feather name="edit-2" size={16} color="#0E1A24" /></Pressable>
-      <Pressable onPress={onShare} style={styles.secondary}><Feather name="share-2" size={16} color="#626760" /><Text style={styles.secondaryText}>{t("candidate_actions.share")}</Text></Pressable>
-    </> : appStatus === "interview_requested" ? <>
+    {!loading && !error && !isOwnerMode ? <StickyFooter desktopRow><View style={[styles.footerActions, isDesktop && styles.footerActionsDesktop]}>{appStatus === "interview_requested" ? <>
       <View style={styles.status}><Feather name="calendar" size={16} color="#526C55" /><Text style={styles.statusText}>{scheduledAt ? new Date(scheduledAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : t("candidate_actions.status_interview_requested")}{interviewLocation ? " · " + interviewLocation : ""}</Text></View>
       <Pressable disabled={busy} onPress={() => setOutcomeOpen(true)} style={styles.primary}><Feather name="clipboard" size={16} color="#FFF" /><Text style={styles.primaryText}>{t("candidate_actions.update_outcome")}</Text></Pressable>
     </> : <Pressable disabled={busy} onPress={() => setPendingAction("interview")} style={[styles.primary, busy && { opacity: 0.5 }]}><Feather name="calendar" size={16} color="#FFF" /><Text style={styles.primaryText}>{appStatus === "hired" || appStatus === "declined" ? t("candidate_actions.request_another_interview") : t("candidate_actions.confirm_interview_cta")}</Text></Pressable>}</View></StickyFooter> : null}
@@ -214,9 +206,6 @@ const styles = StyleSheet.create({
   footerActionsDesktop: { flexDirection: "row-reverse", justifyContent: "center", width: "auto" },
   primary: { height: 44, minHeight: 44, maxHeight: 44, flexShrink: 0, paddingHorizontal: 20, borderRadius: 22, backgroundColor: "#F0531C", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
   primaryText: { color: "#FFF", fontSize: 14, fontWeight: "600" },
-  secondary: { height: 44, minHeight: 44, maxHeight: 44, flexShrink: 0, paddingHorizontal: 16, borderRadius: 22, borderWidth: 1, borderColor: "rgba(14,26,36,0.16)", backgroundColor: "#FFF", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
-  secondaryText: { color: "#0E1A24", fontSize: 14, fontWeight: "600" },
-  editButton: { alignItems: "center", backgroundColor: "#FFF", borderColor: "rgba(14,26,36,0.16)", borderRadius: 22, borderWidth: 1, height: 44, justifyContent: "center", width: 44 },
   status: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 8 },
   statusText: { color: "#526C55", fontSize: 13 },
   toast: { position: "absolute", top: 70, alignSelf: "center", backgroundColor: "#202421", paddingHorizontal: 14, paddingVertical: 10, borderRadius: 6 },

@@ -103,6 +103,7 @@ export default function WorkerApplications() {
   const [refreshing, setRefreshing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [seenInterviewUpdates, setSeenInterviewUpdates] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
@@ -183,6 +184,10 @@ export default function WorkerApplications() {
       </PageContainer>
 
       <FilterBar
+        mobileOpen={filtersOpen}
+        mobileActive={filter !== "all"}
+        mobileLabel={t("talent.filters")}
+        onToggleMobile={() => setFiltersOpen((open) => !open)}
         trailing={!loading ? (
           <RefreshIconButton
             label={t("talent.retry")}
@@ -298,15 +303,6 @@ function ApplicationCard({
     ? { uri: v.photo_url }
     : VENUE_TYPE_PHOTOS[typeKey] ?? VENUE_CAFE;
 
-  const contactUnlocked = a.status === "interview_requested" || a.status === "hired";
-  const contactItems = contactUnlocked
-    ? [
-        v?.contact_email_enabled !== false ? v?.email : undefined,
-        v?.contact_phone_enabled !== false ? v?.phone : undefined,
-        v?.contact_in_person_enabled === true ? t("shift_detail.contact_visit") : undefined,
-      ].filter(Boolean)
-    : [];
-
   const payStr =
     s?.pay_amount && s?.pay_unit
       ? `€${s.pay_amount}/${shortUnit(s.pay_unit)}`
@@ -335,19 +331,9 @@ function ApplicationCard({
         <Image source={photo} style={[styles.thumb, isDesktop && styles.thumbDesktop]} resizeMode="cover" />
         <View style={styles.rowBody}>
           <View style={styles.line1}>
-            <Pressable
-              onPress={(event) => {
-                event.stopPropagation();
-                const venueId = v?.id ?? a.venue_id;
-                if (venueId) router.push({ pathname: "/venue-board", params: { venueId } });
-              }}
-              style={styles.venueNameLink}
-            >
-              <Text style={[styles.venueName, isDesktop && styles.venueNameDesktop]} numberOfLines={1}>
-                {v?.name || t("shift_detail.default_venue")}
-              </Text>
-              <Feather name="arrow-up-right" size={14} color="#185FA5" />
-            </Pressable>
+            <Text style={[styles.venueName, isDesktop && styles.venueNameDesktop]} numberOfLines={1}>
+              {v?.name || t("shift_detail.default_venue")}
+            </Text>
             {payStr && <Text style={styles.pay}>{payStr}</Text>}
           </View>
           <Text style={[styles.role, isDesktop && styles.roleDesktop]} numberOfLines={1}>
@@ -359,7 +345,7 @@ function ApplicationCard({
           </View>
           {a.status === "interview_requested" ? (
             <View style={styles.interviewSchedule}>
-              <Feather name="calendar" size={14} color="#C2410C" />
+              <Feather name="calendar" size={14} color="#626B78" />
               <Text style={styles.interviewScheduleText}>
                 {a.interview_scheduled_at
                   ? new Date(a.interview_scheduled_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
@@ -367,19 +353,7 @@ function ApplicationCard({
                 {a.interview_location ? ` · ${a.interview_location}` : ""}
               </Text>
             </View>
-          ) : (
-            <Text style={styles.statusDetail}>{statusCopy(a.status).detail}</Text>
-          )}
-          <View style={[styles.contactPreview, contactUnlocked ? styles.contactPreviewOpen : styles.contactPreviewLocked]}>
-            <Feather name={contactUnlocked ? "unlock" : "lock"} size={12} color={contactUnlocked ? "#C2410C" : "#854F0B"} />
-            <Text style={styles.contactPreviewText} numberOfLines={1}>
-              {contactUnlocked
-                ? contactItems.length > 0
-                  ? contactItems.join(" / ")
-                  : t("shift_detail.contact_none")
-                : t("shift_detail.contact_details_locked_sub")}
-            </Text>
-          </View>
+          ) : null}
         </View>
         <Feather name="chevron-right" size={18} color="#9CA3AF" />
     </ListRow>
@@ -507,7 +481,7 @@ const styles = StyleSheet.create({
   },
   emptyCtaTxt: { color: "white", fontWeight: "800", fontSize: 14 },
 
-  rowInterviewUpdate: { backgroundColor: TAVORIA.color.orangeSoft },
+  rowInterviewUpdate: { backgroundColor: "#F7F7F2" },
   thumb: {
     width: 64,
     height: 72,
@@ -529,7 +503,6 @@ const styles = StyleSheet.create({
     color: "#0E1A24",
     letterSpacing: -0.2,
   },
-  venueNameLink: { alignItems: "center", flex: 1, flexDirection: "row", gap: 4, minWidth: 0 },
   venueNameDesktop: { fontSize: 17 },
   pay: { fontSize: 14, fontWeight: "900", color: "#F0531C" },
   role: { color: "#303C49", fontSize: 14 },
@@ -542,13 +515,8 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   timeTxt: { fontSize: 11, color: "#9CA3AF" },
-  statusDetail: { color: "#6B7280", fontSize: 11, lineHeight: 15, marginTop: 5 },
-  interviewSchedule: { alignItems: "flex-start", backgroundColor: "#FFE3D1", borderRadius: 9, flexDirection: "row", gap: 6, marginTop: 7, paddingHorizontal: 8, paddingVertical: 7 },
-  interviewScheduleText: { color: "#9A3412", flex: 1, fontSize: 11, fontWeight: "700", lineHeight: 15 },
-  contactPreview: { alignItems: "center", alignSelf: "flex-start", borderRadius: 8, flexDirection: "row", gap: 5, marginTop: 7, maxWidth: "100%", paddingHorizontal: 7, paddingVertical: 5 },
-  contactPreviewOpen: { backgroundColor: "#FFE3D1" },
-  contactPreviewLocked: { backgroundColor: "#F1EFE8" },
-  contactPreviewText: { color: "#5D6670", fontSize: 10, lineHeight: 14 },
+  interviewSchedule: { alignItems: "flex-start", backgroundColor: "#F1EFE8", borderRadius: 9, flexDirection: "row", gap: 6, marginTop: 7, paddingHorizontal: 8, paddingVertical: 7 },
+  interviewScheduleText: { color: "#263542", flex: 1, fontSize: 11, fontWeight: "700", lineHeight: 15 },
   statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
   statusTxt: {
     fontSize: 11,

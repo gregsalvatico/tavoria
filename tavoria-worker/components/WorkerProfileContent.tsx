@@ -33,7 +33,7 @@ function SectionLabel({ children }: { children: string }) {
   return <Text style={styles.sectionLabel}>{children}</Text>;
 }
 
-export default function WorkerProfileContent({ row, owner }: { row: any; owner: boolean }) {
+export default function WorkerProfileContent({ row, owner, onEdit }: { row: any; owner: boolean; onEdit?: () => void }) {
   const router = useRouter();
   const [details, setDetails] = useState(false);
   const [photo, setPhoto] = useState<string | null>(null);
@@ -97,6 +97,16 @@ export default function WorkerProfileContent({ row, owner }: { row: any; owner: 
           {roles ? <Text style={styles.roles}>{roles}</Text> : null}
           {location ? <Text style={styles.meta}>{location}</Text> : null}
         </View>
+        {owner && onEdit ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("candidate_actions.edit")}
+            onPress={onEdit}
+            style={styles.edit}
+          >
+            <Feather name="edit-2" size={15} color="#0E1A24" />
+          </Pressable>
+        ) : null}
       </View>
 
       {hasFacts ? (
@@ -201,6 +211,7 @@ const styles = StyleSheet.create({
   wrap: { gap: 0 },
   identity: { alignItems: "center", flexDirection: "row", gap: 16, paddingBottom: 22 },
   identityBody: { flex: 1, gap: 5, minWidth: 0 },
+  edit: { alignItems: "center", backgroundColor: "#FFFFFF", borderColor: "rgba(14,26,36,0.16)", borderRadius: 22, borderWidth: 1, height: 42, justifyContent: "center", width: 42 },
   profilePhotoWrap: { backgroundColor: "#E6E4DC", borderRadius: 14, height: 136, overflow: "hidden", width: 112 },
   profilePhoto: { height: "100%", width: "100%" },
   addProfilePhoto: { alignItems: "center", backgroundColor: "#E8E6DE", borderRadius: 14, height: 136, justifyContent: "center", width: 112 },
