@@ -101,7 +101,10 @@ function VideoCarouselContent({
           }}
           style={styles.videoButton}
         >
-          <VideoView player={player} style={styles.video} nativeControls={false} contentFit="cover" />
+          {/* expo-video does not support two VideoViews sharing one player on
+              mobile. Leave the thumbnail view unmounted while the modal owns
+              the player, otherwise playback can pause or detach. */}
+          {!open ? <VideoView player={player} style={styles.video} nativeControls={false} contentFit="cover" /> : null}
           <View style={styles.playButton}>
             <Feather name="play" size={15} color={TAVORIA.color.paper} />
           </View>
