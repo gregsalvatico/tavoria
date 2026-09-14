@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -91,6 +92,7 @@ export default function ShiftDetail() {
   const [contactOpen, setContactOpen] = useState(false);
   const [hasAccount, setHasAccount] = useState(false);
   const [heroImageFailed, setHeroImageFailed] = useState(false);
+  const [heroPreviewOpen, setHeroPreviewOpen] = useState(false);
 
   // Determine if the current signed-in user owns the venue that posted this shift
   useEffect(() => {
@@ -307,7 +309,12 @@ export default function ShiftDetail() {
         <View style={isDesktop && styles.detailGrid}>
           <View style={[styles.mediaColumn, isDesktop && styles.mediaColumnDesktop]}>
             {/* Hero */}
-            <View style={[styles.hero, isDesktop && styles.heroDesktop]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("talent.photos")}
+              onPress={() => setHeroPreviewOpen(true)}
+              style={[styles.hero, isDesktop && styles.heroDesktop]}
+            >
               <Image
                 source={heroSource}
                 onError={() => {
@@ -325,7 +332,7 @@ export default function ShiftDetail() {
                   </Text>
                 </View>
               )}
-            </View>
+            </Pressable>
 
           <VenueMediaGallery
             photoUrls={additionalVenuePhotoUrls}
@@ -474,6 +481,20 @@ export default function ShiftDetail() {
         })}
       />
 
+      <Modal visible={heroPreviewOpen} transparent onRequestClose={() => setHeroPreviewOpen(false)}>
+        <View style={styles.previewModal}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("talent.close")}
+            onPress={() => setHeroPreviewOpen(false)}
+            style={styles.previewClose}
+          >
+            <Feather name="x" size={24} color="#FFFFFF" />
+          </Pressable>
+          <Image source={heroSource} resizeMode="contain" style={styles.previewImage} />
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -514,12 +535,7 @@ function VenueContactDetails({
         ) : (
           <Text style={styles.contactNone}>{t("shift_detail.contact_none")}</Text>
         )
-      ) : (
-        <View style={styles.contactLockedPlaceholders}>
-          <Text style={styles.contactPlaceholder}>••••••@••••••••</Text>
-          <Text style={styles.contactPlaceholder}>••• ••• •••••</Text>
-        </View>
-      )}
+      ) : null}
     </View>
   );
 }
@@ -751,13 +767,13 @@ const styles = StyleSheet.create({
   },
   kvValue: { fontSize: 14, color: "#0E1A24", marginTop: 1, fontWeight: "500" },
 
-  contactDetails: { borderRadius: 14, marginTop: 2, padding: 13 },
-  contactDetailsOpen: { backgroundColor: "#FFF4EE", borderColor: "#F7C7AB", borderWidth: 1 },
-  contactDetailsLocked: { backgroundColor: "#F1EFE8", borderColor: "#E2DED3", borderWidth: 1 },
+  contactDetails: { borderRadius: 14, marginTop: 4, padding: 13 },
+  contactDetailsOpen: { backgroundColor: TAVORIA.color.orangeSoft, borderColor: "#F7C7AB", borderWidth: 1 },
+  contactDetailsLocked: { backgroundColor: "#EAE7DF", borderColor: "#DED8CC", borderWidth: 1 },
   contactDetailsHead: { alignItems: "flex-start", flexDirection: "row", gap: 9 },
   contactDetailsIcon: { alignItems: "center", borderRadius: 9, height: 31, justifyContent: "center", width: 31 },
   contactDetailsIconOpen: { backgroundColor: "#FFE1CE" },
-  contactDetailsIconLocked: { backgroundColor: "#E7E2D7" },
+  contactDetailsIconLocked: { backgroundColor: "#DDD6C9" },
   contactDetailsTitle: { color: "#0E1A24", fontSize: 13, fontWeight: "800" },
   contactDetailsSub: { color: "#5D6670", fontSize: 11, lineHeight: 15, marginTop: 2 },
   contactMethodList: { gap: 9, marginTop: 12 },
@@ -765,8 +781,9 @@ const styles = StyleSheet.create({
   contactMethodLabel: { color: "#6B7280", fontSize: 10, fontWeight: "800", letterSpacing: 0.5, textTransform: "uppercase" },
   contactMethodValue: { color: "#0E1A24", fontSize: 12, lineHeight: 17, marginTop: 1 },
   contactNone: { color: "#6B7280", fontSize: 12, marginTop: 10 },
-  contactLockedPlaceholders: { flexDirection: "row", gap: 12, marginTop: 12 },
-  contactPlaceholder: { color: "#9CA3AF", fontSize: 12, letterSpacing: 1, textDecorationLine: "line-through" },
+  previewModal: { alignItems: "center", backgroundColor: "rgba(14,26,36,.96)", flex: 1, justifyContent: "center", padding: 24 },
+  previewClose: { padding: 12, position: "absolute", right: 24, top: 24, zIndex: 2 },
+  previewImage: { height: "82%", maxWidth: 960, width: "100%" },
 
   bottom: {
     alignItems: "center",

@@ -141,6 +141,7 @@ export type WorkerInsert = {
   video_urls?: (string | null)[];
   phone?: string;
   phone_visible?: boolean;
+  profile_visible?: boolean;
   email?: string;
   first_name?: string;
   last_name?: string;
@@ -499,10 +500,12 @@ export async function getDiscoverWorkersPage(
 ): Promise<DiscoverPage<MatchWorker>> {
   await ensureSession();
   const base = "id, first_name, last_name, photo_url, video_url, positions, languages, city, country, nationality, work_eligibility_it, age_range, years_exp, personality, strengths, interview_answers, created_at";
-  const selectWorkers = (extended: boolean) => {
+  const selectWorkers = (extended: boolean, applyVisibility: boolean) => {
+    const fields = applyVisibility ? `${base}, profile_visible` : base;
     let query = supabase
       .from("workers")
-      .select(extended ? `${base}, job_preferences, last_seen_at, photo_urls, video_urls` : base);
+      .select(extended ? `${fields}, job_preferences, last_seen_at, photo_urls, video_urls` : fields);
+    if (applyVisibility) query = query.eq("profile_visible", true);
     query = applyDiscoverCursor(query, cursor)
       .order("created_at", { ascending: false })
       .order("id", { ascending: true })
@@ -511,10 +514,15 @@ export async function getDiscoverWorkersPage(
   };
 
   let extended = true;
-  let { data, error } = await selectWorkers(extended);
+  let applyVisibility = true;
+  let { data, error } = await selectWorkers(extended, applyVisibility);
   if (error && extended && ["42703", "PGRST204"].includes(error.code)) {
     extended = false;
-    ({ data, error } = await selectWorkers(extended));
+    ({ data, error } = await selectWorkers(extended, applyVisibility));
+  }
+  if (error && applyVisibility && isMissingFeatureColumn(error)) {
+    applyVisibility = false;
+    ({ data, error } = await selectWorkers(extended, applyVisibility));
   }
   if (error) throw error;
 
@@ -531,12 +539,17 @@ export async function getDiscoverWorkers(): Promise<MatchWorker[]> {
   await ensureSession();
   const base = "id, first_name, last_name, photo_url, video_url, positions, languages, city, country, nationality, work_eligibility_it, age_range, years_exp, personality, strengths, interview_answers, created_at";
   let extended = true;
+  let applyVisibility = true;
   const rows: MatchWorker[] = [];
   for (let offset = 0; ; offset += 500) {
-    const { data, error } = await supabase.from("workers")
-      .select(extended ? `${base}, job_preferences, last_seen_at, photo_urls, video_urls` : base)
+    const fields = applyVisibility ? `${base}, profile_visible` : base;
+    let query = supabase.from("workers")
+      .select(extended ? `${fields}, job_preferences, last_seen_at, photo_urls, video_urls` : fields);
+    if (applyVisibility) query = query.eq("profile_visible", true);
+    let { data, error } = await query
       .order("created_at", { ascending: false }).order("id").range(offset, offset + 499);
     if (error && extended && ["42703", "PGRST204"].includes(error.code)) { extended = false; offset -= 500; continue; }
+    if (error && applyVisibility && isMissingFeatureColumn(error)) { applyVisibility = false; offset -= 500; continue; }
     if (error) throw error;
     rows.push(...(data ?? []) as unknown as MatchWorker[]);
     if (!data || data.length < 500) break;
@@ -673,11 +686,19 @@ export async function getCurrentVenueShifts(localVenueId?: string) {
 
 // Fetch a single worker by id (for direct profile navigation)
 export async function getWorkerById(id: string) {
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("workers")
     .select("*")
     .eq("id", id)
+    .eq("profile_visible", true)
     .maybeSingle();
+  if (error && isMissingFeatureColumn(error)) {
+    ({ data, error } = await supabase
+      .from("workers")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle());
+  }
   if (error) throw error;
   return data;
 }

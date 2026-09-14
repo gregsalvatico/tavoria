@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, ImageSourcePropType, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
 import { t } from "../lib/i18n";
 import { mapsUrl, websiteLabel, websiteUrl } from "../lib/contact";
 import { openExternalLink } from "../lib/externalLinks";
@@ -27,6 +28,7 @@ export type VenueProfileHeaderData = {
 };
 
 export default function VenueProfileHeader({ venue, onEdit }: { venue: VenueProfileHeaderData; onEdit?: () => void }) {
+  const [previewOpen, setPreviewOpen] = useState(false);
   const venuePhotos = (venue.photo_urls ?? []).filter((url): url is string => Boolean(url));
   // Keep the profile image separate from the additional media grid. Older
   // rows may still repeat it in photo_urls, so dedupe that legacy value below.
@@ -45,7 +47,14 @@ export default function VenueProfileHeader({ venue, onEdit }: { venue: VenueProf
   return (
     <View style={styles.wrap}>
       <View style={styles.identity}>
-        <Image source={image} style={styles.avatar} resizeMode="cover" />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t("talent.photos")}
+          onPress={() => setPreviewOpen(true)}
+          style={styles.avatarButton}
+        >
+          <Image source={image} style={styles.avatar} resizeMode="cover" />
+        </Pressable>
         <View style={styles.identityBody}>
           <Text style={styles.eyebrow}>{venue.type || "Venue"}</Text>
           <Text style={styles.name} numberOfLines={2}>{venue.name || "Venue"}</Text>
@@ -104,6 +113,20 @@ export default function VenueProfileHeader({ venue, onEdit }: { venue: VenueProf
           <MediaGrid photos={profilePhotos} videos={venue.video_urls} />
         </View>
       ) : null}
+
+      <Modal visible={previewOpen} transparent onRequestClose={() => setPreviewOpen(false)}>
+        <View style={styles.previewModal}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("talent.close")}
+            onPress={() => setPreviewOpen(false)}
+            style={styles.previewClose}
+          >
+            <Feather name="x" size={24} color="#FFFFFF" />
+          </Pressable>
+          <Image source={image as ImageSourcePropType} resizeMode="contain" style={styles.previewImage} />
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -111,6 +134,7 @@ export default function VenueProfileHeader({ venue, onEdit }: { venue: VenueProf
 const styles = StyleSheet.create({
   wrap: { gap: 0 },
   identity: { alignItems: "center", flexDirection: "row", gap: 14, paddingBottom: 18 },
+  avatarButton: { borderRadius: 14, overflow: "hidden" },
   avatar: { backgroundColor: "#E6E4DC", borderRadius: 14, height: 112, width: 112 },
   identityBody: { flex: 1, gap: 4, minWidth: 0 },
   eyebrow: { color: "#626B78", fontFamily: "DMMono_500Medium", fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase" },
@@ -125,4 +149,7 @@ const styles = StyleSheet.create({
   infoLabelRow: { alignItems: "center", flexDirection: "row", gap: 5 },
   infoLabel: { color: "#7A818B", fontFamily: "DMMono_500Medium", fontSize: 9, letterSpacing: 0.7, textTransform: "uppercase" },
   infoText: { color: "#0E1A24", fontSize: 13, fontWeight: "600", marginTop: 3 },
+  previewModal: { alignItems: "center", backgroundColor: "rgba(14,26,36,.96)", flex: 1, justifyContent: "center", padding: 24 },
+  previewClose: { padding: 12, position: "absolute", right: 24, top: 24, zIndex: 2 },
+  previewImage: { height: "82%", maxWidth: 960, width: "100%" },
 });

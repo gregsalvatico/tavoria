@@ -25,7 +25,8 @@ export default function VenueMediaGallery({ photoUrls = [], videoUrls = [] }: { 
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: 15, marginBottom: 16 },
+  // Keep additional media visually separate from the primary venue image.
+  wrap: { gap: 15, marginBottom: 16, marginTop: 18 },
   group: { gap: 9 },
   caption: { color: "#626B78", fontFamily: "DMMono_500Medium", fontSize: 10, letterSpacing: 0.8, textTransform: "uppercase" },
 });

@@ -28,7 +28,7 @@ import StickyFooter from "../components/StickyFooter";
 import ActionButton from "../components/ActionButton";
 import { FlowTopBar } from "../components/PagePrimitives";
 import { PreferenceFields, validPreferences } from "../components/TalentFields";
-import type { JobPreferences } from "../lib/workerMatching";
+import { normalizeJobPreferences, type JobPreferences } from "../lib/workerMatching";
 
 const EXPERIENCE = [
   { id: 0, labelKey: "worker_experience.exp_new" },
@@ -64,7 +64,7 @@ export default function WorkerExperience() {
   const isVenueBoardFlow = next === "venue-board" && !!venueId;
   const isEditMode = mode === "edit";
   const existing = getWorkerProfile();
-  const [preferences, setPreferences] = useState<JobPreferences>(existing?.jobPreferences ?? {});
+  const [preferences, setPreferences] = useState<JobPreferences>(() => normalizeJobPreferences(existing?.jobPreferences ?? {}));
   const knownLanguageCodes = new Set(LANGUAGES.map((language) => language.code));
 
   const [years, setYears] = useState<number | null>(() => existing?.yearsExperience ?? null);
@@ -89,7 +89,8 @@ export default function WorkerExperience() {
   const [countryPickerOpen, setCountryPickerOpen] = useState(false);
 
   const onContinue = async () => {
-    if (!validPreferences(preferences)) { setErrorMsg(t("talent.invalid")); return; }
+    const savedPreferences = normalizeJobPreferences(preferences);
+    if (!validPreferences(savedPreferences)) { setErrorMsg(t("talent.invalid")); return; }
     setErrorMsg(null);
     setBusy(true);
     const allLanguages = [...languages, ...otherLangs];
@@ -98,7 +99,7 @@ export default function WorkerExperience() {
         ? t(EXPERIENCE.find((e) => e.id === years)!.labelKey)
         : undefined;
     patchWorkerProfile({
-      jobPreferences: preferences,
+      jobPreferences: savedPreferences,
       yearsExperience: years ?? undefined,
       languages: allLanguages,
       city: city.trim(),
@@ -109,7 +110,7 @@ export default function WorkerExperience() {
     const profile = getWorkerProfile();
     try {
       const workerPatch = {
-        job_preferences: preferences,
+        job_preferences: savedPreferences,
         first_name: profile?.firstName,
         last_name: profile?.lastName,
         email: profile?.email,
@@ -126,7 +127,7 @@ export default function WorkerExperience() {
       };
       if (isEditMode) {
         await updateCurrentWorker({
-          job_preferences: preferences,
+          job_preferences: savedPreferences,
           age_range: profile?.ageRange,
           city: city.trim(),
           country: profile?.country ?? "Italy",
@@ -370,7 +371,7 @@ export default function WorkerExperience() {
             })}
           </View>
 
-          <PreferenceFields value={preferences} onChange={setPreferences} roles={existing?.positions ?? []} />
+          <PreferenceFields value={preferences} onChange={setPreferences} />
           <View style={{ height: 12 }} />
           {errorMsg && <Text style={styles.errorTxt}>{errorMsg}</Text>}
 

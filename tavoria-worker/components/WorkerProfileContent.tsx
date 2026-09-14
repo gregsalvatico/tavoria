@@ -5,7 +5,7 @@ import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { countryNameFromCode } from "../lib/countries";
 import { t } from "../lib/i18n";
 import { localizeRoles } from "../lib/positions";
-import { JobPreferences, WEEK_DAYS } from "../lib/workerMatching";
+import { JobPreferences, normalizeJobPreferences, WEEK_DAYS } from "../lib/workerMatching";
 import MediaGrid from "./MediaGrid";
 
 export function mediaSlots(row: any, kind: "photo" | "video"): (string | null)[] {
@@ -37,7 +37,7 @@ export default function WorkerProfileContent({ row, owner, onEdit }: { row: any;
   const router = useRouter();
   const [details, setDetails] = useState(false);
   const [photo, setPhoto] = useState<string | null>(null);
-  const p: JobPreferences = row?.job_preferences ?? {};
+  const p: JobPreferences = normalizeJobPreferences(row?.job_preferences ?? {});
   const photos = mediaSlots(row, "photo").filter((url): url is string => Boolean(url));
   const primaryPhoto = photos[0] ?? null;
   const extraPhotos = photos.slice(1);
@@ -58,8 +58,7 @@ export default function WorkerProfileContent({ row, owner, onEdit }: { row: any;
       value: `${availableDays.map((day) => t(`talent.${day}`)).join(" · ")}${p.from && p.to ? ` / ${p.from}–${p.to}` : ""}`,
     } : null,
     p.availableFrom?.trim() ? { label: t("talent.availableFrom"), value: p.availableFrom.trim() } : null,
-    p.travelRadiusKm ? { label: t("talent.radius"), value: `${p.travelRadiusKm}` } : null,
-    p.minimumHourlyPay ? { label: t("talent.minimumPay"), value: `${p.minimumHourlyPay}` } : null,
+    p.minimumMonthlyPay ? { label: t("talent.minimumPay"), value: `€${p.minimumMonthlyPay} / ${t("talent.minimumPayUnit")}` } : null,
   ].filter((item): item is { label: string; value: string } => Boolean(item));
   const hasDetails = answers.length > 0 || traits.length > 0 || Boolean(row?.work_eligibility_it?.trim?.()) || owner;
 

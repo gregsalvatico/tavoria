@@ -19,8 +19,9 @@ assert.equal(coversSchedule(worker.job_preferences, { ...request, days: [], star
 assert.equal(matchWorker({ ...worker, job_preferences: {} }, request).group, 'good');
 assert.ok(matchWorker({ ...worker, job_preferences: {} }, request).reasons.includes('availability_unknown'));
 assert.equal(matchWorker({ ...worker, positions: ['Chef'] }, request).group, 'review');
-assert.equal(matchWorker({ ...worker, job_preferences: { ...worker.job_preferences, minimumHourlyPay: 14 } }, { ...request, pay_unit: 'hour', pay_amount: 12 }).group, 'review');
-assert.equal(matchWorker({ ...worker, job_preferences: { ...worker.job_preferences, minimumHourlyPay: 14 } }, { ...request, pay_unit: 'month', pay_amount: 1200 }).group, 'strong');
+assert.equal(matchWorker({ ...worker, job_preferences: { ...worker.job_preferences, minimumMonthlyPay: 2200 } }, { ...request, pay_unit: 'hour', pay_amount: 12 }).group, 'review');
+assert.equal(matchWorker({ ...worker, job_preferences: { ...worker.job_preferences, minimumMonthlyPay: 2200 } }, { ...request, pay_unit: 'month', pay_amount: 2500 }).group, 'strong');
+assert.equal(matchWorker({ ...worker, job_preferences: { ...worker.job_preferences, minimumHourlyPay: 14 } }, { ...request, pay_unit: 'month', pay_amount: 2500 }).group, 'strong');
 assert.equal(matchWorker({ ...worker, job_preferences: { ...worker.job_preferences, availableFrom: '2026-09-15' } }, { ...request, start_when: 'now' }, '2026-09-11').group, 'review');
 assert.equal(matchWorker({ ...worker, age_range: '50+', nationality: 'FR' }, request).score, matchWorker({ ...worker, age_range: '18–20', nationality: 'IT' }, request).score);
 assert.equal(matchWorker({ ...worker, years_exp: '5+ years', job_preferences: { ...worker.job_preferences, roleExperience: undefined } }, { ...request, worker_requirements: { ...request.worker_requirements, minimumExperience: 4 } }).group, 'strong');
@@ -50,4 +51,4 @@ const sparseProfile = {
   photo_url: 'photo.jpg',
 };
 assert.deepEqual(rankWorkers([sparseProfile, completeProfile], request).map(m => m.worker.id), ['complete-profile', 'sparse-profile']);
-console.log('Matching checks passed: overnight/week boundaries, unknown data, salary units, start dates, complete visibility, media priority, profile completeness, demographic neutrality.');
+console.log('Matching checks passed: overnight/week boundaries, unknown data, monthly salary units, start dates, complete visibility, media priority, profile completeness, demographic neutrality.');

@@ -17,6 +17,7 @@ export type WorkerProfile = {
   email?: string;
   phone?: string;
   phoneVisible?: boolean;
+  profileVisible?: boolean;
   ageRange?: string; // "18–20" | "21–25" | "26–30" | "31–40" | "41–50" | "50+"
   country?: string;
   city?: string;

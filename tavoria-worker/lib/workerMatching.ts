@@ -4,8 +4,7 @@ export type JobPreferences = {
   from?: string;
   to?: string;
   availableFrom?: string;
-  travelRadiusKm?: number;
-  minimumHourlyPay?: number;
+  minimumMonthlyPay?: number;
   roleExperience?: Record<string, number>;
 };
 
@@ -45,6 +44,23 @@ export type MatchRequest = {
 export type MatchReason = "role" | "city" | "schedule" | "experience" | "languages" | "availability_unknown" | "schedule_conflict" | "pay_conflict" | "start_conflict";
 export type WorkerMatch = { worker: MatchWorker; score: number; group: "strong" | "good" | "review"; reasons: MatchReason[] };
 export const WEEK_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
+type LegacyJobPreferences = JobPreferences & { travelRadiusKm?: number; minimumHourlyPay?: number };
+const MONTHLY_PAY_MULTIPLIERS: Record<string, number> = { hour: 173.33, day: 21.67, week: 4.33, month: 1 };
+
+export function normalizeJobPreferences(value: JobPreferences | LegacyJobPreferences = {}): JobPreferences {
+  const { travelRadiusKm: _radius, minimumHourlyPay, ...cleaned } = value as LegacyJobPreferences;
+  if (cleaned.minimumMonthlyPay === undefined && Number.isFinite(minimumHourlyPay)) {
+    cleaned.minimumMonthlyPay = Math.round((minimumHourlyPay as number) * MONTHLY_PAY_MULTIPLIERS.hour);
+  }
+  return cleaned;
+}
+
+export function monthlyPayForRequest(request: MatchRequest): number | null {
+  if (!request.pay_unit || request.pay_amount === undefined || !Number.isFinite(request.pay_amount)) return null;
+  const multiplier = MONTHLY_PAY_MULTIPLIERS[request.pay_unit];
+  return multiplier ? request.pay_amount * multiplier : null;
+}
 
 const normalize = (s: string) => s.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 const DAY_ALIASES: Record<string, string> = {
@@ -112,7 +128,7 @@ export function coversSchedule(p: JobPreferences, r: MatchRequest): boolean | nu
 }
 
 export function matchWorker(worker: MatchWorker, request: MatchRequest, today = new Date().toISOString().slice(0, 10)): WorkerMatch {
-  const p = worker.job_preferences ?? {};
+  const p = normalizeJobPreferences(worker.job_preferences ?? {});
   const reasons: MatchReason[] = [];
   let earned = 0, possible = 0, unknown = false, conflict = false;
   const roles = (request.roles ?? []).map(normalize);
@@ -154,7 +170,8 @@ export function matchWorker(worker: MatchWorker, request: MatchRequest, today = 
     else if (worker.languages?.length) conflict = true;
     else unknown = true;
   }
-  if (p.minimumHourlyPay && request.pay_unit === "hour" && request.pay_amount && request.pay_amount < p.minimumHourlyPay) {
+  const requestedMonthlyPay = monthlyPayForRequest(request);
+  if (p.minimumMonthlyPay && requestedMonthlyPay !== null && requestedMonthlyPay < p.minimumMonthlyPay) {
     conflict = true; reasons.push("pay_conflict");
   }
   const requestedStart = request.start_date || (["now", "asap"].includes(request.start_when ?? "") ? today : undefined);
