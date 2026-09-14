@@ -65,7 +65,12 @@ export const metadata: Metadata = {
     canonical: "https://tavoriapp.com",
   },
   icons: {
-    icon: "/favicon.png?v=3",
+    icon: [
+      { url: "/favicon.png", type: "image/png", sizes: "64x64" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    shortcut: ["/favicon.png"],
+    apple: [{ url: "/favicon.png", type: "image/png", sizes: "64x64" }],
   },
 };
 

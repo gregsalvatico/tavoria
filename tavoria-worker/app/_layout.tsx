@@ -158,7 +158,7 @@ export default function RootLayout() {
       document.head.appendChild(link);
     }
     link.type = "image/png";
-    link.href = "/favicon.png?v=3";
+    link.href = "/favicon.png?v=4";
   }, []);
 
   useEffect(() => {

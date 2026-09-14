@@ -12,6 +12,15 @@
   ],
   "headers": [
     {
+      "source": "/((?!\\.well-known|_expo/|assets/|favicon\\.ico$|favicon\\.png$|favicon\\.svg$).*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
       "source": "/.well-known/apple-app-site-association",
       "headers": [
         {
