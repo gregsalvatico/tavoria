@@ -45,6 +45,7 @@ const PROTECTED_ROUTES = new Set([
   "venue-inbox",
   "venue-media-edit",
   "venue-profile-media",
+  "venue-avatar-edit",
   "venue-shifts",
   "worker-applications",
   "worker-documents",

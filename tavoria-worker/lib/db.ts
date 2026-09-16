@@ -23,6 +23,24 @@ function isMissingFeatureColumn(error: { code?: string; message?: string } | nul
       /column .* does not exist|schema cache/i.test(error.message ?? ""));
 }
 
+function normalizeMediaSlots(values?: (string | null)[]) {
+  if (!values) return undefined;
+  const seen = new Set<string>();
+  return values.map((url) => {
+    if (!url || seen.has(url)) return null;
+    seen.add(url);
+    return url;
+  });
+}
+
+function normalizeMediaPatch<T extends { photo_urls?: (string | null)[]; video_urls?: (string | null)[] }>(patch: T): T {
+  return {
+    ...patch,
+    ...(patch.photo_urls ? { photo_urls: normalizeMediaSlots(patch.photo_urls) } : {}),
+    ...(patch.video_urls ? { video_urls: normalizeMediaSlots(patch.video_urls) } : {}),
+  };
+}
+
 // ---- VENUES ----
 
 export type VenueInsert = {
@@ -63,7 +81,6 @@ export async function updateVenue(
     website_url?: string | null;
     photo_url?: string | null;
     photo_variant?: number;
-    roles?: string[];
     pay_schedule?: string;
     venue_style?: string;
     preferred_interview_answers?: unknown[];
@@ -82,7 +99,7 @@ export async function updateVenue(
 
   const { error } = await supabase
     .from("venues")
-    .update(patch)
+    .update(normalizeMediaPatch(patch))
     .eq("id", id)
     .eq("user_id", userId);
   if (error) throw error;
@@ -175,7 +192,7 @@ export async function updateCurrentWorker(patch: WorkerInsert) {
 
   let { error } = await supabase
     .from("workers")
-    .update(patch)
+    .update(normalizeMediaPatch(patch))
     .eq("user_id", userId);
   if (error && isMissingFeatureColumn(error)) {
     const { job_preferences: _preferences, photo_urls: _photos, video_urls: _videos, ...legacyPatch } = patch;
@@ -386,7 +403,7 @@ export async function updateShift(
   shiftId: string,
   patch: Partial<Pick<ShiftInsert, "contract_type" | "hours_start" | "hours_end" | "pay_unit" | "pay_amount" | "start_when" | "start_date" | "days" | "worker_requirements" | "photo_urls" | "video_urls">>
 ) {
-  let { error } = await supabase.from("shifts").update(patch).eq("id", shiftId);
+  let { error } = await supabase.from("shifts").update(normalizeMediaPatch(patch)).eq("id", shiftId);
   if (error && isMissingFeatureColumn(error)) {
     const hasMedia = "photo_urls" in patch || "video_urls" in patch;
     const { worker_requirements: _requirements, photo_urls: _photos, video_urls: _videos, ...legacyPatch } = patch;
@@ -562,7 +579,8 @@ export async function getVenueMatchRequests(): Promise<{ venue: MatchRequest; sh
   if (!venue) return { venue: {}, shifts: [] };
   const { data, error } = await supabase.from("shifts").select("*").eq("venue_id", venue.id).or("status.eq.live,status.is.null").order("created_at", { ascending: false });
   if (error) throw error;
-  return { venue: { roles: venue.roles ?? [], city: venue.city }, shifts: (data ?? []).map(s => ({ ...s, city: venue.city })) };
+  const roles = Array.from(new Set((data ?? []).flatMap((shift) => Array.isArray(shift.roles) ? shift.roles : [])));
+  return { venue: { roles, city: venue.city }, shifts: (data ?? []).map(s => ({ ...s, city: venue.city })) };
 }
 
 // Worker IDs that have applied to one specific venue. This is used by the

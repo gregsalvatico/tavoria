@@ -10,6 +10,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { useIsDesktop } from "../lib/responsive";
+import { t } from "../lib/i18n";
 import { TAVORIA } from "../lib/designTokens";
 
 export const PAGE_MAX_WIDTH = 1180;
@@ -28,19 +29,21 @@ export function PageContainer({
 export function PageHeader({
   title,
   left,
+  showLeftOnDesktop = false,
   right,
   style,
 }: {
   title: string;
   left?: ReactNode;
+  showLeftOnDesktop?: boolean;
   right?: ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
   const isDesktop = useIsDesktop();
   return (
     <View style={[styles.header, isDesktop && styles.headerDesktop, style]}>
-      <View style={[styles.leftSlot, isDesktop && styles.leftSlotDesktop]}>
-        {!isDesktop ? left : null}
+      <View style={[styles.leftSlot, isDesktop && (showLeftOnDesktop ? styles.leftSlotDesktopVisible : styles.leftSlotDesktop)]}>
+        {!isDesktop || showLeftOnDesktop ? left : null}
       </View>
       <Text style={[styles.title, isDesktop && styles.titleDesktop, !isDesktop && styles.titleMobile]} numberOfLines={1}>
         <Text style={styles.accent}>{title.charAt(0)}</Text>
@@ -48,6 +51,53 @@ export function PageHeader({
       </Text>
       <View style={styles.rightSlot}>{right}</View>
     </View>
+  );
+}
+
+export function FormFlowHeader({
+  title,
+  subtitle,
+  onBack,
+  step,
+  total,
+}: {
+  title: string;
+  subtitle?: string;
+  onBack: () => void;
+  step?: number;
+  total?: number;
+}) {
+  const isDesktop = useIsDesktop();
+  const showProgress = !isDesktop && step !== undefined && total !== undefined;
+
+  return (
+    <PageContainer style={styles.formFlowHeaderContainer}>
+      <PageHeader
+        title={title}
+        showLeftOnDesktop
+        style={styles.formFlowHeader}
+        left={(
+          <HeaderIconButton label={t("common.back")} onPress={onBack}>
+            <Feather name="chevron-left" size={24} color={TAVORIA.color.navy} />
+          </HeaderIconButton>
+        )}
+      />
+      {subtitle ? (
+        <Text style={[styles.formFlowSubtitle, !isDesktop && styles.formFlowSubtitleMobile]}>
+          {subtitle}
+        </Text>
+      ) : null}
+      {showProgress ? (
+        <View style={styles.formFlowProgress} accessibilityLabel={`Step ${(step ?? 0) + 1} of ${total}`}>
+          {Array.from({ length: total ?? 0 }).map((_, index) => (
+            <View
+              key={index}
+              style={[styles.formFlowProgressItem, index <= (step ?? 0) && styles.formFlowProgressItemActive]}
+            />
+          ))}
+        </View>
+      ) : null}
+    </PageContainer>
   );
 }
 
@@ -268,6 +318,20 @@ const styles = StyleSheet.create({
     paddingTop: TAVORIA.space.sm,
   },
   headerDesktop: { gap: 0 },
+  formFlowHeaderContainer: { paddingBottom: 0 },
+  formFlowHeader: { marginBottom: 0, paddingTop: TAVORIA.space.md },
+  formFlowSubtitle: {
+    color: TAVORIA.color.muted,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: TAVORIA.space.sm,
+    marginTop: 6,
+    maxWidth: 760,
+  },
+  formFlowSubtitleMobile: { textAlign: "center" },
+  formFlowProgress: { flexDirection: "row", gap: 5, marginBottom: TAVORIA.space.sm },
+  formFlowProgressItem: { backgroundColor: "rgba(14,26,36,0.14)", borderRadius: 999, flex: 1, height: 4 },
+  formFlowProgressItemActive: { backgroundColor: TAVORIA.color.orange },
   leftSlot: {
     alignItems: "center",
     height: 36,
@@ -276,6 +340,7 @@ const styles = StyleSheet.create({
     width: 36,
   },
   leftSlotDesktop: { width: 0 },
+  leftSlotDesktopVisible: { marginRight: 12 },
   rightSlot: { alignItems: "center", flexDirection: "row", gap: 8, zIndex: 1 },
   title: {
     color: TAVORIA.color.navy,
@@ -348,8 +413,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    minHeight: 48,
-    paddingVertical: 4,
+    minHeight: 52,
+    paddingBottom: 8,
+    paddingTop: 8,
   },
   flowSide: {
     alignItems: "center",

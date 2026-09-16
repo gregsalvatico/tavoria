@@ -19,6 +19,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getCurrentVenueRow, getCurrentVenueShifts } from "../lib/db";
 import { t } from "../lib/i18n";
+import { formatLocalizedDate } from "../lib/dateFormat";
 import { getVenueProfile, patchVenueProfile } from "../lib/venueProfile";
 import { localizeRoles } from "../lib/positions";
 import AppBottomNav from "../components/AppBottomNav";
@@ -121,6 +122,9 @@ export default function VenueShifts() {
           address: nextVenue.address ?? "",
           websiteUrl: nextVenue.website_url,
           photoUrl: nextVenue.photo_url,
+          photoUrls: nextVenue.photo_urls?.filter((url): url is string => Boolean(url)),
+          videoUrls: nextVenue.video_urls?.filter((url): url is string => Boolean(url)),
+          venueStyle: nextVenue.venue_style,
         });
       }
       const rows = await getCurrentVenueShifts(localVenueId);
@@ -173,12 +177,20 @@ export default function VenueShifts() {
           <View style={[styles.emptyWrap, isDesktop && styles.fullWidthState]}>
             <Feather name="alert-circle" size={32} color="#993556" />
             <Text style={styles.emptyTxt}>{errorMsg}</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => { setRefreshing(true); void load(); }}
+              style={({ hovered, pressed }) => [styles.retryButton, hovered && styles.retryButtonHovered, pressed && styles.retryButtonPressed]}
+            >
+              <Feather name="refresh-cw" size={15} color={TAVORIA.color.orange} />
+              <Text style={styles.retryText}>{t("talent.retry")}</Text>
+            </Pressable>
           </View>
         ) : (
-          <>
-            {venue ? <VenueSummary venue={venue} onEdit={() => router.push("/venue-edit")} /> : null}
+          <View style={styles.contentStack}>
+            {venue ? <VenueSummary venue={venue} onEdit={() => router.push("/venue-edit")} onAvatarReplace={() => router.push("/venue-avatar-edit")} /> : null}
             <Pressable
-              onPress={() => router.push("/venue-photo")}
+              onPress={() => router.push("/post-shift")}
               style={styles.postShiftCard}
               accessibilityRole="button"
             >
@@ -204,7 +216,7 @@ export default function VenueShifts() {
                 {shifts.map((s, index) => <ShiftRowItem key={s.id} row={s} router={router} isDesktop={isDesktop} last={index === shifts.length - 1} />)}
               </ListSurface>
             )}
-          </>
+          </View>
         )}
       </ScrollView>
       <AppBottomNav role="venue" active="shifts" />
@@ -212,8 +224,8 @@ export default function VenueShifts() {
   );
 }
 
-function VenueSummary({ venue, onEdit }: { venue: VenueRow; onEdit: () => void }) {
-  return <VenueProfileHeader venue={venue} onEdit={onEdit} />;
+function VenueSummary({ venue, onEdit, onAvatarReplace }: { venue: VenueRow; onEdit: () => void; onAvatarReplace: () => void }) {
+  return <VenueProfileHeader venue={venue} onEdit={onEdit} onAvatarReplace={onAvatarReplace} />;
 }
 
 function ShiftRowItem({
@@ -249,10 +261,7 @@ function ShiftRowItem({
         d.getMonth() === today.getMonth() &&
         d.getDate() === today.getDate();
       if (sameDay) return t("shift_filters.today");
-      return d.toLocaleDateString([], {
-        day: "numeric",
-        month: "short",
-      });
+      return formatLocalizedDate(d);
     }
     return (row.days ?? []).map(dayLabel).join(" · ") || "—";
   })();
@@ -296,11 +305,16 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: TAVORIA.color.paperDeep },
   scroll: { paddingBottom: 20, paddingHorizontal: 16, paddingTop: 10 },
   scrollDesktop: { alignSelf: "center", maxWidth: 1180, paddingHorizontal: 24, width: "100%" },
+  contentStack: { gap: 16 },
 
   loadingWrap: { paddingVertical: 60, alignItems: "center" },
   fullWidthState: { width: "100%" },
   emptyWrap: { alignItems: "center", gap: 8, paddingHorizontal: 24, paddingVertical: 60 },
   emptyTxt: { color: "#6B7280", fontSize: 13, textAlign: "center" },
+  retryButton: { alignItems: "center", borderColor: TAVORIA.color.borderStrong, borderRadius: TAVORIA.radius.pill, borderWidth: 1, flexDirection: "row", gap: 7, marginTop: 8, minHeight: 40, paddingHorizontal: 14 },
+  retryButtonHovered: { backgroundColor: TAVORIA.color.white },
+  retryButtonPressed: { opacity: 0.72 },
+  retryText: { color: TAVORIA.color.orange, fontSize: 13, fontWeight: "700" },
   hero: { backgroundColor: "#0E1A24", borderRadius: 18, height: 180, marginBottom: 14, overflow: "hidden", position: "relative" },
   heroImg: { height: "100%", width: "100%" },
   heroOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.30)" },
@@ -317,12 +331,12 @@ const styles = StyleSheet.create({
   venueLinkText: { color: "#0E1A24", fontSize: 13, fontWeight: "700", marginTop: 2 },
   editVenueButton: { alignItems: "center", backgroundColor: "white", borderColor: "rgba(14,26,36,0.14)", borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, justifyContent: "center", marginBottom: 12, minHeight: 46, paddingHorizontal: 16 },
   editVenueText: { color: "#0E1A24", fontSize: 13, fontWeight: "800" },
-  postShiftCard: { alignItems: "center", backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.medium, borderWidth: 1, flexDirection: "row", gap: 11, marginBottom: 18, minHeight: 68, paddingHorizontal: 14 },
+  postShiftCard: { alignItems: "center", backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.medium, borderWidth: 1, flexDirection: "row", gap: 11, marginBottom: 0, marginTop: 0, minHeight: 104, paddingHorizontal: 16, paddingVertical: 16 },
   postShiftIcon: { alignItems: "center", backgroundColor: "#FFE1CE", borderRadius: TAVORIA.radius.small, height: 44, justifyContent: "center", width: 44 },
   postShiftTitle: { color: TAVORIA.color.navy, fontSize: 15, fontWeight: "800" },
   postShiftTitleRow: { alignItems: "center", flexDirection: "row", gap: 5 },
   postShiftText: { color: "#6B7280", fontSize: 11, marginTop: 3 },
-  shiftList: { marginBottom: 20 },
+  shiftList: { marginBottom: 0 },
   emptyInline: { alignItems: "center", backgroundColor: "white", borderColor: "rgba(14,26,36,0.08)", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 11, padding: 14 },
   emptyInlineTitle: { color: "#0E1A24", fontSize: 14, fontWeight: "800" },
 

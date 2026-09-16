@@ -137,7 +137,7 @@ export default function MobileAccountMenu({
                     onPress={() => {
                       onClose();
                       if (item.id === "language") setLanguageOpen(true);
-                      else if (item.id === "change_pin") onNavigate("/change-pin");
+                      else if (item.id === "change_pin") onNavigate(`/change-pin?role=${role}`);
                       else setContactOpen(true);
                     }}
                   />

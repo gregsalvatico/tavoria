@@ -21,6 +21,7 @@ import { getCurrentUserContext, getCurrentWorkerContactAccessForVenue, getVenueB
 import { localizeRoles } from "../lib/positions";
 import ContactPersonModal from "../components/ContactPersonModal";
 import { t } from "../lib/i18n";
+import { formatLocalizedDate } from "../lib/dateFormat";
 import VenueProfileHeader from "../components/VenueProfileHeader";
 import { ListRow, ListSurface } from "../components/PagePrimitives";
 import { TAVORIA } from "../lib/designTokens";
@@ -160,7 +161,7 @@ export default function VenueBoard() {
             <Text style={styles.emptyTxt}>{errorMsg}</Text>
           </View>
         ) : (
-          <>
+          <View style={styles.contentStack}>
             <VenueProfileHeader venue={venue ?? {}} />
 
             <Pressable
@@ -204,7 +205,7 @@ export default function VenueBoard() {
                 </View>
               </ListSurface>
             )}
-          </>
+          </View>
         )}
       </ScrollView>
       <ContactPersonModal
@@ -246,7 +247,7 @@ function ShiftRowItem({
         d.getMonth() === today.getMonth() &&
         d.getDate() === today.getDate();
       if (sameDay) return t("shift_filters.today");
-      return d.toLocaleDateString([], { day: "numeric", month: "short" });
+      return formatLocalizedDate(d);
     }
     return (row.days ?? []).map(dayLabel).join(" · ") || "—";
   })();
@@ -297,6 +298,7 @@ const styles = StyleSheet.create({
 
   scroll: { paddingHorizontal: 14, paddingBottom: 20 },
   scrollDesktop: { alignSelf: "center", maxWidth: 1180, paddingHorizontal: 24, width: "100%" },
+  contentStack: { gap: 16 },
   desktopGrid: { width: "100%" },
 
   loadingWrap: { paddingVertical: 60, alignItems: "center" },
@@ -351,7 +353,7 @@ const styles = StyleSheet.create({
   venueLinkLabel: { color: "#6B7280", fontSize: 10, fontWeight: "800", letterSpacing: 0.7, textTransform: "uppercase" },
   venueLinkText: { color: "#0E1A24", fontSize: 13, fontWeight: "700", marginTop: 2 },
 
-  contactCard: { alignItems: "center", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 10, marginBottom: 16, padding: 12 },
+  contactCard: { alignItems: "center", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 10, marginBottom: 0, padding: 12 },
   contactCardOpen: { backgroundColor: TAVORIA.color.orangeSoft, borderColor: "#F7C7AB" },
   contactCardLocked: { backgroundColor: "#EAE7DF", borderColor: "#DED8CC" },
   contactIcon: { alignItems: "center", borderRadius: 9, height: 34, justifyContent: "center", width: 34 },
@@ -366,8 +368,8 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     color: "#6B7280",
     letterSpacing: 1.2,
-    marginBottom: 10,
-    marginTop: 4,
+    marginBottom: 0,
+    marginTop: 0,
     textTransform: "uppercase",
   },
 

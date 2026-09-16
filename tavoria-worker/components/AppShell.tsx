@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useGlobalSearchParams, useRouter } from "expo-router";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -45,6 +45,7 @@ const FOCUSED_ROUTES = new Set([
   "venue-interview",
   "venue-photo",
   "venue-profile-media",
+  "venue-avatar-edit",
   "venue-type",
   "venue-welcome",
   "worker-bonus",
@@ -80,6 +81,7 @@ const DESKTOP_FLOW_ROUTES = new Set([
   "venue-interview",
   "venue-photo",
   "venue-profile-media",
+  "venue-avatar-edit",
   "venue-bonus",
   "venue-type",
   "venue-done",
@@ -99,6 +101,7 @@ const DESKTOP_FLOW_ROUTES = new Set([
 ]);
 
 const DESKTOP_INTRO_ROUTES = new Set(["venue-welcome", "worker-welcome"]);
+const FORM_FLOW_ROUTES = new Set(["venue-edit", "post-shift", "venue-type", "venue-info", "venue-photo", "venue-profile-media", "worker-media-edit"]);
 
 const DARK_FLOW_ROUTES = new Set(["apply", "record", "scan"]);
 const PAPER_FLOW_ROUTES = new Set(["venue-info", "venue-photo", "venue-type"]);
@@ -119,13 +122,14 @@ export default function AppShell({ children, currentRoute, isSignedIn }: Props) 
   const showSidebar = isDesktop && isSignedIn && !FOCUSED_ROUTES.has(route);
   const isAuthRoute = isDesktop && AUTH_ROUTES.has(route);
   const isFlowRoute = isDesktop && DESKTOP_FLOW_ROUTES.has(route);
+  const isFormFlowRoute = isFlowRoute && FORM_FLOW_ROUTES.has(route);
   const isIntroRoute = isDesktop && DESKTOP_INTRO_ROUTES.has(route);
   const isPublicDesktopRoute = isDesktop && !showSidebar && !isAuthRoute && !isFlowRoute && !isIntroRoute && route !== "index";
 
   const desktopContent = isAuthRoute ? (
     <DesktopAuthFrame route={route}>{children}</DesktopAuthFrame>
   ) : isFlowRoute ? (
-    <DesktopFlowFrame route={route}>{children}</DesktopFlowFrame>
+    isFormFlowRoute ? <DesktopFormFlowFrame route={route}>{children}</DesktopFormFlowFrame> : <DesktopFlowFrame route={route}>{children}</DesktopFlowFrame>
   ) : showSidebar ? (
     <DesktopAppFrame route={route}>{children}</DesktopAppFrame>
   ) : isPublicDesktopRoute ? (
@@ -280,6 +284,147 @@ function DesktopFlowFrame({
   );
 }
 
+type FormFlowStep = {
+  id: string;
+  label: string;
+  icon: keyof typeof Feather.glyphMap;
+};
+
+function formFlowSteps(route: string): FormFlowStep[] {
+  if (route === "worker-media-edit") {
+    return [
+      { id: "profile", label: t("home_in.my_card"), icon: "user" },
+      { id: "media", label: t("talent.media"), icon: "image" },
+    ];
+  }
+  if (route === "venue-edit" || route === "venue-profile-media") {
+    return [
+      { id: "details", label: t("venue_info.title"), icon: "edit-3" },
+      { id: "style", label: t("venue_style.title"), icon: "star" },
+      { id: "schedule", label: t("pay_schedule.title"), icon: "calendar" },
+      { id: "contact", label: t("venue_edit.contact_title"), icon: "mail" },
+      { id: "media", label: t("talent.media"), icon: "image" },
+    ];
+  }
+  if (route !== "post-shift") {
+    return [
+      { id: "type", label: t("venue_type.title"), icon: "layers" },
+      { id: "details", label: t("venue_info.title"), icon: "edit-3" },
+      { id: "style", label: t("venue_style.title"), icon: "star" },
+      { id: "schedule", label: t("pay_schedule.title"), icon: "calendar" },
+    ];
+  }
+  return [
+    { id: "roles", label: t("post_shift.for"), icon: "users" },
+    { id: "contract", label: t("post_shift.contract"), icon: "briefcase" },
+    { id: "schedule", label: t("post_shift.days"), icon: "calendar" },
+    { id: "availability", label: t("post_shift.when"), icon: "clock" },
+    { id: "pay", label: t("post_shift.pay"), icon: "credit-card" },
+    { id: "requirements", label: t("talent.requirements"), icon: "check-square" },
+    { id: "review", label: t("post_shift.review"), icon: "check-circle" },
+  ];
+}
+
+function formFlowActiveStep(route: string, focus: unknown, steps: FormFlowStep[]) {
+  if (route === "venue-type") return "type";
+  if (route === "venue-info") return "details";
+  if (route === "venue-profile-media" || route === "worker-media-edit") return "media";
+  if (typeof focus === "string" && steps.some((step) => step.id === focus)) return focus;
+  return route === "venue-edit" ? "details" : steps[0]?.id;
+}
+
+function formFlowDestination(route: string, stepId: string) {
+  if (route === "worker-media-edit" && stepId === "profile") return "/candidate";
+  if (stepId === "media") return route === "worker-media-edit" ? "/worker-media-edit" : "/venue-profile-media";
+  if (route === "venue-edit" || route === "venue-profile-media") {
+    return { pathname: "/venue-edit", params: { focus: stepId } };
+  }
+  if (route === "post-shift") {
+    return { pathname: "/post-shift", params: { focus: stepId } };
+  }
+  if (stepId === "type") return "/venue-type";
+  if (stepId === "details") return "/venue-info";
+  return { pathname: "/venue-photo", params: { focus: stepId } };
+}
+
+function DesktopFormFlowFrame({
+  route,
+  children,
+}: {
+  route: string;
+  children: ReactNode;
+}) {
+  return (
+    <View style={styles.desktopFrame}>
+      <DesktopFormFlowSidebar route={route} />
+      <View style={[styles.flowMain, { backgroundColor: "#F1EFE8" }]}>
+        <View style={styles.flowMainInner}>{children}</View>
+      </View>
+    </View>
+  );
+}
+
+function DesktopFormFlowSidebar({ route }: { route: string }) {
+  const router = useRouter();
+  // Global params are required here because the sidebar lives above the
+  // screen content in AppShell. Local params can remain stale when only the
+  // focus query parameter changes on the same route.
+  const params = useGlobalSearchParams<{ focus?: string }>();
+  const steps = formFlowSteps(route);
+  const activeStep = formFlowActiveStep(route, params.focus, steps);
+
+  return (
+    <View style={styles.sidebar}>
+      <Pressable
+        style={({ pressed }) => [styles.sidebarBrand, pressed && styles.sidebarBrandPressed]}
+        onPress={() => router.replace("/")}
+        accessibilityRole="button"
+        accessibilityLabel={t("home_in.home")}
+      >
+        <Text style={styles.brandText}>
+          <Text style={styles.brandAccent}>T</Text>avoria<Text style={styles.brandAccent}>.</Text>
+        </Text>
+      </Pressable>
+
+      <ScrollView contentContainerStyle={styles.sidebarScroll} showsVerticalScrollIndicator={false}>
+        <View style={styles.sidebarNavGroup}>
+          {steps.map((step) => {
+            const active = step.id === activeStep;
+            return (
+              <Pressable
+                key={step.id}
+                onPress={() => {
+                  if (!active) {
+                    router.replace(formFlowDestination(route, step.id) as never);
+                  }
+                }}
+                style={({ hovered, pressed }) => [
+                  styles.sidebarNavItem,
+                  active && styles.sidebarNavItemActive,
+                  hovered && !active && styles.sidebarNavItemHovered,
+                  pressed && styles.sidebarNavItemPressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={step.label}
+              >
+                <Feather
+                  name={step.icon}
+                  size={18}
+                  color={active ? TAVORIA.color.orange : "rgba(14,26,36,0.62)"}
+                />
+                <Text style={[styles.sidebarNavLabel, active && styles.sidebarNavLabelActive]} numberOfLines={2}>
+                  {step.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
 function DesktopSidebar({ currentRoute, onLanguageChange }: { currentRoute: string; onLanguageChange: () => void }) {
   const router = useRouter();
   const [context, setContext] = useState<HomeContext | null>(() => getCachedHomeContext());
@@ -359,7 +504,7 @@ function DesktopSidebar({ currentRoute, onLanguageChange }: { currentRoute: stri
       return;
     }
     if (id === "change_pin") {
-      router.push("/change-pin");
+      router.push({ pathname: "/change-pin", params: { role: venueMode ? "venue" : "worker" } });
       return;
     }
     if (id === "share") {
@@ -689,7 +834,9 @@ const styles = StyleSheet.create({
   flowStepLabel: { color: "rgba(247,244,238,0.48)", fontSize: 12 },
   flowStepLabelActive: { color: "#F7F4EE", fontWeight: "800" },
   flowMain: { flex: 1, minWidth: 0 },
-  flowMainInner: { alignSelf: "center", flex: 1, maxWidth: 1180, width: "100%" },
+  // Keep the page frame full width so sticky action bars can reach the
+  // viewport edge. Individual flow screens constrain their content separately.
+  flowMainInner: { flex: 1, minWidth: 0, width: "100%" },
   sidebar: {
     backgroundColor: "#F7F4EE",
     borderRightColor: "rgba(14,26,36,0.12)",

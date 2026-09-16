@@ -19,7 +19,6 @@ export type VenueProfile = {
   photoUrl?: string; // Supabase Storage public URL (real uploaded photo)
   photoUrls?: string[];
   videoUrls?: string[];
-  roles?: string[]; // positions this venue typically hires for
   payScheduleId?: PayScheduleId;
   payScheduleLabel?: string; // display label (incl. the custom-typed text)
   venueStyle?: string; // "casual" | "busy" | "upscale" | "luxury" | "nightlife"

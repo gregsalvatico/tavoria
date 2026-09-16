@@ -24,13 +24,14 @@ type ActiveView = "candidates" | "inbox" | "shifts";
 type Props = {
   title: string;
   active: ActiveView;
+  onBack?: () => void;
   onRefresh?: () => void;
   refreshable?: boolean;
   refreshing?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
-export default function VenueScreenHeader({ title, active, onRefresh, refreshable = false, refreshing = false, style }: Props) {
+export default function VenueScreenHeader({ title, active, onBack, onRefresh, refreshable = false, refreshing = false, style }: Props) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   useLanguage();
@@ -77,7 +78,22 @@ export default function VenueScreenHeader({ title, active, onRefresh, refreshabl
     <>
       <PageHeader
         title={title}
-        left={
+        showLeftOnDesktop={Boolean(onBack)}
+        left={onBack ? (
+          <Pressable
+            accessibilityLabel={t("common.back")}
+            accessibilityRole="button"
+            hitSlop={10}
+            onPress={onBack}
+            style={({ hovered, pressed }) => [
+              styles.headerIconButton,
+              hovered && styles.headerIconButtonHovered,
+              pressed && styles.headerIconButtonPressed,
+            ]}
+          >
+            <Feather name="chevron-left" size={24} color={TAVORIA.color.navy} />
+          </Pressable>
+        ) : (
           <Pressable
             accessibilityLabel="Open venue menu"
             accessibilityRole="button"
@@ -91,7 +107,7 @@ export default function VenueScreenHeader({ title, active, onRefresh, refreshabl
           >
             <Feather name="menu" size={21} color={TAVORIA.color.navy} />
           </Pressable>
-        }
+        )}
         right={onRefresh && refreshable ? (
           <RefreshIconButton
             label={t("talent.retry")}

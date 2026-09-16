@@ -1,26 +1,45 @@
-import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import StickyFooter from "../components/StickyFooter";
 import ActionButton from "../components/ActionButton";
+import MixedMediaSlotGrid, { type EditableMediaItem } from "../components/MixedMediaSlotGrid";
 import { updateShift, uploadVenueShiftMedia } from "../lib/db";
 import { t } from "../lib/i18n";
-import { pickImageWeb, pickVideoWeb } from "../lib/webMedia";
+import { pickMediaWeb } from "../lib/webMedia";
 import { supabase } from "../lib/supabase";
 import { TAVORIA } from "../lib/designTokens";
+import { uniqueMediaItems, type MediaKind } from "../components/mediaTypes";
 
 const LIMITS = { photo: 5, video: 3 } as const;
-type Kind = keyof typeof LIMITS;
+
+function mediaKindFromAsset(asset: { type?: string; mimeType?: string }): MediaKind {
+  return asset.type === "video" || asset.mimeType?.startsWith("video/") ? "video" : "photo";
+}
+
+function mediaItems(row: { photo_urls?: (string | null)[]; video_urls?: (string | null)[] }): EditableMediaItem[] {
+  const photos = Array.from({ length: LIMITS.photo }, (_, slot) => row.photo_urls?.[slot] ?? null);
+  const videos = Array.from({ length: LIMITS.video }, (_, slot) => row.video_urls?.[slot] ?? null);
+  return uniqueMediaItems([
+    ...photos.flatMap((url, slot) => url ? [{ url, kind: "photo" as const, slot }] : []),
+    ...videos.flatMap((url, slot) => url ? [{ url, kind: "video" as const, slot }] : []),
+  ]);
+}
+
+function nextAvailableSlot(items: EditableMediaItem[], kind: MediaKind) {
+  const used = new Set(items.filter((item) => item.kind === kind).map((item) => item.slot));
+  return Array.from({ length: LIMITS[kind] }, (_, slot) => slot).find((slot) => !used.has(slot));
+}
 
 export default function VenueMediaEdit() {
   const router = useRouter();
-  const { id, kind: rawKind } = useLocalSearchParams<{ id?: string; kind?: string }>();
-  const kind: Kind = rawKind === "video" ? "video" : "photo";
+  const { id } = useLocalSearchParams<{ id?: string }>();
   const [row, setRow] = useState<{ photo_urls?: (string | null)[]; video_urls?: (string | null)[] } | null>(null);
-  const [busy, setBusy] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
   const [error, setError] = useState("");
 
   const load = async () => {
@@ -42,50 +61,66 @@ export default function VenueMediaEdit() {
 
   useEffect(() => { void load(); }, [id]);
 
-  const slots = useMemo(() => {
-    const urls = row?.[`${kind}_urls`] ?? [];
-    return Array.from({ length: LIMITS[kind] }, (_, index) => urls[index] ?? null);
-  }, [kind, row]);
-  const nextSlot = slots.findIndex((url) => !url);
+  const items = useMemo(() => row ? mediaItems(row) : [], [row]);
 
-  const pick = async (slot: number) => {
+  const persist = async (nextItems: EditableMediaItem[]) => {
     if (!id) return;
+    const photos = Array.from({ length: LIMITS.photo }, () => null as string | null);
+    const videos = Array.from({ length: LIMITS.video }, () => null as string | null);
+    uniqueMediaItems(nextItems).forEach((item) => {
+      if (item.kind === "photo") photos[item.slot] = item.url;
+      else videos[item.slot] = item.url;
+    });
+    await updateShift(id, { photo_urls: photos, video_urls: videos });
+    setRow({ photo_urls: photos, video_urls: videos });
+  };
+
+  const pick = async (index?: number) => {
+    if (!id || (index === undefined && items.length >= LIMITS.photo + LIMITS.video) || busyRef.current) return;
     setError("");
-    setBusy(slot);
+    busyRef.current = true;
+    setBusy(true);
     try {
       const result = Platform.OS === "web"
-        ? kind === "photo" ? await pickImageWeb({ camera: false }) : await pickVideoWeb({ camera: false })
-        : await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: [kind === "photo" ? "images" : "videos"],
-            quality: 0.8,
-          });
+        ? await pickMediaWeb({ camera: false })
+        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images", "videos"] as any, quality: 0.8 });
       if (result.canceled || !result.assets?.[0]) return;
       const asset = result.assets[0];
+      const kind = mediaKindFromAsset(asset as any);
+      const current = [...items];
+      const currentItem = index === undefined ? undefined : current[index];
+      const targetSlot = currentItem?.kind === kind
+        ? currentItem.slot
+        : nextAvailableSlot(index === undefined ? current : current.filter((_, itemIndex) => itemIndex !== index), kind);
+      if (targetSlot === undefined) {
+        setError(t("talent.mediaLimit"));
+        return;
+      }
       const url = await uploadVenueShiftMedia(id, kind, asset.uri, (asset as any).mimeType);
-      const urls = [...slots];
-      urls[slot] = url;
-      await updateShift(id, { [`${kind}_urls`]: urls });
-      setRow((current) => ({ ...(current ?? {}), [`${kind}_urls`]: urls }));
+      const next = currentItem
+        ? current.map((item, itemIndex) => itemIndex === index ? { url, kind, slot: targetSlot } : item)
+        : [...current, { url, kind, slot: targetSlot }];
+      await persist(next);
     } catch (e: any) {
       setError(e?.message ?? t("talent.uploadError"));
     } finally {
-      setBusy(null);
+      busyRef.current = false;
+      setBusy(false);
     }
   };
 
-  const remove = async (slot: number) => {
-    if (!id) return;
-    setBusy(slot);
+  const remove = async (index: number) => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setBusy(true);
     setError("");
     try {
-      const urls = [...slots];
-      urls[slot] = null;
-      await updateShift(id, { [`${kind}_urls`]: urls });
-      setRow((current) => ({ ...(current ?? {}), [`${kind}_urls`]: urls }));
+      await persist(items.filter((_, itemIndex) => itemIndex !== index));
     } catch (e: any) {
       setError(e?.message ?? t("talent.uploadError"));
     } finally {
-      setBusy(null);
+      busyRef.current = false;
+      setBusy(false);
     }
   };
 
@@ -93,40 +128,20 @@ export default function VenueMediaEdit() {
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false}>
         <Pressable accessibilityLabel={t("talent.close")} onPress={() => router.back()} style={styles.back}>
-          <Feather name="arrow-left" size={20} color="#0E1A24" />
+          <Feather name="arrow-left" size={20} color={TAVORIA.color.navy} />
         </Pressable>
-        <Text style={styles.title}>{t(`talent.${kind === "photo" ? "photos" : "videos"}`)}</Text>
-        <Text style={styles.intro}>
-          {kind === "photo" ? t("talent.venuePhotoIntro") : t("talent.venueVideoIntro")}
-        </Text>
+        <Text style={styles.title}>{t("talent.media")}</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        {!row && !error ? <ActivityIndicator color="#F0531C" style={styles.loading} /> : null}
+        {!row && !error ? <ActivityIndicator color={TAVORIA.color.orange} style={styles.loading} /> : null}
         {row ? (
-          <View style={styles.grid}>
-            {slots.map((url, index) => url ? (
-              <View key={`${url}-${index}`} style={styles.item}>
-                <View style={styles.preview}>
-                  {kind === "photo" ? <Image source={{ uri: url }} style={styles.image} /> : <Feather name="video" size={28} color="#F0531C" />}
-                </View>
-                <View style={styles.itemActions}>
-                  <Pressable disabled={busy !== null} onPress={() => void pick(index)} style={styles.secondary}>
-                    <Text style={styles.secondaryText}>{t("talent.replace")}</Text>
-                    {busy === index ? <ActivityIndicator size="small" color="#F0531C" /> : null}
-                  </Pressable>
-                  <Pressable disabled={busy !== null} accessibilityLabel={t("talent.remove")} onPress={() => void remove(index)} style={styles.delete}>
-                    <Feather name="trash-2" size={16} color="#626B78" />
-                  </Pressable>
-                </View>
-              </View>
-            ) : null)}
-            {nextSlot >= 0 ? (
-              <Pressable disabled={busy !== null} onPress={() => void pick(nextSlot)} style={styles.add}>
-                <Feather name="plus" size={20} color="#F0531C" />
-                <Text style={styles.addText}>{t("talent.add")}</Text>
-                {busy === nextSlot ? <ActivityIndicator size="small" color="#F0531C" /> : null}
-              </Pressable>
-            ) : null}
-          </View>
+          <MixedMediaSlotGrid
+            items={items}
+            maxItems={LIMITS.photo + LIMITS.video}
+            busy={busy}
+            onPick={(index) => void pick(index)}
+            onRemove={(index) => void remove(index)}
+            onAdd={() => void pick()}
+          />
         ) : null}
       </ScrollView>
       <StickyFooter desktopRow>
@@ -137,21 +152,10 @@ export default function VenueMediaEdit() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: TAVORIA.color.paperDeep },
-  content: { alignSelf: "center", maxWidth: 840, paddingHorizontal: 20, paddingTop: 18, paddingBottom: 32, width: "100%" },
-  back: { alignSelf: "flex-start", marginBottom: 8, paddingVertical: 8 },
+  safe: { backgroundColor: TAVORIA.color.paperDeep, flex: 1 },
+  content: { alignSelf: "center", gap: 12, maxWidth: 840, paddingBottom: 32, paddingHorizontal: 24, paddingTop: 18, width: "100%" },
+  back: { alignSelf: "flex-start", paddingVertical: 8 },
   title: { color: TAVORIA.color.navy, fontFamily: "InstrumentSerif_400Regular", fontSize: 29 },
-  intro: { color: TAVORIA.color.muted, fontSize: 14, lineHeight: 21, marginBottom: 22, marginTop: 6 },
-  error: { color: "#993556", fontSize: 14, lineHeight: 21, marginBottom: 16 },
+  error: { color: TAVORIA.color.error, fontSize: 14, lineHeight: 21 },
   loading: { marginTop: 36 },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 14 },
-  item: { width: 210, maxWidth: "100%", gap: 10 },
-  preview: { alignItems: "center", backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.medium, borderWidth: 1, height: 170, justifyContent: "center", overflow: "hidden" },
-  image: { height: "100%", width: "100%" },
-  itemActions: { alignItems: "center", flexDirection: "row", gap: 8 },
-  secondary: { alignItems: "center", backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.borderStrong, borderRadius: TAVORIA.radius.small, borderWidth: 1, flexDirection: "row", gap: 7, justifyContent: "center", minHeight: 40, paddingHorizontal: 13 },
-  secondaryText: { color: TAVORIA.color.navy, fontSize: 13, fontWeight: "700" },
-  delete: { alignItems: "center", height: 36, justifyContent: "center", width: 36 },
-  add: { alignItems: "center", backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.borderStrong, borderRadius: TAVORIA.radius.medium, borderWidth: 1, gap: 7, height: 170, justifyContent: "center", paddingHorizontal: 20, width: 210 },
-  addText: { color: TAVORIA.color.navy, fontSize: 13, fontWeight: "700" },
 });

@@ -19,6 +19,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getApplicationsForCurrentWorker } from "../lib/db";
 import { t } from "../lib/i18n";
+import { formatLocalizedDate } from "../lib/dateFormat";
 import { localizeRoles } from "../lib/positions";
 import AppBottomNav from "../components/AppBottomNav";
 import FilterChips from "../components/FilterChips";
@@ -308,7 +309,7 @@ function ApplicationCard({
       ? `€${s.pay_amount}/${shortUnit(s.pay_unit)}`
       : null;
   const roleStr = s
-    ? localizeRoles(s.roles ?? []).slice(0, 2).join(" · ") || "Shift"
+    ? localizeRoles(s.roles ?? []).slice(0, 2).join(" · ") || t("shift_detail.default_shift")
     : t("candidate_actions.direct_interview_invitation");
 
   return (
@@ -421,11 +422,11 @@ function shortUnit(u: string) {
 function formatWhen(iso: string) {
   const d = new Date(iso);
   const diff = (Date.now() - d.getTime()) / 1000;
-  if (diff < 60) return "just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)}d ago`;
-  return d.toLocaleDateString();
+  if (diff < 60) return t("common.just_now");
+  if (diff < 3600) return t("common.minutes_ago", { count: Math.floor(diff / 60) });
+  if (diff < 86400) return t("common.hours_ago", { count: Math.floor(diff / 3600) });
+  if (diff < 86400 * 7) return t("common.days_ago", { count: Math.floor(diff / 86400) });
+  return formatLocalizedDate(d, { day: "numeric", month: "short", year: "numeric" });
 }
 
 const styles = StyleSheet.create({

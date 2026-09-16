@@ -9,7 +9,8 @@ import {
   View,
 } from "react-native";
 import { useEffect, useMemo, useState } from "react";
-import { t } from "../lib/i18n";
+import { t, useLanguage } from "../lib/i18n";
+import { formatLocalizedDate, formatLocalizedMonthYear, getLocalizedCalendarDays } from "../lib/dateFormat";
 import { TAVORIA } from "../lib/designTokens";
 import ActionButton from "./ActionButton";
 
@@ -45,6 +46,7 @@ export default function ApplicationActionModal({
   onCancel: () => void;
   onConfirm: (interview?: InterviewSchedule) => void;
 }) {
+  useLanguage();
   const [date, setDate] = useState(defaultInterviewDate);
   const [time, setTime] = useState("10:00");
   const [datePickerOpen, setDatePickerOpen] = useState(false);
@@ -150,7 +152,7 @@ export default function ApplicationActionModal({
                       <Feather name="chevron-left" size={18} color="#0E1A24" />
                     </Pressable>
                     <Text style={styles.calendarMonth}>
-                      {calendarMonth.toLocaleDateString([], { month: "long", year: "numeric" })}
+                      {formatLocalizedMonthYear(calendarMonth)}
                     </Text>
                     <Pressable
                       style={styles.calendarArrow}
@@ -160,7 +162,7 @@ export default function ApplicationActionModal({
                     </Pressable>
                   </View>
                   <View style={styles.weekdays}>
-                    {["M", "T", "W", "T", "F", "S", "S"].map((day, index) => (
+                    {getLocalizedCalendarDays().map((day, index) => (
                       <Text key={`${day}-${index}`} style={styles.weekday}>{day}</Text>
                     ))}
                   </View>
@@ -403,5 +405,5 @@ function getCalendarDays(month: Date) {
 }
 
 function formatInterviewDate(key: string) {
-  return dateFromKey(key).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" });
+  return formatLocalizedDate(dateFromKey(key), { day: "numeric", month: "short", year: "numeric" });
 }

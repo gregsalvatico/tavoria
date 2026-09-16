@@ -2,7 +2,6 @@ import { Feather } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { useState } from "react";
 import {
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,6 +12,8 @@ import { mailtoUrl, mapsUrl, telUrl, whatsAppUrl } from "../lib/contact";
 import { openExternalLink } from "../lib/externalLinks";
 import { t } from "../lib/i18n";
 import { TAVORIA } from "../lib/designTokens";
+import { useIsDesktop } from "../lib/responsive";
+import ResponsiveModal from "./ResponsiveModal";
 
 type Props = {
   visible: boolean;
@@ -34,6 +35,7 @@ export default function ContactPersonModal({
   visitAddress,
   recipientType = "venue",
 }: Props) {
+  const isDesktop = useIsDesktop();
   const [copied, setCopied] = useState(false);
   const open = (url: string | null, target: string) => openExternalLink(url, target);
   const copyEmail = async () => {
@@ -46,11 +48,9 @@ export default function ContactPersonModal({
     : t("contact_modal.venue");
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+    <ResponsiveModal visible={visible} onClose={onClose} panelStyle={isDesktop && styles.desktopPanel}>
         <ScrollView style={styles.sheet} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          <View style={styles.handle} />
+          {!isDesktop ? <View style={styles.handle} /> : null}
           <View style={styles.titleRow}>
             <View>
               <Text style={styles.kicker}>{t("contact_modal.kicker")}</Text>
@@ -127,14 +127,13 @@ export default function ContactPersonModal({
 
           {!email && !phone && !visitAddress ? <Text style={styles.noContact}>{t("contact_modal.no_contact", { recipient: recipientLabel.toLowerCase() })}</Text> : null}
         </ScrollView>
-      </View>
-    </Modal>
+    </ResponsiveModal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: { backgroundColor: "rgba(14,26,36,0.42)", flex: 1, justifyContent: "flex-end" },
-  sheet: { backgroundColor: TAVORIA.color.paper, borderTopLeftRadius: 26, borderTopRightRadius: 26, maxHeight: "86%" },
+  desktopPanel: { maxWidth: 620 },
+  sheet: { maxHeight: "86%" },
   content: { paddingBottom: 30, paddingHorizontal: 18, paddingTop: 11 },
   handle: { alignSelf: "center", backgroundColor: "#C8CBCF", borderRadius: 999, height: 4, marginBottom: 17, width: 38 },
   titleRow: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },

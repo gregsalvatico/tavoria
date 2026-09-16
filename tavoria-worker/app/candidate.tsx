@@ -41,9 +41,12 @@ export default function Candidate() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width >= 1024;
-  const params = useLocalSearchParams<{ applicationId?: string; workerId?: string }>();
+  const params = useLocalSearchParams<{ applicationId?: string; workerId?: string; returnTo?: string }>();
   const incomingAppId = params.applicationId;
   const incomingWorkerId = params.workerId;
+  const returnPath = params.returnTo === "/venue-browse-workers" || params.returnTo === "/venue-inbox" || params.returnTo === "/"
+    ? params.returnTo
+    : undefined;
   const isOwnerMode = !incomingAppId && !incomingWorkerId;
   const localWorker = getWorkerProfile();
 
@@ -62,6 +65,17 @@ export default function Candidate() {
   const [contactOpen, setContactOpen] = useState(false);
   const [directApplicationId, setDirectApplicationId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const goBack = () => {
+    if (returnPath) {
+      router.replace(returnPath as never);
+      return;
+    }
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace("/" as never);
+  };
 
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -161,7 +175,7 @@ export default function Candidate() {
       {isOwnerMode ? (
         <WorkerScreenHeader title={t("talent.profile")} active="profile" />
       ) : (
-        <VenueScreenHeader title={t("candidate_actions.view_full_profile")} active={incomingAppId ? "inbox" : "candidates"} />
+        <VenueScreenHeader onBack={goBack} title={t("candidate_actions.view_full_profile")} active={incomingAppId ? "inbox" : "candidates"} />
       )}
       <View style={styles.content}>
         {loading ? <ActivityIndicator color="#F0531C" style={{ marginVertical: 50 }} /> : error ? <View style={{ paddingVertical: 36, gap: 12 }}><Text style={talentStyles.error}>{error}</Text><Pressable onPress={() => router.replace("/candidate" as never)}><Text style={styles.link}>{t("talent.retry")}</Text></Pressable></View> : row ? <WorkerProfileContent row={row} owner={isOwnerMode} onEdit={() => router.push("/worker-profile-edit" as never)} /> : null}

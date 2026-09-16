@@ -18,7 +18,7 @@ import { FilterBar, HeaderIconButton, ListRow, ListSurface, PageContainer, Refre
 import ApplicationActionModal, { type InterviewLocationType, type InterviewSchedule } from "./ApplicationActionModal";
 import PreviewMedia from "./PreviewMedia";
 
-export default function WorkerDirectory({ embedded = false }: { embedded?: boolean }) {
+export default function WorkerDirectory({ embedded = false, returnTo = "/venue-browse-workers" }: { embedded?: boolean; returnTo?: string }) {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width >= 1024;
@@ -99,7 +99,7 @@ export default function WorkerDirectory({ embedded = false }: { embedded?: boole
   }} onOpen={() => {
     if (!selectedMatch?.worker.id) return;
     setSelectedMatch(null);
-    router.push({ pathname: "/candidate", params: { workerId: selectedMatch.worker.id } });
+    router.push({ pathname: "/candidate", params: { workerId: selectedMatch.worker.id, returnTo } });
   }} />;
   return <SafeAreaView style={styles.safe} edges={embedded ? [] : ["top", "bottom"]}>
     <View style={[styles.workspace, isDesktop && styles.workspaceDesktop]}>

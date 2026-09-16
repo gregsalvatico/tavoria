@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -16,16 +16,38 @@ import { changeUsernamePin } from "../lib/usernameAuth";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import { TAVORIA } from "../lib/designTokens";
 import ActionButton from "../components/ActionButton";
+import AppBottomNav from "../components/AppBottomNav";
+import WorkerScreenHeader from "../components/WorkerScreenHeader";
+import VenueScreenHeader from "../components/VenueScreenHeader";
+import { PageContainer, PageHeader } from "../components/PagePrimitives";
+import { getCurrentUserContext } from "../lib/db";
+import { getCachedHomeContext } from "../lib/homeContextCache";
 
 export default function ChangePin() {
   const router = useRouter();
   const isDesktop = useIsDesktop();
+  const { role: roleParam } = useLocalSearchParams<{ role?: string }>();
+  const [role, setRole] = useState<"worker" | "venue">(() => (
+    roleParam === "venue" || (roleParam !== "worker" && getCachedHomeContext()?.hasVenue)
+      ? "venue"
+      : "worker"
+  ));
   const [currentPin, setCurrentPin] = useState("");
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [emailNotificationSent, setEmailNotificationSent] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (roleParam === "venue" || roleParam === "worker") {
+      setRole(roleParam);
+      return;
+    }
+    getCurrentUserContext()
+      .then((context) => setRole(context.hasVenue ? "venue" : "worker"))
+      .catch(() => {});
+  }, [roleParam]);
 
   const pinsMatch = newPin === confirmPin;
   const canSubmit = /^\d{4}$/.test(currentPin) && /^\d{4}$/.test(newPin) && pinsMatch && currentPin !== newPin;
@@ -51,20 +73,15 @@ export default function ChangePin() {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <KeyboardAvoidingView style={styles.safe} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <View style={styles.header}>
-          <Pressable style={styles.back} onPress={() => router.back()} hitSlop={12} accessibilityLabel={t("common.back")}>
-            <Feather name="chevron-left" size={26} color="#0E1A24" />
-          </Pressable>
-          {isDesktop ? (
-            <Text style={styles.desktopHeaderTitle}>
-              <Text style={{ color: "#F0531C" }}>{t("change_pin.drawer").charAt(0)}</Text>
-              {t("change_pin.drawer").slice(1)}
-            </Text>
-          ) : (
-            <Text style={styles.wordmark}><Text style={{ color: "#F0531C" }}>T</Text>avoria.</Text>
-          )}
-          <View style={styles.back} />
-        </View>
+        {isDesktop ? (
+          <PageContainer>
+            <PageHeader title={t("change_pin.drawer")} />
+          </PageContainer>
+        ) : role === "venue" ? (
+          <VenueScreenHeader title={t("change_pin.drawer")} active="candidates" />
+        ) : (
+          <WorkerScreenHeader title={t("change_pin.drawer")} active="profile" />
+        )}
 
         <View style={styles.content}>
           <Text style={styles.kicker}>{t("change_pin.kicker")}</Text>
@@ -103,6 +120,11 @@ export default function ChangePin() {
           </View>
         </View>
       </KeyboardAvoidingView>
+      {!isDesktop ? (
+        role === "venue"
+          ? <AppBottomNav role="venue" active="home" />
+          : <AppBottomNav role="worker" active="profile" />
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -127,11 +149,7 @@ function PinField({ label, value, onChangeText }: { label: string; value: string
 
 const styles = StyleSheet.create({
   safe: { backgroundColor: TAVORIA.color.paperDeep, flex: 1 },
-  header: { alignItems: "center", flexDirection: "row", justifyContent: "space-between", minHeight: 58, paddingHorizontal: 16 },
-  back: { alignItems: "center", height: 40, justifyContent: "center", width: 40 },
-  wordmark: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 27 },
-  content: { alignSelf: "center", flex: 1, maxWidth: 560, paddingHorizontal: 24, paddingTop: 34, width: "100%" },
-  desktopHeaderTitle: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 29 },
+  content: { alignSelf: "center", flex: 1, maxWidth: 840, paddingHorizontal: 24, paddingTop: 34, width: "100%" },
   kicker: { color: "#F0531C", fontFamily: "DMMono_500Medium", fontSize: 11, letterSpacing: 1.3 },
   title: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 36, lineHeight: 40, marginTop: 6 },
   intro: { color: "#5D6670", fontSize: 14, lineHeight: 20, marginBottom: 28, marginTop: 10 },

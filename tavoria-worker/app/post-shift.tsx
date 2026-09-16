@@ -1,24 +1,25 @@
 import { Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useGlobalSearchParams, useRouter } from "expo-router";
 import { setPostedShift } from "../lib/postedShift";
 import { getVenueProfile, patchVenueProfile } from "../lib/venueProfile";
 import { getCurrentVenueRow, insertShift } from "../lib/db";
-import { t } from "../lib/i18n";
-import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import { t, useLanguage } from "../lib/i18n";
+import { formatLocalizedDate, formatLocalizedMonthYear, getLocalizedCalendarDays } from "../lib/dateFormat";
+import { localizeRole } from "../lib/positions";
+import { useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
-import { PageContainer, PageHeader } from "../components/PagePrimitives";
+import { FormFlowHeader } from "../components/PagePrimitives";
 import ActionButton from "../components/ActionButton";
+import ResponsiveModal from "../components/ResponsiveModal";
 import { RequirementFields } from "../components/TalentFields";
 import { TAVORIA } from "../lib/designTokens";
 import type { WorkerRequirements } from "../lib/workerMatching";
+import { serializeContractTypes } from "../lib/contractTypes";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
   InputAccessoryView,
   Keyboard,
   KeyboardAvoidingView,
-  Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Platform,
@@ -38,19 +39,6 @@ const fmtHHMM = (mins: number) => {
   const m = mins % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 };
-
-const ROLES = [
-  "Barista",
-  "Waiter",
-  "Runner",
-  "Cashier",
-  "Rider",
-  "Bartender",
-  "Cook",
-  "Chef",
-  "Kitchen helper",
-  "Cleaner",
-];
 
 const CONTRACTS: {
   id: string;
@@ -87,7 +75,7 @@ const PAY_UNITS: {
   { id: "month", label: "Per month", unitTxt: "month", icon: "credit-card" },
 ];
 
-const DAYS = ["M", "T", "W", "T", "F", "S", "S"];
+const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 const PAY_ACCESSORY_ID = "pay-accessory";
 
 type Shift = { fromMins: number; toMins: number };
@@ -99,8 +87,8 @@ const fmt = (mins: number) => {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 };
 
-// Common hospitality positions venues can post for — used as a fallback when
-// the venue's profile doesn't yet have its own positions saved.
+// Shift roles belong to the shift, not to the venue profile. A venue can use
+// any role here and can post more roles on other shifts later.
 const COMMON_ROLES = [
   "Barista",
   "Waiter",
@@ -112,18 +100,23 @@ const COMMON_ROLES = [
   "Chef",
   "Cleaner",
 ];
+const POST_SHIFT_STEPS = ["roles", "contract", "schedule", "availability", "pay", "requirements", "review"] as const;
+type PostShiftStep = (typeof POST_SHIFT_STEPS)[number];
 
 export default function PostShift() {
   const router = useRouter();
   const isDesktop = useIsDesktop();
-  const venueRoles = getVenueProfile()?.roles ?? [];
-  // Shifts inherit the venue's saved positions automatically.
-  // If a venue wants to change which positions a shift covers, they edit
-  // their venue profile on /venue-photo.
-  const [roles, setRoles] = useState<string[]>(venueRoles);
+  useLanguage();
+  const { focus } = useGlobalSearchParams<{ focus?: string }>();
+  const focusKey = typeof focus === "string" && POST_SHIFT_STEPS.includes(focus as PostShiftStep) ? focus as PostShiftStep : "roles";
+  const stepIndex = POST_SHIFT_STEPS.indexOf(focusKey);
+  const availableRoles = COMMON_ROLES;
+  const [roles, setRoles] = useState<string[]>([]);
   const [requirements, setRequirements] = useState<WorkerRequirements>({});
-  const [contract, setContract] = useState<string | null>(null);
+  const [contracts, setContracts] = useState<string[]>([]);
   const [days, setDays] = useState<number[]>([]);
+  // The shifts table currently persists one interval per post. Keep the
+  // creation flow honest until the schema supports multiple intervals.
   const [shifts, setShifts] = useState<Shift[]>([{ fromMins: 0, toMins: 0 }]);
   const [startWhen, setStartWhen] = useState<"now" | "asap" | "pickdate" | null>(null);
   const [pickedDate, setPickedDate] = useState<Date | null>(null);
@@ -134,19 +127,37 @@ export default function PostShift() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [payUnit, setPayUnit] = useState<"hour" | "day" | "week" | "month" | "later">("hour");
-  const [pay, setPay] = useState<number>(0);
+  const [payInput, setPayInput] = useState("");
+  const [payUnitTouched, setPayUnitTouched] = useState(false);
+  const defaultPayUnitApplied = useRef(false);
 
-  // When the contract type changes, just snap payUnit (don't auto-fill amount —
-  // venue picks that on purpose)
-  const onPickContract = (id: string) => {
-    setContract(id);
-    const c = CONTRACTS.find((x) => x.id === id)!;
-    if (payUnit !== "later") setPayUnit(c.defaultUnit);
+  const goToStep = (index: number) => {
+    const next = POST_SHIFT_STEPS[index];
+    if (!next) return;
+    router.replace({ pathname: "/post-shift", params: { focus: next } });
   };
+
+  // Contract defaults are only applied before the venue makes an explicit pay
+  // choice. Once chosen, the amount and unit must remain stable.
+  const onPickContract = (id: string) => {
+    setContracts((current) => {
+      if (current.includes(id)) return current.filter((value) => value !== id);
+      return [...current, id];
+    });
+  };
+
+  useEffect(() => {
+    if (defaultPayUnitApplied.current || contracts.length === 0 || payUnitTouched || payUnit === "later") return;
+    const first = CONTRACTS.find((item) => item.id === contracts[0]);
+    if (!first) return;
+    defaultPayUnitApplied.current = true;
+    setPayUnit(first.defaultUnit);
+  }, [contracts, payUnit, payUnitTouched]);
 
   const onPickPayUnit = (u: "hour" | "day" | "week" | "month" | "later") => {
     setPayUnit(u);
-    if (u === "later") setPay(0);
+    setPayUnitTouched(true);
+    if (u === "later") setPayInput("");
   };
 
   // Which time field is being edited (e.g. "0-from", "1-to") — controls the modal
@@ -163,12 +174,6 @@ export default function PostShift() {
     );
   };
 
-  const minsToDate = (mins: number) => {
-    const d = new Date();
-    d.setHours(Math.floor(mins / 60), mins % 60, 0, 0);
-    return d;
-  };
-
   const toggleRole = (r: string) =>
     setRoles((cur) =>
       cur.includes(r)
@@ -183,438 +188,383 @@ export default function PostShift() {
       cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i].sort()
     );
 
-  const addShift = () =>
-    setShifts((cur) =>
-      cur.length >= 2
-        ? cur
-        : [...cur, { fromMins: 11 * 60, toMins: 15 * 60 }]
-    );
-  const removeShift = (i: number) =>
-    setShifts((cur) => cur.filter((_, idx) => idx !== i));
+  const selectStartMode = (mode: "now" | "asap" | "pickdate") => {
+    setStartWhen(mode);
+    if (mode === "pickdate") {
+      setCalendarOpen(true);
+    } else {
+      setPickedDate(null);
+    }
+  };
+
+  const todayIso = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  };
+
+  const payAmount = Number(payInput.replace(",", "."));
+  const currentShift = shifts[0];
+  const validContract = contracts.length > 0 && (!contracts.includes("custom") || customContract.trim().length > 0);
+  const validHours = currentShift.fromMins !== currentShift.toMins;
+  const validStart = Boolean(startWhen) && (startWhen !== "pickdate" || Boolean(pickedDate));
+  const validSchedule = days.length > 0 || Boolean(pickedDate) || startWhen === "now" || startWhen === "asap";
+  const validPay = payUnit === "later" || (Number.isFinite(payAmount) && payAmount > 0);
+  const validRequirements = requirements.minimumExperience === undefined || (
+    Number.isFinite(requirements.minimumExperience) &&
+    requirements.minimumExperience >= 0 &&
+    requirements.minimumExperience <= 80
+  );
+  const canSubmit = roles.length > 0 && validContract && validHours && validStart && validSchedule && validPay && validRequirements;
+  const stepComplete = focusKey === "roles"
+    ? roles.length > 0
+    : focusKey === "contract"
+      ? validContract
+      : focusKey === "schedule"
+        ? validHours
+        : focusKey === "availability"
+          ? validStart && validSchedule
+          : focusKey === "pay"
+            ? validPay
+            : focusKey === "requirements"
+              ? validRequirements
+              : canSubmit;
+  const isReviewStep = focusKey === "review";
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <PageContainer>
-        <PageHeader
-          title={t("post_shift.title")}
-          left={
-            <Pressable
-              onPress={() => {
-                if (router.canGoBack()) { router.back(); return; }
-                router.replace("/");
-              }}
-              hitSlop={12}
-              style={styles.iconBtn}
-            >
-              <Feather name="chevron-left" size={26} color="#0E1A24" />
-            </Pressable>
+      <FormFlowHeader
+        title={t("post_shift.title")}
+        subtitle={t("post_shift.intro")}
+        step={stepIndex}
+        total={POST_SHIFT_STEPS.length}
+        onBack={() => {
+          if (stepIndex > 0) {
+            goToStep(stepIndex - 1);
+            return;
           }
-        />
-      </PageContainer>
+          if (router.canGoBack()) { router.back(); return; }
+          router.replace("/");
+        }}
+      />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={0}
       >
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Contract */}
-        <Section title={t("post_shift.contract")}>
-          <View style={styles.contractGrid}>
-            {CONTRACTS.filter((c) => c.id !== "custom").map((c) => {
-              const on = contract === c.id;
-              return (
-                <Pressable
-                  key={c.id}
-                  onPress={() => onPickContract(c.id)}
-                  style={[
-                    styles.contractTile,
-                    on && styles.tileOn,
-                  ]}
-                >
-                  <View style={styles.contractIconWrap}>
-                    <Feather name={c.icon} size={18} color="white" />
-                  </View>
-                  <Text style={styles.contractLabel}>{t(`post_shift.${CONTRACT_KEYS[c.id] ?? c.id}`)}</Text>
-                  {on && (
-                    <View style={styles.tileCheck}>
-                      <Feather name="check" size={10} color="white" />
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {focusKey === "roles" ? <Section title={t("post_shift.for")} sub={t("post_shift.for_sub")}>
+            <View style={styles.sectionMetaRow}>
+              <Text style={styles.sectionMeta}>{t("talent.roleLimit")}</Text>
+            </View>
+            <View style={styles.roleChipWrap}>
+              {availableRoles.map((role) => {
+                const selected = roles.includes(role);
+                return (
+                  <Pressable
+                    key={role}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: selected }}
+                    accessibilityLabel={localizeRole(role)}
+                    onPress={() => toggleRole(role)}
+                    style={({ hovered, pressed }) => [
+                      styles.roleChip,
+                      selected && styles.roleChipOn,
+                      hovered && !selected && styles.roleChipHovered,
+                      pressed && styles.controlPressed,
+                    ]}
+                  >
+                    <Text style={[styles.roleChipTxt, selected && styles.roleChipTxtOn]}>
+                      {localizeRole(role)}
+                    </Text>
+                    {selected ? <Feather name="check" size={14} color="white" /> : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Section> : null}
+
+          {focusKey === "contract" ? <Section title={t("post_shift.contract")}>
+            <View style={styles.contractGrid}>
+              {CONTRACTS.map((c) => {
+                const selected = contracts.includes(c.id);
+                const label = c.id === "custom" && customContract.trim()
+                  ? customContract.trim()
+                  : t(`post_shift.${CONTRACT_KEYS[c.id] ?? c.id}`);
+                return (
+                  <Pressable
+                    key={c.id}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: selected }}
+                    accessibilityLabel={label}
+                    onPress={() => {
+                      const wasSelected = contracts.includes(c.id);
+                      onPickContract(c.id);
+                      if (c.id === "custom" && !wasSelected) setCustomContractOpen(true);
+                    }}
+                    style={({ hovered, pressed }) => [
+                      styles.contractTile,
+                      selected && styles.contractTileOn,
+                      hovered && !selected && styles.contractTileHovered,
+                      pressed && styles.controlPressed,
+                    ]}
+                  >
+                    <View style={styles.contractIconWrap}>
+                      <Feather name={c.icon} size={18} color={TAVORIA.color.orange} />
                     </View>
-                  )}
-                </Pressable>
-              );
-            })}
+                    <Text style={styles.contractLabel}>{label}</Text>
+                    {selected ? <Feather name="check" size={18} color={TAVORIA.color.orange} /> : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Section> : null}
 
-            {/* Custom contract tile */}
-            <Pressable
-              onPress={() => {
-                onPickContract("custom");
-                setCustomContractOpen(true);
-              }}
-              style={[
-                styles.contractTile,
-                contract === "custom" && styles.tileOn,
-              ]}
-            >
-              <View style={styles.contractIconWrap}>
-                <Feather name="more-horizontal" size={18} color="white" />
-              </View>
-              <Text style={styles.contractLabel}>
-                {contract === "custom" && customContract.length > 0
-                  ? customContract
-                  : t("post_shift.other")}
-              </Text>
-              {contract === "custom" && (
-                <View style={styles.tileCheck}>
-                  <Feather name="check" size={10} color="white" />
-                </View>
-              )}
-            </Pressable>
-          </View>
-        </Section>
+          {focusKey === "schedule" ? <View>
+          <Section title={t("post_shift.days")} sub={t("post_shift.days_sub")}>
+            <View style={styles.daysRow}>
+              {DAYS.map((day, index) => {
+                const selected = days.includes(index);
+                const label = t(`shift_detail.days_short.${day}`);
+                return (
+                  <Pressable
+                    key={day}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: selected }}
+                    accessibilityLabel={label}
+                    onPress={() => toggleDay(index)}
+                    style={({ hovered, pressed }) => [
+                      styles.dayPill,
+                      selected && styles.dayPillOn,
+                      hovered && !selected && styles.dayPillHovered,
+                      pressed && styles.controlPressed,
+                    ]}
+                  >
+                    <Text style={[styles.dayPillTxt, selected && styles.dayPillTxtOn]}>{label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Section>
 
-        {/* Days */}
-        <Section title={t("post_shift.days")} sub={t("post_shift.days_sub")}>
-          <View style={styles.daysRow}>
-            {DAYS.map((d, i) => {
-              const on = days.includes(i);
-              return (
+          <Section title={t("post_shift.hours")} sub={t("post_shift.hours_sub")}>
+            <View style={styles.shiftBox}>
+              <Feather name="clock" size={18} color={TAVORIA.color.muted} />
+              <View style={styles.timeFields}>
                 <Pressable
-                  key={i}
-                  onPress={() => toggleDay(i)}
-                  style={[styles.dayPill, on && styles.dayPillOn]}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("shift_edit.start_time")}
+                  onPress={() => setEditing("0-from")}
+                  style={({ hovered, pressed }) => [styles.timeFieldButton, hovered && styles.timeFieldButtonHovered, pressed && styles.controlPressed]}
                 >
-                  <Text style={[styles.dayPillTxt, on && styles.dayPillTxtOn]}>
-                    {d}
+                  <Text style={styles.timeFieldLabel}>{t("shift_edit.start_time")}</Text>
+                  <Text style={[styles.timeFieldValue, currentShift.fromMins === 0 && currentShift.toMins === 0 && styles.timeFieldPlaceholder]}>
+                    {currentShift.fromMins === 0 && currentShift.toMins === 0 ? "--:--" : fmt(currentShift.fromMins)}
                   </Text>
                 </Pressable>
-              );
-            })}
-          </View>
-        </Section>
-
-        {/* Hours */}
-        <Section title={t("post_shift.hours")} sub={t("post_shift.hours_sub")}>
-          <View style={{ gap: 8 }}>
-            {shifts.map((s, i) => (
-              <View
-                key={i}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: 14,
-                  paddingVertical: 12,
-                  backgroundColor: "white",
-                  borderRadius: 12,
-                  borderWidth: 0.5,
-                  borderColor: "rgba(0,0,0,0.10)",
-                }}
-              >
-                <View style={{ width: 30 }}>
-                  <Feather
-                    name={i === 0 ? "sun" : "moon"}
-                    size={18}
-                    color="#854F0B"
-                  />
-                </View>
-                <View
-                  style={{
-                    flex: 1,
-                    flexDirection: "row",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: 10,
-                  }}
-                >
-                  <Pressable
-                    onPress={() => setEditing(`${i}-from`)}
-                    style={styles.timePillTap}
-                  >
-                    <Text style={styles.timePillTapTxt}>{fmt(s.fromMins)}</Text>
-                  </Pressable>
-                  <Text style={{ fontSize: 16, color: "#6B7280" }}>—</Text>
-                  <Pressable
-                    onPress={() => setEditing(`${i}-to`)}
-                    style={styles.timePillTap}
-                  >
-                    <Text style={styles.timePillTapTxt}>{fmt(s.toMins)}</Text>
-                  </Pressable>
-                </View>
-                <View style={{ width: 30, alignItems: "flex-end" }}>
-                  {shifts.length > 1 && (
-                    <Pressable onPress={() => removeShift(i)} hitSlop={8}>
-                      <Feather name="x" size={18} color="#993556" />
-                    </Pressable>
-                  )}
-                </View>
-              </View>
-            ))}
-            {shifts.length < 2 && (
-              <Pressable onPress={addShift} style={styles.addRow}>
-                <Feather name="plus" size={16} color="#0E1A24" />
-                <Text style={styles.addRowTxt}>{t("post_shift.add_second")}</Text>
-              </Pressable>
-            )}
-          </View>
-        </Section>
-
-        {/* When */}
-        <Section title={t("post_shift.when")}>
-          {/* Need someone now — full width, urgent red (emergency: sick call) */}
-          <Pressable
-            onPress={() => {
-              setStartWhen("now");
-              setPickedDate(null);
-            }}
-            style={[
-              styles.asapTile,
-              startWhen === "now" && styles.tileOn,
-            ]}
-          >
-            <View style={styles.asapIconWrap}>
-              <Feather name="zap" size={24} color="#E24B4A" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.asapLbl}>{t("post_shift.need_now")}</Text>
-              <Text style={styles.asapSub}>
-                {t("post_shift.need_now_sub")}
-              </Text>
-            </View>
-            {startWhen === "now" && (
-              <Feather name="check-circle" size={22} color="white" />
-            )}
-          </Pressable>
-
-          <View style={styles.tileGrid}>
-            <Pressable
-              onPress={() => {
-                setStartWhen("asap");
-                setPickedDate(null);
-              }}
-              style={[
-                styles.tileLg,
-                startWhen === "asap" && styles.tileOn,
-              ]}
-            >
-              <View style={styles.tileIconWrap}>
-                <Feather name="clock" size={28} color="white" />
-              </View>
-              <Text style={styles.tileLbl}>{t("post_shift.asap")}</Text>
-              {startWhen === "asap" && (
-                <View style={styles.tileCheck}>
-                  <Feather name="check" size={12} color="white" />
-                </View>
-              )}
-            </Pressable>
-            <Pressable
-              onPress={() => {
-                setStartWhen("pickdate");
-                setCalendarOpen(true);
-              }}
-              style={[
-                styles.tileLg,
-                startWhen === "pickdate" && styles.tileOn,
-              ]}
-            >
-              <View style={styles.tileIconWrap}>
-                <Feather name="calendar" size={28} color="white" />
-              </View>
-              <Text style={styles.tileLbl}>
-                {pickedDate
-                  ? pickedDate.toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "short",
-                    })
-                  : t("post_shift.pick_date")}
-              </Text>
-              {startWhen === "pickdate" && (
-                <View style={styles.tileCheck}>
-                  <Feather name="check" size={12} color="white" />
-                </View>
-              )}
-            </Pressable>
-          </View>
-        </Section>
-
-        {/* Pay */}
-        <Section title={t("post_shift.pay")}>
-          {/* Unit selector — colored tiles to match the rest of the page */}
-          <View style={styles.tileGrid}>
-            {PAY_UNITS.map((u) => {
-              const on = payUnit === u.id;
-              return (
+                <Text style={styles.timeDash}>–</Text>
                 <Pressable
-                  key={u.id}
-                  onPress={() => onPickPayUnit(u.id)}
-                  style={[
-                    styles.tile,
-                    on && styles.tileOn,
-                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("shift_edit.end_time")}
+                  onPress={() => setEditing("0-to")}
+                  style={({ hovered, pressed }) => [styles.timeFieldButton, hovered && styles.timeFieldButtonHovered, pressed && styles.controlPressed]}
                 >
-                  <View style={styles.tileIconWrapPay}>
-                    <Feather name={u.icon} size={16} color="white" />
-                  </View>
-                  <Text style={styles.tileLbl}>{t(`post_shift.per_${u.id}`)}</Text>
-                  {on && (
-                    <View style={styles.tileCheck}>
-                      <Feather name="check" size={12} color="white" />
-                    </View>
-                  )}
+                  <Text style={styles.timeFieldLabel}>{t("shift_edit.end_time")}</Text>
+                  <Text style={[styles.timeFieldValue, currentShift.fromMins === 0 && currentShift.toMins === 0 && styles.timeFieldPlaceholder]}>
+                    {currentShift.fromMins === 0 && currentShift.toMins === 0 ? "--:--" : fmt(currentShift.toMins)}
+                  </Text>
                 </Pressable>
-              );
-            })}
-          </View>
+              </View>
+            </View>
+          </Section>
+          </View> : null}
 
-          {/* Amount input — big card, dynamic unit, hidden when "Discussed later" */}
-          {payUnit !== "later" ? (
-            <>
-              <View style={styles.payCard}>
-                <View style={styles.payCardTop}>
-                  <Text style={styles.payCardCurrency}>€</Text>
+          {focusKey === "availability" ? <Section title={t("post_shift.when")}>
+            <View style={styles.optionStack}>
+              {([
+                ["now", "zap", t("post_shift.need_now"), t("post_shift.need_now_sub")],
+                ["asap", "clock", t("post_shift.asap"), t("post_shift.need_now_sub")],
+                ["pickdate", "calendar", pickedDate ? formatLocalizedDate(pickedDate, { day: "2-digit", month: "short" }) : t("post_shift.pick_date"), t("common.date")],
+              ] as const).map(([mode, icon, label, sub]) => {
+                const selected = startWhen === mode;
+                return (
+                  <Pressable
+                    key={mode}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={label}
+                    onPress={() => selectStartMode(mode)}
+                    style={({ hovered, pressed }) => [styles.optionRow, selected && styles.optionRowOn, hovered && !selected && styles.optionRowHovered, pressed && styles.controlPressed]}
+                  >
+                    <View style={[styles.optionIcon, selected && styles.optionIconOn]}>
+                      <Feather name={icon} size={17} color={selected ? TAVORIA.color.orange : TAVORIA.color.muted} />
+                    </View>
+                    <View style={styles.optionCopy}>
+                      <Text style={styles.optionTitle}>{label}</Text>
+                      <Text style={styles.optionSub}>{sub}</Text>
+                    </View>
+                    {selected ? <Feather name="check-circle" size={19} color={TAVORIA.color.orange} /> : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Section> : null}
+
+          {focusKey === "pay" ? <Section title={t("post_shift.pay")}>
+            <View style={styles.payUnitRow}>
+              {PAY_UNITS.map((unit) => {
+                const selected = payUnit === unit.id;
+                return (
+                  <Pressable
+                    key={unit.id}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={t(`post_shift.per_${unit.id}`)}
+                    onPress={() => onPickPayUnit(unit.id)}
+                    style={({ hovered, pressed }) => [styles.payUnitOption, selected && styles.payUnitOptionOn, hovered && !selected && styles.payUnitOptionHovered, pressed && styles.controlPressed]}
+                  >
+                    <Text style={[styles.payUnitText, selected && styles.payUnitTextOn]}>{t(`post_shift.per_${unit.id}`)}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {payUnit !== "later" ? (
+              <>
+                <View style={styles.payInputRow}>
+                  <Text style={styles.payCurrency}>€</Text>
                   <TextInput
-                    value={pay > 0 ? String(pay) : ""}
-                    onChangeText={(t) => {
-                      const n = parseInt(t.replace(/[^0-9]/g, ""), 10);
-                      setPay(isNaN(n) ? 0 : n);
-                    }}
-                    keyboardType="number-pad"
-                    style={styles.payCardInput}
+                    accessibilityLabel={t("shift_edit.pay")}
+                    value={payInput}
+                    onChangeText={(value) => setPayInput(value.replace(/[^0-9,.]/g, ""))}
+                    keyboardType="decimal-pad"
+                    style={styles.payInput}
                     placeholder="0"
                     placeholderTextColor="#9CA3AF"
-                    maxLength={5}
+                    maxLength={7}
                     selectTextOnFocus
-                    inputAccessoryViewID={
-                      Platform.OS === "ios" ? PAY_ACCESSORY_ID : undefined
-                    }
+                    inputAccessoryViewID={Platform.OS === "ios" ? PAY_ACCESSORY_ID : undefined}
                   />
+                  <Text style={styles.payUnitLabel}>{t(`post_shift.per_${payUnit}`)}</Text>
                 </View>
-                <View style={styles.payCardUnitWrap}>
-                  <Text style={styles.payCardUnit}>
-                    {t(`post_shift.per_${payUnit}`)}
-                  </Text>
-                </View>
+                <Text style={styles.payHint}>{t(`post_shift.pay_hint_${payUnit}`)}</Text>
+                <Pressable onPress={() => onPickPayUnit("later")} style={({ hovered, pressed }) => [styles.discussLaterLink, hovered && styles.discussLaterHovered, pressed && styles.controlPressed]}>
+                  <Feather name="message-circle" size={14} color={TAVORIA.color.muted} />
+                  <Text style={styles.discussLaterTxt}>{t("post_shift.skip_pay")}</Text>
+                </Pressable>
+              </>
+            ) : (
+              <View style={styles.payLaterBox}>
+                <Feather name="message-circle" size={16} color={TAVORIA.color.muted} />
+                <Text style={styles.payLaterTxt}>{t("post_shift.pay_later_hint")}</Text>
               </View>
-              <Text style={styles.payHint}>
-                {t(`post_shift.pay_hint_${payUnit}`)}
-              </Text>
-              <Pressable
-                onPress={() => onPickPayUnit("later")}
-                style={styles.discussLaterLink}
-              >
-                <Feather name="message-circle" size={13} color="#6B7280" />
-                <Text style={styles.discussLaterTxt}>
-                  {t("post_shift.skip_pay")}
+            )}
+          </Section> : null}
+
+          {focusKey === "requirements" ? <RequirementFields value={requirements} onChange={setRequirements} /> : null}
+
+          {isReviewStep ? (
+            <>
+              <View style={styles.reviewBox}>
+                <Text style={styles.reviewTitle}>{t("post_shift.review")}</Text>
+                <Text style={styles.reviewValue}>
+                  {[roles.map(localizeRole).join(" · "), contracts.map((id) => id === "custom" ? customContract.trim() : t(`post_shift.${CONTRACT_KEYS[id] ?? id}`)).filter(Boolean).join(" · ") || null, validHours ? `${fmt(currentShift.fromMins)}–${fmt(currentShift.toMins)}` : null, payUnit === "later" ? t("post_shift.pay_later_short") : payAmount > 0 ? `€${payAmount} / ${t(`post_shift.per_${payUnit}`)}` : null].filter(Boolean).join(" · ") || t("post_shift.review_empty")}
                 </Text>
-              </Pressable>
+              </View>
+              {!canSubmit && <Text style={styles.completeHint}>{validRequirements ? t("post_shift.complete_hint") : t("talent.invalid")}</Text>}
+              {errorMsg && <Text style={styles.errorTxt}>{errorMsg}</Text>}
             </>
-          ) : (
-            <View style={styles.payLaterBox}>
-              <Feather name="message-circle" size={16} color="#6B7280" />
-              <Text style={styles.payLaterTxt}>
-                {t("post_shift.pay_later_hint")}
-              </Text>
-            </View>
-          )}
-        </Section>
+          ) : null}
+        </ScrollView>
 
-        <RequirementFields value={requirements} onChange={setRequirements} />
-        <View style={{ height: 12 }} />
-        {errorMsg && <Text style={styles.errorTxt}>{errorMsg}</Text>}
-
-      </ScrollView>
-      <StickyFooter desktopRow fullBleed backgroundColor="#F7F4EE">
-        <ActionButton
-          label={t("post_shift.post")}
-          icon="arrow-right"
-          style={[styles.cta, isDesktop && desktopButtonStyle]}
-          loading={busy}
-          onPress={async () => {
-            if (requirements.minimumExperience !== undefined && (!Number.isFinite(requirements.minimumExperience) || requirements.minimumExperience < 0 || requirements.minimumExperience > 80)) {
-              setErrorMsg(t("talent.invalid")); return;
-            }
-            if (roles.length === 0) {
-              // Use inline error instead of Alert.alert — Alert is flaky on
-              // React Native Web and silently fails sometimes, making the
-              // button appear dead. Inline banner always renders.
-              setErrorMsg(t("post_shift.err_no_positions_msg"));
-              return;
-            }
-            setErrorMsg(null);
-            setBusy(true);
-            const contractLabel =
-              contract === "custom"
-                ? customContract.trim() || t("post_shift.other")
-                : contract
-                ? t(`post_shift.${CONTRACT_KEYS[contract] ?? contract}`)
-                : null;
-            const contractValue = contract === "custom" ? customContract.trim() || undefined : contract ?? undefined;
-            // Resolve the venue_id. Use the in-memory cache first; if missing
-            // (after sign-in / app restart), hydrate it from Supabase.
-            let venueId = getVenueProfile()?.id;
-            if (!venueId) {
-              try {
-                const v = await getCurrentVenueRow();
-                if (v?.id) {
-                  venueId = v.id as string;
-                  patchVenueProfile({ id: v.id, name: v.name, type: v.type });
-                }
-              } catch (e) {
-                console.warn("[post-shift] hydrate venue failed:", e);
+        <StickyFooter desktopRow fullBleed backgroundColor={TAVORIA.color.paperDeep}>
+          <View style={styles.footerActions}>
+            <ActionButton
+              label={t("common.back")}
+              icon="arrow-left"
+              variant="secondary"
+              onPress={() => {
+                if (stepIndex > 0) { goToStep(stepIndex - 1); return; }
+                if (router.canGoBack()) { router.back(); return; }
+                router.replace("/");
+              }}
+              style={styles.footerButton}
+            />
+            <ActionButton
+              label={isReviewStep ? t("post_shift.post") : t("common.continue")}
+              icon={isReviewStep ? "check" : "arrow-right"}
+              style={styles.footerButton}
+              loading={busy}
+              disabled={isReviewStep ? !canSubmit : !stepComplete}
+              onPress={async () => {
+              if (!isReviewStep) {
+                goToStep(stepIndex + 1);
+                return;
               }
-            }
-            if (!venueId) {
-              setErrorMsg(t("post_shift.err_no_venue"));
-              setBusy(false);
-              return;
-            }
-            const firstShift = shifts[0];
-            const dayCodes = days.map((d) => DAY_CODES[d]);
-            try {
-              await insertShift({
-                venue_id: venueId,
-                roles,
-                worker_requirements: requirements,
-                contract_type: contractValue,
-                days: dayCodes,
-                hours_start: firstShift
-                  ? fmtHHMM(firstShift.fromMins)
-                  : undefined,
-                hours_end: firstShift
-                  ? fmtHHMM(firstShift.toMins)
-                  : undefined,
-                start_when: startWhen ?? undefined,
-                start_date: pickedDate
-                  ? pickedDate.toISOString().slice(0, 10)
-                  : undefined,
-                pay_unit: payUnit,
-                pay_amount: payUnit === "later" ? undefined : pay,
-              });
-              setPostedShift({
-                roles,
-                contractLabel,
-                days,
-                shifts,
-                startWhen,
-                pickedDate: pickedDate ? pickedDate.toISOString() : null,
-                payUnit,
-                pay,
-              });
-              // After posting, send venues to the bonus screen with interview
-              // tile + "post another / see my shifts" options.
-              router.replace("/venue-bonus");
-            } catch (e: any) {
-              setErrorMsg(e?.message || t("post_shift.err_save_shift"));
-            } finally {
-              setBusy(false);
-            }
-          }}
-        />
-      </StickyFooter>
+              if (!canSubmit) return;
+              setErrorMsg(null);
+              setBusy(true);
+              const contractLabel = contracts.map((id) => id === "custom" ? customContract.trim() : t(`post_shift.${CONTRACT_KEYS[id] ?? id}`)).filter(Boolean).join(" · ") || null;
+              const contractValue = serializeContractTypes(contracts, customContract);
+              let venueId = getVenueProfile()?.id;
+              if (!venueId) {
+                try {
+                  const v = await getCurrentVenueRow();
+                  if (v?.id) {
+                    venueId = v.id as string;
+                    patchVenueProfile({ id: v.id, name: v.name, type: v.type });
+                  }
+                } catch (e) {
+                  console.warn("[post-shift] hydrate venue failed:", e);
+                }
+              }
+              if (!venueId) {
+                setErrorMsg(t("post_shift.err_no_venue"));
+                setBusy(false);
+                return;
+              }
+              const dayCodes = days.map((dayIndex) => DAY_CODES[dayIndex]);
+              const startDate = pickedDate
+                ? `${pickedDate.getFullYear()}-${String(pickedDate.getMonth() + 1).padStart(2, "0")}-${String(pickedDate.getDate()).padStart(2, "0")}`
+                : startWhen === "now" || startWhen === "asap" ? todayIso() : undefined;
+              try {
+                await insertShift({
+                  venue_id: venueId,
+                  roles,
+                  worker_requirements: requirements,
+                  contract_type: contractValue,
+                  days: dayCodes,
+                  hours_start: fmtHHMM(currentShift.fromMins),
+                  hours_end: fmtHHMM(currentShift.toMins),
+                  start_when: startWhen ?? undefined,
+                  start_date: startDate,
+                  pay_unit: payUnit,
+                  pay_amount: payUnit === "later" ? undefined : payAmount,
+                });
+                setPostedShift({
+                  roles,
+                  contractLabel,
+                  days,
+                  shifts: [currentShift],
+                  startWhen,
+                  pickedDate: startDate ?? null,
+                  payUnit,
+                  pay: payUnit === "later" ? 0 : payAmount,
+                });
+                router.replace("/venue-bonus");
+              } catch (e: any) {
+                setErrorMsg(e?.message || t("post_shift.err_save_shift"));
+              } finally {
+                setBusy(false);
+              }
+              }}
+            />
+          </View>
+        </StickyFooter>
       </KeyboardAvoidingView>
 
       {/* iOS keyboard "Done" toolbar — appears above numeric keypad */}
@@ -627,31 +577,25 @@ export default function PostShift() {
               hitSlop={8}
               style={styles.kbDoneBtn}
             >
-              <Text style={styles.kbDoneTxt}>Done</Text>
+              <Text style={styles.kbDoneTxt}>{t("common.done")}</Text>
             </Pressable>
           </View>
         </InputAccessoryView>
       )}
 
       {/* Calendar modal */}
-      <Modal
+      <ResponsiveModal
         visible={calendarOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setCalendarOpen(false)}
+        onClose={() => setCalendarOpen(false)}
       >
-        <Pressable
-          style={styles.modalBackdrop}
-          onPress={() => setCalendarOpen(false)}
-        />
-        <View style={styles.modalSheet}>
+        <View>
           <View style={styles.modalHeader}>
             <Pressable onPress={() => setCalendarOpen(false)}>
-              <Text style={styles.modalCancel}>Cancel</Text>
+              <Text style={styles.modalCancel}>{t("common.cancel")}</Text>
             </Pressable>
-            <Text style={styles.modalTitle}>Pick a date</Text>
+            <Text style={styles.modalTitle}>{t("post_shift.pick_date")}</Text>
             <Pressable onPress={() => setCalendarOpen(false)}>
-              <Text style={styles.modalDone}>Done</Text>
+              <Text style={styles.modalDone}>{t("common.done")}</Text>
             </Pressable>
           </View>
           <Calendar
@@ -661,34 +605,28 @@ export default function PostShift() {
             }}
           />
         </View>
-      </Modal>
+      </ResponsiveModal>
 
       {/* Custom contract type modal */}
-      <Modal
+      <ResponsiveModal
         visible={customContractOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setCustomContractOpen(false)}
+        onClose={() => setCustomContractOpen(false)}
       >
-        <Pressable
-          style={styles.modalBackdrop}
-          onPress={() => setCustomContractOpen(false)}
-        />
-        <View style={styles.modalSheet}>
+        <View>
           <View style={styles.modalHeader}>
             <Pressable onPress={() => setCustomContractOpen(false)}>
-              <Text style={styles.modalCancel}>Cancel</Text>
+              <Text style={styles.modalCancel}>{t("common.cancel")}</Text>
             </Pressable>
-            <Text style={styles.modalTitle}>Custom contract</Text>
+            <Text style={styles.modalTitle}>{t("post_shift.other")}</Text>
             <Pressable onPress={() => setCustomContractOpen(false)}>
-              <Text style={styles.modalDone}>Done</Text>
+              <Text style={styles.modalDone}>{t("common.done")}</Text>
             </Pressable>
           </View>
           <View style={{ padding: 16, paddingBottom: 24 }}>
             <TextInput
               value={customContract}
               onChangeText={setCustomContract}
-              placeholder="e.g. 3 months · summer 2026 · weekends only"
+              placeholder={t("post_shift.custom_placeholder")}
               placeholderTextColor="#9CA3AF"
               autoFocus
               style={{
@@ -705,29 +643,23 @@ export default function PostShift() {
             />
           </View>
         </View>
-      </Modal>
+      </ResponsiveModal>
 
       {/* JS wheel time picker (works in Expo Go) */}
-      <Modal
+      <ResponsiveModal
         visible={editing !== null}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setEditing(null)}
+        onClose={() => setEditing(null)}
       >
-        <Pressable
-          style={styles.modalBackdrop}
-          onPress={() => setEditing(null)}
-        />
-        <View style={styles.modalSheet}>
+        <View>
           <View style={styles.modalHeader}>
             <Pressable onPress={() => setEditing(null)}>
-              <Text style={styles.modalCancel}>Cancel</Text>
+              <Text style={styles.modalCancel}>{t("common.cancel")}</Text>
             </Pressable>
             <Text style={styles.modalTitle}>
-              {editing?.endsWith("from") ? "Start time" : "End time"}
+              {editing?.endsWith("from") ? t("shift_edit.start_time") : t("shift_edit.end_time")}
             </Text>
             <Pressable onPress={() => setEditing(null)}>
-              <Text style={styles.modalDone}>Done</Text>
+              <Text style={styles.modalDone}>{t("common.done")}</Text>
             </Pressable>
           </View>
 
@@ -756,7 +688,7 @@ export default function PostShift() {
             />
           )}
         </View>
-      </Modal>
+      </ResponsiveModal>
     </SafeAreaView>
   );
 }
@@ -908,13 +840,6 @@ function Wheel({
 
 // --- Calendar (JS-only, works in Expo Go) ---
 
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
-
-const DAY_LBL = ["M", "T", "W", "T", "F", "S", "S"];
-
 function Calendar({
   value,
   onChange,
@@ -926,6 +851,8 @@ function Calendar({
 
   const year = view.getFullYear();
   const month = view.getMonth();
+  const monthLabel = formatLocalizedMonthYear(new Date(year, month, 1));
+  const dayLabels = getLocalizedCalendarDays();
 
   // First day of month (0=Sun..6=Sat) — shift to Mon-first
   const firstDayRaw = new Date(year, month, 1).getDay();
@@ -975,7 +902,7 @@ function Calendar({
           <Feather name="chevron-left" size={20} color="#0E1A24" />
         </Pressable>
         <Text style={calStyles.title}>
-          {MONTHS[month]} {year}
+          {monthLabel}
         </Text>
         <Pressable
           onPress={() => setView(new Date(year, month + 1, 1))}
@@ -987,7 +914,7 @@ function Calendar({
       </View>
 
       <View style={calStyles.dayLabels}>
-        {DAY_LBL.map((d, i) => (
+        {dayLabels.map((d, i) => (
           <Text key={i} style={calStyles.dayLabel}>
             {d}
           </Text>
@@ -1157,11 +1084,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
   },
-  iconBtn: { padding: 4, width: 32 },
   title: { fontFamily: "InstrumentSerif_400Regular", fontSize: 22, fontWeight: "400", color: TAVORIA.color.navy },
 
-  scroll: { alignSelf: "center", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 120, width: "100%" },
-  scrollDesktop: { maxWidth: 840, paddingHorizontal: 24 },
+  scroll: { alignSelf: "center", paddingHorizontal: TAVORIA.space.md, paddingTop: TAVORIA.space.sm, paddingBottom: 128, width: "100%" },
+  scrollDesktop: { maxWidth: 840, paddingHorizontal: TAVORIA.space.lg },
+  sectionMetaRow: { alignItems: "center", flexDirection: "row", justifyContent: "flex-end", marginBottom: 8 },
+  sectionMeta: { color: TAVORIA.color.muted, fontSize: 12 },
+  helperText: { color: TAVORIA.color.muted, fontSize: 12, lineHeight: 17, marginTop: 10 },
+  controlPressed: { opacity: 0.72 },
 
   inheritedRoles: {
     flexDirection: "row",
@@ -1177,7 +1107,7 @@ const styles = StyleSheet.create({
   inheritedRolesTxt: { color: "#854F0B", fontSize: 13 },
   inheritedRolesBold: { fontWeight: "800" },
 
-  section: { marginTop: 24 },
+  section: { marginTop: 28 },
   sectionTitle: {
     color: TAVORIA.color.muted,
     fontFamily: "DMMono_500Medium",
@@ -1257,10 +1187,10 @@ const styles = StyleSheet.create({
   contractTxt: { fontSize: 13, fontWeight: "600", color: "#0E1A24" },
   contractTxtOn: { color: "white" },
 
-  daysRow: { flexDirection: "row", gap: 6 },
+  daysRow: { flexDirection: "row", gap: 6, width: "100%" },
   dayPill: {
     flex: 1,
-    height: 42,
+    height: 44,
     borderRadius: 12,
     backgroundColor: "white",
     borderWidth: 0.5,
@@ -1269,6 +1199,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dayPillOn: { backgroundColor: "#0E1A24", borderColor: "#0E1A24" },
+  dayPillHovered: { backgroundColor: "#F3F4F0" },
   dayPillTxt: { fontSize: 14, fontWeight: "700", color: "#6B7280" },
   dayPillTxtOn: { color: "white" },
 
@@ -1290,6 +1221,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
   },
+  timeFields: { alignItems: "center", flex: 1, flexDirection: "row", gap: 10 },
+  timeFieldButton: { alignItems: "flex-start", borderRadius: TAVORIA.radius.small, flex: 1, justifyContent: "center", minHeight: 56, paddingHorizontal: 10 },
+  timeFieldButtonHovered: { backgroundColor: "#F3F4F0" },
+  timeFieldLabel: { color: TAVORIA.color.muted, fontFamily: TAVORIA.type.label, fontSize: 9, letterSpacing: 0.8, textTransform: "uppercase" },
+  timeFieldValue: { color: TAVORIA.color.navy, fontFamily: TAVORIA.type.medium, fontSize: 17, marginTop: 3 },
+  timeFieldPlaceholder: { color: "#9CA3AF" },
   timePillTap: {
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -1315,6 +1252,32 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0,0,0,0.20)",
   },
   addRowTxt: { fontSize: 13, fontWeight: "600", color: "#0E1A24" },
+
+  optionStack: { gap: 8 },
+  optionRow: { alignItems: "center", backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.small, borderWidth: 1, flexDirection: "row", gap: 12, minHeight: 64, paddingHorizontal: 12, paddingVertical: 10 },
+  optionRowOn: { backgroundColor: TAVORIA.color.orangeSoft, borderColor: TAVORIA.color.orange },
+  optionRowHovered: { backgroundColor: "#F3F4F0" },
+  optionIcon: { alignItems: "center", backgroundColor: TAVORIA.color.paperDeep, borderRadius: TAVORIA.radius.small, height: 34, justifyContent: "center", width: 34 },
+  optionIconOn: { backgroundColor: TAVORIA.color.white },
+  optionCopy: { flex: 1, minWidth: 0 },
+  optionTitle: { color: TAVORIA.color.navy, fontSize: 15, fontWeight: "700" },
+  optionSub: { color: TAVORIA.color.muted, fontSize: 12, lineHeight: 16, marginTop: 2 },
+
+  payUnitRow: { backgroundColor: "rgba(14,26,36,0.06)", borderRadius: TAVORIA.radius.small, flexDirection: "row", gap: 4, padding: 4 },
+  payUnitOption: { alignItems: "center", borderRadius: 7, flex: 1, justifyContent: "center", minHeight: 42, paddingHorizontal: 4 },
+  payUnitOptionOn: { backgroundColor: TAVORIA.color.white },
+  payUnitOptionHovered: { backgroundColor: "rgba(255,255,255,0.65)" },
+  payUnitText: { color: TAVORIA.color.muted, fontSize: 12, fontWeight: "600", textAlign: "center" },
+  payUnitTextOn: { color: TAVORIA.color.navy },
+  payInputRow: { alignItems: "baseline", backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.small, borderWidth: 1, flexDirection: "row", gap: 5, marginTop: 12, minHeight: 56, paddingHorizontal: 14 },
+  payCurrency: { color: TAVORIA.color.navy, fontSize: 24, fontWeight: "800" },
+  payInput: { color: TAVORIA.color.navy, flex: 1, fontSize: 24, fontWeight: "700", padding: 0 },
+  payUnitLabel: { color: TAVORIA.color.muted, fontSize: 13 },
+  discussLaterHovered: { backgroundColor: "rgba(14,26,36,0.06)" },
+  reviewBox: { backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.small, borderWidth: 1, marginTop: 28, padding: 14 },
+  reviewTitle: { color: TAVORIA.color.muted, fontFamily: TAVORIA.type.label, fontSize: 10, letterSpacing: 1, textTransform: "uppercase" },
+  reviewValue: { color: TAVORIA.color.navy, fontSize: 14, lineHeight: 20, marginTop: 7 },
+  completeHint: { color: TAVORIA.color.muted, fontSize: 12, lineHeight: 17, marginTop: 10 },
 
   unitRow: {
     flexDirection: "row",
@@ -1344,6 +1307,8 @@ const styles = StyleSheet.create({
     position: "relative",
     width: "100%",
   },
+  contractTileOn: { backgroundColor: TAVORIA.color.orangeSoft, borderColor: TAVORIA.color.orange },
+  contractTileHovered: { backgroundColor: "#F3F4F0" },
   contractIconWrap: {
     alignItems: "center",
     backgroundColor: TAVORIA.color.orangeSoft,
@@ -1398,20 +1363,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    justifyContent: "center",
+    justifyContent: "flex-start",
   },
   roleChip: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 7,
+    minHeight: 44,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 999,
+    paddingVertical: 10,
+    borderRadius: TAVORIA.radius.small,
     backgroundColor: TAVORIA.color.white,
     borderWidth: 1,
     borderColor: TAVORIA.color.borderStrong,
   },
   roleChipOn: {
-    backgroundColor: TAVORIA.color.orange,
-    borderColor: TAVORIA.color.orange,
+    backgroundColor: TAVORIA.color.navy,
+    borderColor: TAVORIA.color.navy,
   },
+  roleChipHovered: { backgroundColor: "#F3F4F0" },
   roleChipTxt: { fontSize: 14, fontWeight: "700", color: "#0E1A24" },
   roleChipTxtOn: { color: "white" },
   rolesEmpty: {
@@ -1590,14 +1560,6 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: "rgba(0,0,0,0.10)",
   },
-  payCurrency: { fontSize: 26, fontWeight: "800", color: "#0E1A24" },
-  payInput: {
-    flex: 1,
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#0E1A24",
-    padding: 0,
-  },
   payUnit: { fontSize: 14, color: "#6B7280", fontWeight: "500" },
   payHint: { fontSize: 12, color: "#6B7280", marginTop: 6 },
   payLaterBox: {
@@ -1671,7 +1633,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5,
     borderTopColor: "rgba(0,0,0,0.08)",
   },
-  cta: {
-    width: "100%",
-  },
+  footerActions: { alignItems: "center", flexDirection: "row", gap: 10, justifyContent: "center", maxWidth: 420, width: "100%" },
+  footerButton: { flex: 1, width: "auto" },
 });

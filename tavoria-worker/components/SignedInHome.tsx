@@ -26,6 +26,7 @@ import {
   type WorkerStatusCounts,
 } from "../lib/db";
 import { LANGUAGES, type Language, t } from "../lib/i18n";
+import { formatLocalizedDate } from "../lib/dateFormat";
 import { localizeRoles } from "../lib/positions";
 import { openExternalLink } from "../lib/externalLinks";
 import AppBottomNav from "./AppBottomNav";
@@ -309,7 +310,7 @@ export default function SignedInHome({
   if (venueMode) {
     return (
       <View style={{ flex: 1, backgroundColor: "#F7F7F2" }}>
-        <WorkerDirectory embedded />
+        <WorkerDirectory embedded returnTo="/" />
         <AppBottomNav role="venue" active="home" badge={pendingCount} />
       </View>
     );
@@ -710,7 +711,7 @@ function HomeCandidateRow({
   last: boolean;
 }) {
   const name = [worker.first_name, worker.last_name].filter(Boolean).join(" ") || "Candidate";
-  const roles = localizeRoles((worker.positions ?? []).slice(0, 2)).join(" · ") || "Hospitality";
+  const roles = localizeRoles((worker.positions ?? []).slice(0, 2)).join(" · ") || t("talent.worker");
   const meta = [worker.city, worker.age_range ? `${worker.age_range}y` : null]
     .filter(Boolean)
     .join(" · ");
@@ -751,12 +752,12 @@ function HomeShiftRow({
   const photo = row.venue?.photo_url
     ? { uri: row.venue.photo_url }
     : venueFallback(row.venue?.type);
-  const roles = localizeRoles((row.roles ?? []).slice(0, 2)).join(" · ") || "Shift";
+  const roles = localizeRoles((row.roles ?? []).slice(0, 2)).join(" · ") || t("shift_detail.default_shift");
   const urgent = row.start_when === "now" || row.start_when === "asap";
   const when = urgent ? null : formatWhen(row);
   const pay = row.pay_amount
     ? `€${row.pay_amount}${row.pay_unit ? `/${shortUnit(row.pay_unit)}` : ""}`
-    : "Pay discussed later";
+    : t("shift_detail.pay_discussed");
 
   return (
     <ListRow label={row.venue?.name || roles} last={last} onPress={onOpen}>
@@ -764,7 +765,7 @@ function HomeShiftRow({
       <View style={styles.shiftBody}>
         <View style={styles.shiftTopLine}>
           <Text style={styles.shiftVenue} numberOfLines={1}>
-            {venueMode ? roles : row.venue?.name || "Venue"}
+            {venueMode ? roles : row.venue?.name || t("shift_detail.default_venue")}
           </Text>
           {urgent && (
             <View style={styles.urgentBadge}>
@@ -891,12 +892,14 @@ function formatWhen(row: ShiftRow) {
   if (row.start_when === "now") return t("shift_detail.need_now_banner");
   if (row.start_when === "asap") return t("shift_filters.asap");
   if (row.start_date) {
-    return new Date(row.start_date).toLocaleDateString([], {
-      day: "numeric",
-      month: "short",
-    });
+    return formatLocalizedDate(row.start_date);
   }
-  return row.days?.slice(0, 3).map((day) => day.slice(0, 3)).join(" · ") || t("shift_detail.hours_flexible");
+  return row.days?.slice(0, 3).map(dayLabel).join(" · ") || t("shift_detail.hours_flexible");
+}
+
+function dayLabel(day: string) {
+  const value = t(`shift_detail.days_short.${day}`);
+  return value && !value.includes(".") ? value : day;
 }
 
 const styles = StyleSheet.create({

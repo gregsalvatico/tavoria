@@ -80,8 +80,20 @@ function VideoCarouselContent({
   }, [videoUrls.length]);
 
   const close = () => {
-    player.pause();
+    // A native player can already be unloaded while the modal is closing.
+    // Keep dismissal reliable even when pause() rejects or throws.
+    try {
+      player.pause();
+    } catch {}
     setOpen(false);
+  };
+
+  const openPreview = () => {
+    setOpen(true);
+    try {
+      player.muted = false;
+      player.play();
+    } catch {}
   };
 
   const goTo = (next: number) => {
@@ -94,11 +106,7 @@ function VideoCarouselContent({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t("talent.videos")}
-          onPress={() => {
-            setOpen(true);
-            player.muted = false;
-            player.play();
-          }}
+          onPress={openPreview}
           style={styles.videoButton}
         >
           {/* expo-video does not support two VideoViews sharing one player on
@@ -143,8 +151,12 @@ function VideoCarouselContent({
         <Text style={styles.caption} numberOfLines={1}>{labels[index]}</Text>
       ) : null}
 
-      <Modal visible={open} transparent onRequestClose={close}>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
         <View style={styles.modal}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t("talent.close")} onPress={close} style={styles.backdrop} />
+          {open ? (
+            <VideoView player={player} style={styles.fullVideo} nativeControls allowsFullscreen contentFit="contain" />
+          ) : null}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t("talent.close")}
@@ -153,9 +165,6 @@ function VideoCarouselContent({
           >
             <Feather name="x" size={24} color={TAVORIA.color.paper} />
           </Pressable>
-          {open ? (
-            <VideoView player={player} style={styles.fullVideo} nativeControls allowsFullscreen contentFit="contain" />
-          ) : null}
         </View>
       </Modal>
     </View>
@@ -205,6 +214,7 @@ const styles = StyleSheet.create({
   dotActive: { backgroundColor: TAVORIA.color.orange, width: 14 },
   caption: { color: "#626B78", fontSize: 12 },
   modal: { alignItems: "center", backgroundColor: "rgba(14,26,36,.96)", flex: 1, justifyContent: "center", padding: 24 },
-  close: { padding: 12, position: "absolute", right: 24, top: 24, zIndex: 2 },
+  backdrop: { ...StyleSheet.absoluteFillObject },
+  close: { elevation: 10, padding: 12, position: "absolute", right: 24, top: 24, zIndex: 10 },
   fullVideo: { height: "82%", maxWidth: 960, width: "100%" },
 });

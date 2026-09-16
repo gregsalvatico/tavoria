@@ -89,6 +89,7 @@ export default function WorkerSetup() {
         <PageContainer>
           <PageHeader
             title="Your profile"
+            showLeftOnDesktop
             left={
               <Pressable
                 onPress={() => {

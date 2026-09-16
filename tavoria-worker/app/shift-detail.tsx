@@ -245,6 +245,10 @@ export default function ShiftDetail() {
   );
   const primaryPhotoUrl = venuePhotoUrls[0];
   const additionalVenuePhotoUrls = primaryPhotoUrl ? venuePhotoUrls.slice(1) : [];
+  const shiftPhotoUrls = (shift.photo_urls ?? []).filter((url: unknown): url is string => typeof url === "string" && url.trim().length > 0);
+  const shiftVideoUrls = (shift.video_urls ?? []).filter((url: unknown): url is string => typeof url === "string" && url.trim().length > 0);
+  const previewPhotoUrls = Array.from(new Set([...additionalVenuePhotoUrls, ...shiftPhotoUrls]));
+  const previewVideoUrls = Array.from(new Set([...(v?.video_urls ?? []), ...shiftVideoUrls].filter((url): url is string => typeof url === "string" && url.trim().length > 0)));
   const photo = primaryPhotoUrl
     ? { uri: primaryPhotoUrl }
     : venueFallback(v?.type);
@@ -335,20 +339,42 @@ export default function ShiftDetail() {
             </Pressable>
 
           <VenueMediaGallery
-            photoUrls={additionalVenuePhotoUrls}
-            videoUrls={v?.video_urls}
+            photoUrls={previewPhotoUrls}
+            videoUrls={previewVideoUrls}
           />
         </View>
 
         <View style={[styles.card, isDesktop && styles.cardDesktop]}>
-          <Pressable
-            disabled={!shift.venue_id}
-            onPress={() => router.push({ pathname: "/venue-board", params: { venueId: shift.venue_id } })}
-            style={styles.venueNameLink}
-          >
-            <Text style={styles.venueName}>{v?.name ?? t("shift_detail.default_venue")}</Text>
-            <Feather name="arrow-up-right" size={19} color="#185FA5" />
-          </Pressable>
+          <View style={styles.titleRow}>
+            <Pressable
+              disabled={!shift.venue_id}
+              onPress={() => router.push({ pathname: "/venue-board", params: { venueId: shift.venue_id } })}
+              style={styles.venueNameLink}
+            >
+              <Text style={styles.venueName}>{v?.name ?? t("shift_detail.default_venue")}</Text>
+              <Feather name="arrow-up-right" size={19} color="#185FA5" />
+            </Pressable>
+            {isOwner ? (
+              <View style={styles.ownerActions}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t("shift_owner.edit")}
+                  onPress={() => router.push({ pathname: "/shift-edit", params: { id } })}
+                  style={({ hovered, pressed }) => [styles.iconAction, hovered && styles.iconActionHovered, pressed && styles.iconActionPressed]}
+                >
+                  <Feather name="edit-2" size={16} color="#0E1A24" />
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t("shift_owner.share")}
+                  onPress={onShare}
+                  style={({ hovered, pressed }) => [styles.iconAction, hovered && styles.iconActionHovered, pressed && styles.iconActionPressed]}
+                >
+                  <Feather name="share-2" size={16} color="#0E1A24" />
+                </Pressable>
+              </View>
+            ) : null}
+          </View>
           <View style={styles.metaRow}>
             {v?.type && (
               <Tag>{(() => {
@@ -421,28 +447,9 @@ export default function ShiftDetail() {
 
       </ScrollView>
 
-      <StickyFooter desktopRow>
-        {isOwner ? (
-          <View style={[styles.ownerBar, isDesktop && styles.ownerBarDesktop]}>
-            <OwnerAction
-              icon="edit-2"
-              label={t("shift_owner.edit")}
-              color="white"
-              bg="#F0531C"
-              isDesktop={isDesktop}
-              onPress={() => router.push({ pathname: "/shift-edit", params: { id } })}
-            />
-            <OwnerAction
-              icon="share-2"
-              label={t("shift_owner.share")}
-              color="#0E1A24"
-              bg="#F1EFE8"
-              isDesktop={isDesktop}
-              onPress={onShare}
-            />
-          </View>
-        ) : (
-          application ? (
+      {!isOwner ? (
+        <StickyFooter desktopRow>
+          {application ? (
             <ActionButton
               label={
                 applicationStatus === "interview_requested"
@@ -464,9 +471,9 @@ export default function ShiftDetail() {
               onPress={onApply}
               style={[styles.applyBtn, isDesktop && desktopButtonStyle]}
             />
-          )
-        )}
-      </StickyFooter>
+          )}
+        </StickyFooter>
+      ) : null}
 
       <ContactPersonModal
         visible={contactOpen}
@@ -481,8 +488,15 @@ export default function ShiftDetail() {
         })}
       />
 
-      <Modal visible={heroPreviewOpen} transparent onRequestClose={() => setHeroPreviewOpen(false)}>
+      <Modal visible={heroPreviewOpen} transparent animationType="fade" onRequestClose={() => setHeroPreviewOpen(false)}>
         <View style={styles.previewModal}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("talent.close")}
+            onPress={() => setHeroPreviewOpen(false)}
+            style={styles.previewBackdrop}
+          />
+          <Image source={heroSource} resizeMode="contain" style={styles.previewImage} />
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t("talent.close")}
@@ -491,7 +505,6 @@ export default function ShiftDetail() {
           >
             <Feather name="x" size={24} color="#FFFFFF" />
           </Pressable>
-          <Image source={heroSource} resizeMode="contain" style={styles.previewImage} />
         </View>
       </Modal>
 
@@ -549,36 +562,6 @@ function ContactMethod({ icon, label, value }: { icon: keyof typeof Feather.glyp
         <Text style={styles.contactMethodValue}>{value}</Text>
       </View>
     </View>
-  );
-}
-
-function OwnerAction({
-  icon,
-  label,
-  color,
-  bg,
-  isDesktop,
-  compact,
-  onPress,
-}: {
-  icon: keyof typeof Feather.glyphMap;
-  label: string;
-  color: string;
-  bg: string;
-  isDesktop: boolean;
-  compact?: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={[styles.ownerTile, isDesktop && desktopButtonStyle, compact && styles.ownerTileIcon, { backgroundColor: bg, borderColor: color }]}
-      onPress={onPress}
-    >
-      <Feather name={icon} size={19} color={color} />
-      {compact ? null : <Text style={[styles.ownerTileLbl, { color }]} numberOfLines={1}>{label}</Text>}
-    </Pressable>
   );
 }
 
@@ -704,7 +687,12 @@ const styles = StyleSheet.create({
     color: "#0E1A24",
     letterSpacing: -0.4,
   },
-  venueNameLink: { alignItems: "center", alignSelf: "flex-start", flexDirection: "row", gap: 7 },
+  titleRow: { alignItems: "center", flexDirection: "row", gap: 12, justifyContent: "space-between" },
+  venueNameLink: { alignItems: "center", flex: 1, flexDirection: "row", gap: 7, minWidth: 0 },
+  ownerActions: { flexDirection: "row", gap: 8 },
+  iconAction: { alignItems: "center", backgroundColor: "#FFFFFF", borderColor: "rgba(14,26,36,0.16)", borderRadius: 22, borderWidth: 1, height: 42, justifyContent: "center", width: 42 },
+  iconActionHovered: { backgroundColor: TAVORIA.color.paperDeep },
+  iconActionPressed: { opacity: 0.72 },
   metaRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -782,7 +770,8 @@ const styles = StyleSheet.create({
   contactMethodValue: { color: "#0E1A24", fontSize: 12, lineHeight: 17, marginTop: 1 },
   contactNone: { color: "#6B7280", fontSize: 12, marginTop: 10 },
   previewModal: { alignItems: "center", backgroundColor: "rgba(14,26,36,.96)", flex: 1, justifyContent: "center", padding: 24 },
-  previewClose: { padding: 12, position: "absolute", right: 24, top: 24, zIndex: 2 },
+  previewBackdrop: { ...StyleSheet.absoluteFillObject },
+  previewClose: { elevation: 10, padding: 12, position: "absolute", right: 24, top: 24, zIndex: 10 },
   previewImage: { height: "82%", maxWidth: 960, width: "100%" },
 
   bottom: {
@@ -799,31 +788,6 @@ const styles = StyleSheet.create({
   applyBtn: { minWidth: 220 },
   applicationStatusBtn: { backgroundColor: "#6B7280" },
   contactBtn: { backgroundColor: "#0E1A24" },
-
-  // Owner bottom action bar.
-  ownerBar: {
-    flexDirection: "column",
-    gap: 8,
-  },
-  ownerBarDesktop: { flexDirection: "row-reverse", justifyContent: "center" },
-  ownerTile: {
-    borderRadius: 999,
-    borderWidth: 1,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-    height: 48,
-    maxHeight: 48,
-    paddingHorizontal: 16,
-    width: "100%",
-  },
-  ownerTileIcon: { height: 44, maxHeight: 44, paddingHorizontal: 0, width: 44 },
-  ownerTileLbl: {
-    fontSize: 16,
-    fontWeight: "800",
-    textAlign: "center",
-  },
 
   // QR modal sheet
   qrBackdrop: {

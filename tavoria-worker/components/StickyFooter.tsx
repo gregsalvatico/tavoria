@@ -53,6 +53,7 @@ export default function StickyFooter({
 
 const styles = StyleSheet.create({
   footer: {
+    alignSelf: "stretch",
     alignItems: "center",
     borderTopColor: TAVORIA.color.border,
     borderTopWidth: 0.5,
@@ -62,6 +63,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     paddingTop: 12,
     paddingBottom: 12,
+    width: "100%",
   },
   fullBleed: { alignSelf: "stretch", width: "100%" },
   content: {

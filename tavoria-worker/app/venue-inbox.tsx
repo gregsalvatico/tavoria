@@ -22,6 +22,7 @@ import { countryNameFromCode } from "../lib/countries";
 import { getApplicationsForCurrentVenueOwner, updateApplicationStatus } from "../lib/db";
 import type { ApplicationStatus } from "../lib/db";
 import { t } from "../lib/i18n";
+import { formatLocalizedDate } from "../lib/dateFormat";
 import { getVenueProfile } from "../lib/venueProfile";
 import { localizeRoles } from "../lib/positions";
 import AppBottomNav from "../components/AppBottomNav";
@@ -180,7 +181,7 @@ export default function VenueInbox() {
       onOpen={() => {
         const applicationId = selectedApplication.id;
         setSelectedApplication(null);
-        router.push({ pathname: "/candidate", params: { applicationId } });
+        router.push({ pathname: "/candidate", params: { applicationId, returnTo: "/venue-inbox" } });
       }}
       busy={actionBusy}
       onPrimaryAction={() => {
@@ -252,6 +253,14 @@ export default function VenueInbox() {
           <View style={[styles.emptyWrap, isDesktop && styles.fullWidthState]}>
             <Feather name="alert-circle" size={32} color="#993556" />
             <Text style={styles.emptyTxt}>{errorMsg}</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => { setRefreshing(true); void load(); }}
+              style={({ hovered, pressed }) => [styles.retryButton, hovered && styles.retryButtonHovered, pressed && styles.retryButtonPressed]}
+            >
+              <Feather name="refresh-cw" size={15} color={TAVORIA.color.orange} />
+              <Text style={styles.retryText}>{t("talent.retry")}</Text>
+            </Pressable>
           </View>
         ) : filtered.length === 0 ? (
           <View style={[styles.emptyWrap, isDesktop && styles.fullWidthState]}>
@@ -370,10 +379,10 @@ export default function VenueInbox() {
 function formatWhen(iso: string) {
   const d = new Date(iso);
   const diff = (Date.now() - d.getTime()) / 1000;
-  if (diff < 60) return "just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return d.toLocaleDateString();
+  if (diff < 60) return t("common.just_now");
+  if (diff < 3600) return t("common.minutes_ago", { count: Math.floor(diff / 60) });
+  if (diff < 86400) return t("common.hours_ago", { count: Math.floor(diff / 3600) });
+  return formatLocalizedDate(d, { day: "numeric", month: "short", year: "numeric" });
 }
 
 function computeMatch(
@@ -594,6 +603,10 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontFamily: "InstrumentSerif_400Regular", fontSize: 16, fontWeight: "400", color: "#0E1A24", marginTop: 8 },
   emptyTxt: { color: "#6B7280", fontSize: 13, textAlign: "center" },
+  retryButton: { alignItems: "center", borderColor: TAVORIA.color.borderStrong, borderRadius: TAVORIA.radius.pill, borderWidth: 1, flexDirection: "row", gap: 7, marginTop: 8, minHeight: 40, paddingHorizontal: 14 },
+  retryButtonHovered: { backgroundColor: TAVORIA.color.white },
+  retryButtonPressed: { opacity: 0.72 },
+  retryText: { color: TAVORIA.color.orange, fontSize: 13, fontWeight: "700" },
 
   avatar: {
     width: 64,

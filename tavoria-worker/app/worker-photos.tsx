@@ -9,11 +9,11 @@ import {
   Text,
   TextInput,
   View,
-  Modal,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ActionButton from "../components/ActionButton";
+import ResponsiveModal from "../components/ResponsiveModal";
 import { FlowTopBar } from "../components/PagePrimitives";
 import StickyFooter from "../components/StickyFooter";
 import {
@@ -193,17 +193,15 @@ export default function WorkerPhotos() {
         <ActionButton label={t("common.done")} icon="check" onPress={close} />
       </StickyFooter>
 
-      <Modal
+      <ResponsiveModal
         visible={Boolean(selectedFile)}
-        transparent
-        animationType="slide"
-        onRequestClose={() => {
+        onClose={() => {
           if (!saving) setSelectedFile(null);
         }}
+        panelStyle={styles.documentModalPanel}
       >
-        <Pressable style={styles.modalBackdrop} onPress={() => !saving && setSelectedFile(null)} />
         <View style={styles.sheet}>
-          <View style={styles.grabber} />
+          {!isDesktop ? <View style={styles.grabber} /> : null}
           <Text style={styles.sheetTitle}>{t("docs.name_title")}</Text>
           <Text style={styles.sheetSub} numberOfLines={1}>{selectedFile?.name}</Text>
           <Text style={styles.inputLabel}>{t("docs.document_name")}</Text>
@@ -241,12 +239,13 @@ export default function WorkerPhotos() {
             <Text style={styles.cancelText}>{t("common.cancel")}</Text>
           </Pressable>
         </View>
-      </Modal>
+      </ResponsiveModal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  documentModalPanel: { backgroundColor: TAVORIA.color.white, maxWidth: 560 },
   safe: { backgroundColor: TAVORIA.color.paperDeep, flex: 1 },
   topTitle: { color: TAVORIA.color.navy, fontFamily: "InstrumentSerif_400Regular", fontSize: 22 },
   content: { alignSelf: "center", paddingBottom: 32, paddingHorizontal: 20, paddingTop: 8, width: "100%" },

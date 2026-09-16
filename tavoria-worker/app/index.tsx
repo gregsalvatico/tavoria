@@ -508,7 +508,7 @@ export default function Welcome() {
                   )}
                 </Pressable>
                 <Pressable
-                  onPress={() => router.push("/venue-photo")}
+                  onPress={() => router.push("/post-shift")}
                   style={[styles.continueBtn, styles.continueBtnGhost]}
                 >
                   <Feather name="plus" size={14} color="#0E1A24" />

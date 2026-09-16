@@ -8,7 +8,7 @@ import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
 import ActionButton from "../components/ActionButton";
-import { FlowTopBar } from "../components/PagePrimitives";
+import { FormFlowHeader } from "../components/PagePrimitives";
 import {
   generateUsername,
   nameToSlug,
@@ -141,13 +141,14 @@ export default function VenueInfo() {
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <FlowTopBar
+        <FormFlowHeader
+          title={t("venue_info.title")}
           onBack={() => {
             if (router.canGoBack()) { router.back(); return; }
             router.replace("/venue-type");
           }}
           step={1}
-          total={4}
+          total={5}
         />
 
         <ScrollView
@@ -157,14 +158,6 @@ export default function VenueInfo() {
           showsVerticalScrollIndicator={false}
           showsHorizontalScrollIndicator={false}
         >
-          <Text style={[styles.h1, styles.h1Center]}>
-            <Text style={styles.h1Accent}>{t("venue_info.title").charAt(0)}</Text>
-            {t("venue_info.title").slice(1)}
-          </Text>
-          <Text style={[styles.sub, { textAlign: "center" }]}>
-            {t("venue_info.sub")}
-          </Text>
-
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>{t("venue_info.venue_name")}</Text>
             <View style={styles.inputWrap}>
@@ -343,49 +336,10 @@ export default function VenueInfo() {
   );
 }
 
-function ProgressDots({ step, total }: { step: number; total: number }) {
-  return (
-    <View style={styles.progress}>
-      {Array.from({ length: total }).map((_, i) => (
-        <View key={i} style={[styles.progDot, i <= step && styles.progDotActive]} />
-      ))}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#F7F4EE" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  iconBtn: { padding: 4 },
-  progress: { flexDirection: "row", gap: 5 },
-  progDot: {
-    width: 22,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "rgba(11,15,26,0.15)",
-  },
-  progDotActive: { backgroundColor: "#0E1A24" },
-
   container: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
   containerDesktop: { alignSelf: "center", maxWidth: 840, paddingHorizontal: 24, width: "100%" },
-  h1: {
-    fontFamily: "InstrumentSerif_400Regular",
-    fontSize: 30,
-    fontWeight: "400",
-    color: "#0E1A24",
-    lineHeight: 34,
-    letterSpacing: -0.6,
-  },
-  h1Center: { textAlign: "center" },
-  h1Accent: { color: "#F0531C" },
-  sub: { color: "#6B7280", fontSize: 14, marginTop: 6 },
-
   fieldGroup: { marginTop: 28 },
   label: {
     fontSize: 12,

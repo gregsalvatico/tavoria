@@ -3,7 +3,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import {
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -26,6 +25,7 @@ import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
 import ActionButton from "../components/ActionButton";
+import ResponsiveModal from "../components/ResponsiveModal";
 import { FlowTopBar } from "../components/PagePrimitives";
 import { PreferenceFields, validPreferences } from "../components/TalentFields";
 import { normalizeJobPreferences, type JobPreferences } from "../lib/workerMatching";
@@ -396,18 +396,13 @@ export default function WorkerExperience() {
         />
 
         {/* Custom language modal */}
-        <Modal
+        <ResponsiveModal
           visible={otherOpen}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setOtherOpen(false)}
+          onClose={() => setOtherOpen(false)}
+          panelStyle={styles.otherModalPanel}
         >
-          <Pressable
-            style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)" }}
-            onPress={() => setOtherOpen(false)}
-          />
           <View style={styles.otherSheet}>
-            <View style={styles.otherGrabber} />
+            {!isDesktop ? <View style={styles.otherGrabber} /> : null}
             <Text style={styles.otherTitle}>{t("worker_experience.other_lang_title")}</Text>
             <Text style={styles.otherSub}>
               {t("worker_experience.other_lang_sub")}
@@ -434,7 +429,7 @@ export default function WorkerExperience() {
               <Text style={styles.otherAddTxt}>{t("worker_experience.other_lang_add")}</Text>
             </Pressable>
           </View>
-        </Modal>
+        </ResponsiveModal>
 
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -442,6 +437,7 @@ export default function WorkerExperience() {
 }
 
 const styles = StyleSheet.create({
+  otherModalPanel: { backgroundColor: "white", maxWidth: 560 },
   safe: { flex: 1, backgroundColor: "#F1EFE8" },
   header: {
     flexDirection: "row",

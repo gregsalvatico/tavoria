@@ -6,7 +6,9 @@ import { countryNameFromCode } from "../lib/countries";
 import { t } from "../lib/i18n";
 import { localizeRoles } from "../lib/positions";
 import { JobPreferences, normalizeJobPreferences, WEEK_DAYS } from "../lib/workerMatching";
-import MediaGrid from "./MediaGrid";
+import AvatarActionModal from "./AvatarActionModal";
+import ProfileMediaSection from "./ProfileMediaSection";
+import type { MediaItem } from "./mediaTypes";
 
 export function mediaSlots(row: any, kind: "photo" | "video"): (string | null)[] {
   const slots = row?.[`${kind}_urls`] ?? [];
@@ -36,12 +38,17 @@ function SectionLabel({ children }: { children: string }) {
 export default function WorkerProfileContent({ row, owner, onEdit }: { row: any; owner: boolean; onEdit?: () => void }) {
   const router = useRouter();
   const [details, setDetails] = useState(false);
-  const [photo, setPhoto] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [avatarActionsOpen, setAvatarActionsOpen] = useState(false);
   const p: JobPreferences = normalizeJobPreferences(row?.job_preferences ?? {});
   const photos = mediaSlots(row, "photo").filter((url): url is string => Boolean(url));
   const primaryPhoto = photos[0] ?? null;
   const extraPhotos = photos.slice(1);
-  const videos = mediaSlots(row, "video");
+  const videos = mediaSlots(row, "video").filter((url): url is string => Boolean(url));
+  const profileMedia: MediaItem[] = [
+    ...extraPhotos.map((url) => ({ url, kind: "photo" as const })),
+    ...videos.map((url) => ({ url, kind: "video" as const })),
+  ];
   const answers = (row?.interview_answers ?? []).filter((answer: any) => answer?.q_text?.trim() || answer?.a_text?.trim());
   const traits = [...(row?.personality ?? []), ...(row?.strengths ?? [])].filter((trait: unknown) => typeof trait === "string" && trait.trim());
   const name = [row?.first_name, row?.last_name].filter(Boolean).join(" ") || "—";
@@ -69,7 +76,7 @@ export default function WorkerProfileContent({ row, owner, onEdit }: { row: any;
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t("talent.photos")}
-            onPress={() => setPhoto(primaryPhoto)}
+            onPress={() => setAvatarActionsOpen(true)}
             style={styles.profilePhotoWrap}
           >
             <Image source={{ uri: primaryPhoto }} style={styles.profilePhoto} />
@@ -78,7 +85,7 @@ export default function WorkerProfileContent({ row, owner, onEdit }: { row: any;
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t("talent.photos")}
-            onPress={() => router.push("/worker-media-edit?kind=photo" as never)}
+            onPress={() => router.push("/worker-media-edit" as never)}
             style={styles.addProfilePhoto}
           >
             <Feather name="camera" size={17} color="#626B78" />
@@ -129,25 +136,10 @@ export default function WorkerProfileContent({ row, owner, onEdit }: { row: any;
         </View>
       ) : null}
 
-      {(extraPhotos.length > 0 || owner) ? (
-        <View style={styles.section}>
-          <SectionLabel>{t("talent.otherPhotos")}</SectionLabel>
-          <MediaGrid
-            photos={extraPhotos}
-            onAdd={owner ? () => router.push("/worker-media-edit?kind=photo" as never) : undefined}
-          />
-        </View>
-      ) : null}
-
-      {(videos.some(Boolean) || owner) ? (
-        <View style={styles.section}>
-          <SectionLabel>{t("talent.videos")}</SectionLabel>
-          <MediaGrid
-            videos={videos}
-            onAdd={owner ? () => router.push("/worker-media-edit?kind=video" as never) : undefined}
-          />
-        </View>
-      ) : null}
+      <ProfileMediaSection
+        media={profileMedia}
+        onAdd={owner ? () => router.push("/worker-media-edit" as never) : undefined}
+      />
 
       {hasDetails ? (
         <View style={styles.section}>
@@ -185,12 +177,26 @@ export default function WorkerProfileContent({ row, owner, onEdit }: { row: any;
         </View>
       ) : null}
 
-      <Modal visible={Boolean(photo)} transparent onRequestClose={() => setPhoto(null)}>
+      <AvatarActionModal
+        visible={avatarActionsOpen}
+        canReplace={owner}
+        onClose={() => setAvatarActionsOpen(false)}
+        onPreview={() => {
+          setAvatarActionsOpen(false);
+          setPhotoPreview(primaryPhoto);
+        }}
+        onReplace={() => {
+          setAvatarActionsOpen(false);
+          router.push("/worker-media-edit" as never);
+        }}
+      />
+
+      <Modal visible={Boolean(photoPreview)} transparent onRequestClose={() => setPhotoPreview(null)}>
         <View style={styles.modal}>
-          <Pressable accessibilityLabel={t("talent.close")} onPress={() => setPhoto(null)} style={styles.close}>
+          <Pressable accessibilityLabel={t("talent.close")} onPress={() => setPhotoPreview(null)} style={styles.close}>
             <Feather name="x" size={24} color="#FFFFFF" />
           </Pressable>
-          {photo ? <Image source={{ uri: photo }} resizeMode="contain" style={styles.fullVideo} /> : null}
+          {photoPreview ? <Image source={{ uri: photoPreview }} resizeMode="contain" style={styles.fullVideo} /> : null}
         </View>
       </Modal>
     </View>
@@ -207,8 +213,8 @@ function DetailRow({ label, value, last }: { label: string; value: string; last?
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: 0 },
-  identity: { alignItems: "center", flexDirection: "row", gap: 16, paddingBottom: 22 },
+  wrap: { gap: 16 },
+  identity: { alignItems: "center", flexDirection: "row", gap: 16 },
   identityBody: { flex: 1, gap: 5, minWidth: 0 },
   edit: { alignItems: "center", backgroundColor: "#FFFFFF", borderColor: "rgba(14,26,36,0.16)", borderRadius: 22, borderWidth: 1, height: 42, justifyContent: "center", width: 42 },
   profilePhotoWrap: { backgroundColor: "#E6E4DC", borderRadius: 14, height: 136, overflow: "hidden", width: 112 },
@@ -222,12 +228,12 @@ const styles = StyleSheet.create({
   name: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 34, lineHeight: 38 },
   roles: { color: "#263542", fontSize: 16, lineHeight: 22 },
   meta: { color: "#626B78", fontSize: 13, lineHeight: 19 },
-  facts: { borderBottomColor: "rgba(14,26,36,0.12)", borderBottomWidth: StyleSheet.hairlineWidth, borderTopColor: "rgba(14,26,36,0.12)", borderTopWidth: StyleSheet.hairlineWidth, flexDirection: "row", flexWrap: "wrap", marginBottom: 4, paddingHorizontal: 0, paddingVertical: 2 },
+  facts: { borderBottomColor: "rgba(14,26,36,0.12)", borderBottomWidth: StyleSheet.hairlineWidth, borderTopColor: "rgba(14,26,36,0.12)", borderTopWidth: StyleSheet.hairlineWidth, flexDirection: "row", flexWrap: "wrap" },
   fact: { alignItems: "flex-start", flexBasis: 145, flexGrow: 1, flexDirection: "row", gap: 9, minWidth: 145, paddingVertical: 12 },
   factBody: { flex: 1, minWidth: 0 },
   factLabel: { color: "#7A818B", fontFamily: "DMMono_500Medium", fontSize: 9, letterSpacing: 0.7, textTransform: "uppercase" },
   factValue: { color: "#0E1A24", fontSize: 13, fontWeight: "600", marginTop: 3 },
-  section: { borderBottomColor: "rgba(14,26,36,0.12)", borderBottomWidth: 1, gap: 13, paddingVertical: 20 },
+  section: { borderBottomColor: "rgba(14,26,36,0.12)", borderBottomWidth: 1, gap: 13, paddingBottom: 20 },
   sectionLabel: { color: "#626B78", fontFamily: "DMMono_500Medium", fontSize: 10, letterSpacing: 1, textTransform: "uppercase" },
   detailList: { gap: 0 },
   detailRow: { alignItems: "baseline", flexDirection: "row", gap: 14, justifyContent: "space-between", paddingVertical: 9 },

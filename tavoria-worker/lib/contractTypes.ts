@@ -17,6 +17,46 @@ export const STANDARD_CONTRACT_TYPES = [
   "seasonal",
 ] as const;
 
+// The database column is currently text. Keep single values compatible with
+// existing rows, and use a stable separator for the new multi-select value.
+const CONTRACT_SEPARATOR = "|";
+
+export function parseContractTypes(value?: string | null): string[] {
+  const raw = value?.trim() ?? "";
+  if (!raw) return [];
+
+  // Accept JSON arrays as well so rows created by an earlier experiment remain
+  // readable if they exist in the database.
+  if (raw.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return Array.from(new Set(parsed
+          .filter((item): item is string => typeof item === "string")
+          .map((item) => item.trim())
+          .filter(Boolean)));
+      }
+    } catch {
+      // Fall through to the delimiter format for malformed legacy values.
+    }
+  }
+
+  return Array.from(new Set(raw
+    .split(CONTRACT_SEPARATOR)
+    .map((item) => item.trim())
+    .filter(Boolean)));
+}
+
+export function serializeContractTypes(values: string[], customLabel?: string): string | undefined {
+  const normalized = Array.from(new Set(values
+    .map((value) => {
+      if (value === "custom" || value === "other") return customLabel?.trim() ?? "";
+      return value.trim();
+    })
+    .filter(Boolean)));
+  return normalized.length ? normalized.join(CONTRACT_SEPARATOR) : undefined;
+}
+
 export function normalizeContractType(value?: string | null): string | null {
   if (!value) return null;
   return CONTRACT_KEYS[value.trim().toLowerCase()] ?? null;
@@ -24,6 +64,10 @@ export function normalizeContractType(value?: string | null): string | null {
 
 export function localizeContractType(value?: string | null) {
   if (!value) return "";
-  const key = normalizeContractType(value);
-  return key ? t(`post_shift.${key}`) : value;
+  return parseContractTypes(value)
+    .map((item) => {
+      const key = normalizeContractType(item);
+      return key ? t(`post_shift.${key}`) : item;
+    })
+    .join(" · ");
 }

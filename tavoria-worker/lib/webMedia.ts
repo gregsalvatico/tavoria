@@ -36,6 +36,10 @@ export function pickVideoWeb(opts: PickOpts = {}): Promise<WebPickResult> {
   return openPickerWeb("video/*", opts);
 }
 
+export function pickMediaWeb(opts: PickOpts = {}): Promise<WebPickResult> {
+  return openPickerWeb("image/*,video/*", opts);
+}
+
 function openPickerWeb(
   accept: string,
   opts: PickOpts
@@ -73,7 +77,7 @@ function openPickerWeb(
         return;
       }
 
-      if (accept.startsWith("video/")) {
+      if (accept.includes("video/") && file.type.startsWith("video/")) {
         // Videos: hand back the raw file. Probe for duration.
         const uri = URL.createObjectURL(file);
         const asset: WebPickResult["assets"][number] = {

@@ -1,10 +1,6 @@
-import { Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useGlobalSearchParams, useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Image,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,161 +15,77 @@ import {
   getVenueProfile,
   patchVenueProfile,
 } from "../lib/venueProfile";
-import { updateVenue } from "../lib/db";
+import { getCurrentVenueRow, updateVenue } from "../lib/db";
 import { t } from "../lib/i18n";
-import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import { useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
 import ActionButton from "../components/ActionButton";
-import { FlowTopBar } from "../components/PagePrimitives";
-import { localizeRole } from "../lib/positions";
+import ResponsiveModal from "../components/ResponsiveModal";
+import { FormFlowHeader } from "../components/PagePrimitives";
+import VenueProfileFields from "../components/VenueProfileFields";
+import { customPayScheduleValue, storedPayScheduleValue } from "../lib/venueOptions";
 
-type Schedule = {
-  id: PayScheduleId;
-  label: string;
-  icon: keyof typeof Feather.glyphMap;
-};
-
-type ScheduleExt = Schedule & { hue: string };
-
-const SCHEDULES: ScheduleExt[] = [
-  { id: "sameday", label: "Daily", icon: "zap", hue: "#F59E0B" },
-  { id: "weekly", label: "Weekly", icon: "calendar", hue: "#10B981" },
-  { id: "monthly", label: "Monthly", icon: "credit-card", hue: "#3B82F6" },
-];
-
-// Map schedule id → t() key suffix under pay_schedule.*
-const SCHEDULE_KEYS: Record<string, string> = {
-  sameday: "daily",
-  weekly: "weekly",
-  monthly: "monthly",
-};
-
-type Variant = {
-  id: string;
-  // real photos to be added per category; for demo we have cafe
-  source?: number;
-  hue: string;
-  label: string;
-};
-
-const VARIANTS: Variant[] = [
-  {
-    id: "v1",
-    source: require("../assets/venue-cafe.png"),
-    hue: "#2D6A75",
-    label: "Teal night",
-  },
-  { id: "v2", hue: "#854F0B", label: "Warm sunset" },
-  { id: "v3", hue: "#0F6E56", label: "Forest evening" },
-  { id: "v4", hue: "#993556", label: "Wine cellar" },
-  { id: "v5", hue: "#185FA5", label: "Blue hour" },
-  { id: "v6", hue: "#2C2C2A", label: "Industrial chic" },
-];
-
-type Role = {
-  id: string;
-  label: string;
-  icon: keyof typeof Feather.glyphMap;
-  image: number;
-};
-
-const ROLES: Role[] = [
-  { id: "barista", label: "Barista", icon: "coffee", image: require("../assets/position-barista.png") },
-  { id: "waiter", label: "Waiter", icon: "shopping-bag", image: require("../assets/position-waiter.png") },
-  { id: "runner", label: "Runner", icon: "zap", image: require("../assets/position-runner.png") },
-  { id: "cashier", label: "Cashier", icon: "credit-card", image: require("../assets/position-cashier.png") },
-  { id: "rider", label: "Rider", icon: "navigation", image: require("../assets/position-rider.png") },
-  { id: "bartender", label: "Bartender", icon: "wind", image: require("../assets/position-bartender.png") },
-  { id: "cook", label: "Cook", icon: "thermometer", image: require("../assets/position-cook.png") },
-  { id: "chef", label: "Chef", icon: "award", image: require("../assets/position-chef.png") },
-  { id: "cleaner", label: "Cleaner", icon: "trash-2", image: require("../assets/position-cleaner.png") },
-];
-
-type VenueStyleOpt = {
-  id: string;
-  label: string;
-  sub: string;
-  icon: keyof typeof Feather.glyphMap;
-  hue: string;
-};
-
-const VENUE_STYLES: VenueStyleOpt[] = [
-  {
-    id: "casual",
-    label: "Casual",
-    sub: "Relaxed pace",
-    icon: "droplet",
-    hue: "#06B6D4", // ocean teal — wave vibe
-  },
-  {
-    id: "busy",
-    label: "Busy",
-    sub: "Fast-paced, high volume",
-    icon: "zap",
-    hue: "#EC4899", // hot pink
-  },
-  {
-    id: "upscale",
-    label: "Upscale",
-    sub: "Refined service",
-    icon: "star",
-    hue: "#3B82F6", // bright blue
-  },
-  {
-    id: "luxury",
-    label: "Luxury",
-    sub: "Michelin / 5-star",
-    icon: "award",
-    hue: "#A855F7", // royal purple
-  },
-];
+const VENUE_SETUP_STEPS = ["style", "schedule"] as const;
+type VenueSetupStep = (typeof VENUE_SETUP_STEPS)[number];
 
 export default function VenuePhoto() {
   const router = useRouter();
   const isDesktop = useIsDesktop();
+  const { focus } = useGlobalSearchParams<{ focus?: string }>();
   const scrollRef = useRef<ScrollView>(null);
-  const [setupStep, setSetupStep] = useState<0 | 1>(0);
-  const [picked, setPicked] = useState<string | null>("v1");
-  const [pickedRoles, setPickedRoles] = useState<string[]>([]);
-  const [customRoles, setCustomRoles] = useState<string[]>([]);
-  const [customRoleInput, setCustomRoleInput] = useState<string>("");
-  const [venueStyle, setVenueStyle] = useState<string | null>(null);
-  const [schedule, setSchedule] = useState<PayScheduleId | null>(null);
-  const [customSchedule, setCustomSchedule] = useState("");
+  const setupStep: number = typeof focus === "string" && VENUE_SETUP_STEPS.includes(focus as VenueSetupStep)
+    ? VENUE_SETUP_STEPS.indexOf(focus as VenueSetupStep)
+    : 0;
+  const cachedVenue = getVenueProfile();
+  const [venueStyle, setVenueStyle] = useState<string | null>(cachedVenue?.venueStyle ?? null);
+  const [schedule, setSchedule] = useState<PayScheduleId | null>(cachedVenue?.payScheduleId ?? null);
+  const [customSchedule, setCustomSchedule] = useState(customPayScheduleValue(cachedVenue?.payScheduleLabel));
   const [customScheduleOpen, setCustomScheduleOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    getCurrentVenueRow()
+      .then((venue) => {
+        if (!active) return;
+        if (!venue) {
+          const draft = getVenueProfile();
+          if (!draft?.id) {
+            setRedirecting(true);
+            router.replace(draft?.type ? "/venue-info" : "/venue-type");
+          }
+          return;
+        }
+        setVenueStyle((venue.venue_style as string | null) ?? null);
+        setSchedule((venue.pay_schedule as PayScheduleId | null) ?? null);
+        setCustomSchedule(customPayScheduleValue(venue.pay_schedule as string | null));
+      })
+      .catch((error) => {
+        if (active) {
+          console.warn("[venue-photo] failed to load venue", error);
+          setErrorMsg(t("talent.loadError"));
+        }
+      })
+    return () => { active = false; };
+  }, [router]);
   const onContinue = async () => {
     setErrorMsg(null);
     setBusy(true);
-    const standardLabels = pickedRoles
-      .map((id) => ROLES.find((r) => r.id === id)?.label)
-      .filter((x): x is string => Boolean(x));
-    const labels = [...standardLabels, ...customRoles];
-    const sObj = SCHEDULES.find((s) => s.id === schedule);
-    const scheduleLabel =
-      schedule === "custom"
-        ? customSchedule.trim() || "Other"
-        : sObj?.label;
-    const photoVariant = picked ? parseInt(picked.replace("v", ""), 10) : 1;
+    const scheduleValue = storedPayScheduleValue(schedule, customSchedule);
     const venueId = getVenueProfile()?.id;
-    const venueStyleLabel = VENUE_STYLES.find((s) => s.id === venueStyle)?.label;
     try {
       if (venueId) {
         await updateVenue(venueId, {
-          photo_variant: photoVariant,
-          roles: labels,
-          pay_schedule: scheduleLabel,
+          pay_schedule: scheduleValue,
           venue_style: venueStyle ?? undefined,
         });
       }
       patchVenueProfile({
-        photoId: picked ?? undefined,
-        roles: labels,
         payScheduleId: schedule ?? undefined,
-        payScheduleLabel: scheduleLabel,
+        payScheduleLabel: schedule === "custom" ? customSchedule.trim() : scheduleValue,
         venueStyle: venueStyle ?? undefined,
-        venueStyleLabel,
       });
       // Venue basics done — straight to first shift post.
       // Interview QCM is now a bonus step on /venue-bonus after the post.
@@ -185,19 +97,25 @@ export default function VenuePhoto() {
     }
   };
 
-  const toggleRole = (id: string) =>
-    setPickedRoles((cur) =>
-      cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]
-    );
-
-  const moveToSetupStep = (nextStep: 0 | 1) => {
-    setSetupStep(nextStep);
+  const moveToSetupStep = (nextStep: number) => {
+    const next = VENUE_SETUP_STEPS[nextStep];
+    if (!next) return;
+    router.replace({ pathname: "/venue-photo", params: { focus: next } });
     requestAnimationFrame(() => scrollRef.current?.scrollTo({ y: 0, animated: false }));
   };
 
+  const goBack = () => {
+    if (setupStep > 0) {
+      moveToSetupStep(setupStep - 1);
+      return;
+    }
+    if (router.canGoBack()) { router.back(); return; }
+    router.replace("/venue-info");
+  };
+
   const onPrimaryAction = () => {
-    if (setupStep === 0) {
-      moveToSetupStep(1);
+    if (setupStep < VENUE_SETUP_STEPS.length - 1) {
+      moveToSetupStep(setupStep + 1);
       return;
     }
     void onContinue();
@@ -205,17 +123,12 @@ export default function VenuePhoto() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <FlowTopBar
-        onBack={() => {
-          if (setupStep > 0) {
-            moveToSetupStep(0);
-            return;
-          }
-          if (router.canGoBack()) { router.back(); return; }
-          router.replace("/venue-info");
-        }}
-        step={setupStep + 1}
-        total={3}
+      <FormFlowHeader
+        title={t("venue_edit.title")}
+        subtitle={t("venue_edit.intro")}
+        onBack={goBack}
+        step={setupStep + 2}
+        total={5}
       />
 
       <ScrollView
@@ -225,237 +138,49 @@ export default function VenuePhoto() {
         showsVerticalScrollIndicator={false}
       >
         {setupStep === 0 && (
-          <>
-        {/* Step 1: venue style and the roles it hires for. */}
-        <Text
-          style={[
-            styles.h1,
-            { marginTop: 22, fontSize: 24, textAlign: "center" },
-          ]}
-        >
-          <Text style={{ color: "#F0531C" }}>
-            {t("venue_style.title").charAt(0)}
-          </Text>
-          {t("venue_style.title").slice(1)}
-        </Text>
-        <Text style={[styles.sub, { textAlign: "center" }]}>
-          {t("venue_style.sub")}
-        </Text>
-
-        <View style={styles.styleGrid}>
-          {VENUE_STYLES.map((s) => {
-            const on = venueStyle === s.id;
-            return (
-              <Pressable
-                key={s.id}
-                onPress={() => setVenueStyle(s.id)}
-                style={[
-                  styles.styleTile,
-                  { backgroundColor: s.hue },
-                  on && styles.styleTileOn,
-                ]}
-              >
-                <View style={styles.styleTileIconWrap}>
-                  <Feather name={s.icon} size={30} color="white" />
-                </View>
-                <Text style={styles.styleTileLbl}>{t(`venue_style.${s.id}`)}</Text>
-                <Text style={styles.styleTileSub}>{t(`venue_style.${s.id}_sub`)}</Text>
-                {on && (
-                  <View style={styles.styleTileCheck}>
-                    <Feather name="check" size={14} color="white" />
-                  </View>
-                )}
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {/* Positions section */}
-        <Text
-          style={[
-            styles.h1,
-            { marginTop: 22, fontSize: 24, textAlign: "center" },
-          ]}
-        >
-          <Text style={{ color: "#F0531C" }}>
-            {t("positions.title").charAt(0)}
-          </Text>
-          {t("positions.title").slice(1)}
-        </Text>
-        <Text style={[styles.sub, { textAlign: "center" }]}>
-          {t("positions.sub")}
-        </Text>
-
-        <View style={styles.rolesGrid}>
-          {ROLES.map((r) => {
-            const on = pickedRoles.includes(r.id);
-            return (
-              <Pressable
-                key={r.id}
-                onPress={() => toggleRole(r.id)}
-                style={[styles.roleTile, on && styles.roleTileOn]}
-              >
-                <Image
-                  source={r.image}
-                  style={styles.roleTileImg}
-                  resizeMode="cover"
-                />
-                <View style={styles.roleTileScrim} pointerEvents="none" />
-                <Text
-                  style={styles.roleTileLbl}
-                  numberOfLines={1}
-                >
-                  {localizeRole(r.id)}
-                </Text>
-                {on && (
-                  <View style={styles.roleCheck}>
-                    <Feather name="check" size={11} color="white" />
-                  </View>
-                )}
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {/* Custom positions — freeform text input for specialized roles */}
-        <View style={styles.customRoleWrap}>
-          <Feather name="plus-circle" size={18} color="#F0531C" />
-          <TextInput
-            value={customRoleInput}
-            onChangeText={setCustomRoleInput}
-            onSubmitEditing={() => {
-              const v = customRoleInput.trim();
-              if (v && !customRoles.includes(v)) {
-                setCustomRoles((cur) => [...cur, v]);
-              }
-              setCustomRoleInput("");
-            }}
-            placeholder={t("positions.custom_placeholder")}
-            placeholderTextColor="#9CA3AF"
-            style={styles.customRoleInput}
-            returnKeyType="done"
-            autoCapitalize="words"
+          <VenueProfileFields
+            section="style"
+            venueStyle={venueStyle}
+            paySchedule={schedule}
+            customSchedule={customSchedule}
+            onVenueStyleChange={setVenueStyle}
+            onPayScheduleChange={setSchedule}
+            onCustomScheduleChange={setCustomSchedule}
+            onOpenCustomSchedule={() => setCustomScheduleOpen(true)}
           />
-        </View>
-        {customRoles.length > 0 && (
-          <View style={styles.customRoleChips}>
-            {customRoles.map((r) => (
-              <Pressable
-                key={r}
-                onPress={() =>
-                  setCustomRoles((cur) => cur.filter((x) => x !== r))
-                }
-                style={styles.customRoleChip}
-              >
-                <Text style={styles.customRoleChipTxt}>{r}</Text>
-                <Feather name="x" size={12} color="#F7F4EE" />
-              </Pressable>
-            ))}
-          </View>
-        )}
-
-          </>
         )}
 
         {setupStep === 1 && (
-          <>
-        {/* Step 2: pay schedule. */}
-        <Text
-          style={[
-            styles.h1,
-            { marginTop: 22, fontSize: 24, textAlign: "center" },
-          ]}
-        >
-          <Text style={{ color: "#F0531C" }}>
-            {t("pay_schedule.title").charAt(0)}
-          </Text>
-          {t("pay_schedule.title").slice(1)}
-        </Text>
-        <Text style={[styles.sub, { textAlign: "center" }]}>
-          {t("pay_schedule.sub")}
-        </Text>
-
-        <View style={styles.styleGrid}>
-          {SCHEDULES.map((s) => {
-            const on = schedule === s.id;
-            return (
-              <Pressable
-                key={s.id}
-                onPress={() => setSchedule(s.id)}
-                style={[
-                  styles.styleTile,
-                  { backgroundColor: s.hue },
-                  on && styles.styleTileOn,
-                ]}
-              >
-                <View style={styles.styleTileIconWrap}>
-                  <Feather name={s.icon} size={28} color="white" />
-                </View>
-                <Text style={styles.styleTileLbl}>{t(`pay_schedule.${SCHEDULE_KEYS[s.id] ?? s.id}`)}</Text>
-                {on && (
-                  <View style={styles.styleTileCheck}>
-                    <Feather name="check" size={14} color="white" />
-                  </View>
-                )}
-              </Pressable>
-            );
-          })}
-
-          {/* Custom option */}
-          <Pressable
-            onPress={() => {
-              setSchedule("custom");
-              setCustomScheduleOpen(true);
-            }}
-            style={[
-              styles.styleTile,
-              { backgroundColor: "#6B7280" },
-              schedule === "custom" && styles.styleTileOn,
-            ]}
-          >
-            <View style={styles.styleTileIconWrap}>
-              <Feather name="more-horizontal" size={28} color="white" />
-            </View>
-            <Text style={styles.styleTileLbl}>
-              {schedule === "custom" && customSchedule ? customSchedule : t("pay_schedule.other")}
-            </Text>
-            {schedule === "custom" && (
-              <View style={styles.styleTileCheck}>
-                <Feather name="check" size={14} color="white" />
-              </View>
-            )}
-          </Pressable>
-        </View>
-
-          </>
+          <VenueProfileFields
+            section="schedule"
+            venueStyle={venueStyle}
+            paySchedule={schedule}
+            customSchedule={customSchedule}
+            onVenueStyleChange={setVenueStyle}
+            onPayScheduleChange={setSchedule}
+            onCustomScheduleChange={setCustomSchedule}
+            onOpenCustomSchedule={() => setCustomScheduleOpen(true)}
+          />
         )}
+
 
         <View style={{ height: 12 }} />
         {errorMsg && <Text style={styles.errorTxt}>{errorMsg}</Text>}
 
       </ScrollView>
       <StickyFooter desktopRow fullBleed backgroundColor="#F7F4EE">
-        <ActionButton
-          label={t("common.continue")}
-          icon="arrow-right"
-          disabled={busy}
-          loading={busy}
-          onPress={onPrimaryAction}
-          style={styles.fullWidthButton}
-        />
+        <View style={styles.footerActions}>
+          <ActionButton label={t("common.back")} icon="arrow-left" variant="secondary" onPress={goBack} style={styles.footerButton} />
+          <ActionButton label={t("common.continue")} icon="arrow-right" disabled={busy} loading={busy} onPress={onPrimaryAction} style={styles.footerButton} />
+        </View>
       </StickyFooter>
 
       {/* Custom schedule input modal */}
-      <Modal
+      <ResponsiveModal
         visible={customScheduleOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setCustomScheduleOpen(false)}
+        onClose={() => setCustomScheduleOpen(false)}
+        panelStyle={styles.customSchedulePanel}
       >
-        <Pressable
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)" }}
-          onPress={() => setCustomScheduleOpen(false)}
-        />
         <View
           style={{
             backgroundColor: "white",
@@ -510,394 +235,18 @@ export default function VenuePhoto() {
             />
           </View>
         </View>
-      </Modal>
+      </ResponsiveModal>
 
     </SafeAreaView>
   );
 }
 
-function ProgressDots({ step, total }: { step: number; total: number }) {
-  return (
-    <View style={styles.progress}>
-      {Array.from({ length: total }).map((_, i) => (
-        <View
-          key={i}
-          style={[styles.progDot, i <= step && styles.progDotActive]}
-        />
-      ))}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
+  customSchedulePanel: { backgroundColor: "white", maxWidth: 560 },
   safe: { flex: 1, backgroundColor: "#F7F4EE" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  iconBtn: { padding: 4 },
-  progress: { flexDirection: "row", gap: 5 },
-  progDot: {
-    width: 22,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "rgba(11,15,26,0.15)",
-  },
-  progDotActive: { backgroundColor: "#0E1A24" },
-
-  container: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
   scroll: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 },
   scrollDesktop: { alignSelf: "center", maxWidth: 840, paddingHorizontal: 24, width: "100%" },
-  h1: {
-    fontFamily: "InstrumentSerif_400Regular",
-    fontSize: 30,
-    fontWeight: "400",
-    color: "#0E1A24",
-    letterSpacing: -0.6,
-  },
-  sub: {
-    color: "#6B7280",
-    fontSize: 14,
-    marginTop: 6,
-    lineHeight: 20,
-  },
-
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 18,
-  },
-  tile: {
-    width: "31.5%",
-    aspectRatio: 1,
-    borderRadius: 12,
-    overflow: "hidden",
-    backgroundColor: "#0E1A24",
-    borderWidth: 2,
-    borderColor: "transparent",
-    position: "relative",
-  },
-  tileActive: { borderColor: "#F0531C" },
-  tileImg: { width: "100%", height: "100%" },
-  tilePlaceholder: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 6,
-  },
-  tilePhTxt: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 10,
-    fontWeight: "600",
-  },
-  tileCheck: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    width: 22,
-    height: 22,
-    borderRadius: 999,
-    backgroundColor: "#F0531C",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  uploadRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 16,
-    paddingVertical: 12,
-  },
-  uploadTxt: { fontSize: 14, fontWeight: "600", color: "#0E1A24" },
-
-  uploadCard: {
-    marginTop: 16,
-    backgroundColor: "white",
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: "#F0531C",
-    borderStyle: "dashed",
-    paddingVertical: 36,
-    paddingHorizontal: 24,
-    alignItems: "center",
-    gap: 8,
-  },
-  uploadCardIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 999,
-    backgroundColor: "#FFF4EE",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  uploadCardTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#0E1A24",
-  },
-  uploadCardSub: {
-    fontSize: 13,
-    color: "#6B7280",
-    textAlign: "center",
-    maxWidth: 240,
-  },
-
-  uploadedWrap: {
-    marginTop: 14,
-    borderRadius: 14,
-    overflow: "hidden",
-    position: "relative",
-    aspectRatio: 4 / 3,
-    backgroundColor: "#0E1A24",
-  },
-  uploadedImg: { width: "100%", height: "100%" },
-  uploadedBadge: {
-    position: "absolute",
-    top: 10,
-    left: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#3B6D11",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  uploadedBadgeTxt: { color: "white", fontSize: 11, fontWeight: "700" },
-  uploadedReplaceBtn: {
-    position: "absolute",
-    bottom: 10,
-    right: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(0,0,0,0.65)",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-  },
-  uploadedReplaceTxt: { color: "#F7F4EE", fontSize: 12, fontWeight: "700" },
-
-  customRoleWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginTop: 12,
-    backgroundColor: "white",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#F0531C",
-    borderStyle: "dashed",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  customRoleInput: {
-    flex: 1,
-    fontSize: 15,
-    color: "#0E1A24",
-    padding: 0,
-  },
-  customRoleChips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    marginTop: 8,
-  },
-  customRoleChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "#F0531C",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  customRoleChipTxt: {
-    color: "#F7F4EE",
-    fontSize: 13,
-    fontWeight: "700",
-  },
-
-  venueStyleSub: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginTop: 2,
-    lineHeight: 16,
-  },
-
-  styleGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginTop: 14,
-  },
-  styleTile: {
-    width: "47.5%",
-    aspectRatio: 1.15,
-    borderRadius: 18,
-    borderWidth: 3,
-    borderColor: "transparent",
-    paddingVertical: 18,
-    paddingHorizontal: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-    shadowColor: "#000",
-    shadowOpacity: 0.10,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-  },
-  styleTileOn: { borderColor: "#F0531C" },
-  styleTileIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.25)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  styleTileLbl: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "white",
-    textAlign: "center",
-    letterSpacing: -0.2,
-    textShadowColor: "rgba(0,0,0,0.25)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  styleTileSub: {
-    fontSize: 11,
-    color: "rgba(255,255,255,0.85)",
-    textAlign: "center",
-    marginTop: 3,
-    letterSpacing: 0.2,
-  },
-  styleTileCheck: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 22,
-    height: 22,
-    borderRadius: 999,
-    backgroundColor: "#F0531C",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  rolesGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 14,
-  },
-  roleTile: {
-    aspectRatio: 1,
-    borderRadius: 14,
-    overflow: "hidden",
-    borderWidth: 2,
-    borderColor: "transparent",
-    position: "relative",
-    width: "31.5%",
-  },
-  roleTileOn: { borderColor: "#F0531C" },
-  roleTileImg: { width: "100%", height: "100%" },
-  roleTileScrim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.25)",
-  },
-  roleTileLbl: {
-    position: "absolute",
-    bottom: 8,
-    left: 4,
-    right: 4,
-    fontSize: 13,
-    fontWeight: "800",
-    color: "white",
-    textAlign: "center",
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  roleCheck: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 20,
-    height: 20,
-    borderRadius: 999,
-    backgroundColor: "#F0531C",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  scheduleCol: { gap: 8, marginTop: 14 },
-  scheduleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: "white",
-    borderWidth: 0.5,
-    borderColor: "rgba(0,0,0,0.10)",
-  },
-  scheduleRowOn: {
-    borderColor: "#F0531C",
-    borderWidth: 2,
-    backgroundColor: "#FFF4EE",
-  },
-  scheduleRowCustom: {
-    borderStyle: "dashed",
-    borderWidth: 1,
-    backgroundColor: "transparent",
-  },
-  scheduleIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: "#F1EFE8",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  scheduleIconOn: { backgroundColor: "#0E1A24" },
-  scheduleLbl: { flex: 1, fontSize: 15, fontWeight: "600", color: "#0E1A24" },
-  scheduleLblOn: { color: "#0E1A24", fontWeight: "700" },
-
-  errorTxt: {
-    color: "#B91C1C",
-    fontSize: 13,
-    textAlign: "center",
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-
-  bottom: { paddingBottom: 24, paddingHorizontal: 20, paddingTop: 20 },
-  cta: {
-    alignSelf: "center",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#F0531C",
-    borderRadius: 999,
-    height: 44,
-    maxHeight: 44,
-    minHeight: 44,
-    paddingHorizontal: 16,
-    width: "100%",
-  },
-  ctaDisabled: { backgroundColor: "rgba(11,15,26,0.15)" },
-  ctaTxt: { color: "#F7F4EE", fontSize: 16, fontWeight: "700" },
-  fullWidthButton: { width: "100%" },
+  errorTxt: { color: "#B91C1C", fontSize: 13, paddingHorizontal: 20, paddingTop: 8, textAlign: "center" },
+  footerActions: { alignItems: "center", flexDirection: "row", gap: 10, justifyContent: "center", maxWidth: 420, width: "100%" },
+  footerButton: { flex: 1, width: "auto" },
 });

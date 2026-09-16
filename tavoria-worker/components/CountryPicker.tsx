@@ -4,7 +4,6 @@ import { Feather } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import {
   FlatList,
-  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -12,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ResponsiveModal from "./ResponsiveModal";
 import { COUNTRIES, Country, countryNameFromCode, flagFromCode } from "../lib/countries";
 import { getCurrentLang, t } from "../lib/i18n";
 
@@ -48,11 +48,10 @@ export default function CountryPicker({
   }, [language, query]);
 
   return (
-    <Modal
+    <ResponsiveModal
       visible={visible}
-      animationType="slide"
-      onRequestClose={onClose}
-      presentationStyle="pageSheet"
+      onClose={onClose}
+      panelStyle={styles.countryPanel}
     >
       <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
         <View style={styles.header}>
@@ -113,11 +112,12 @@ export default function CountryPicker({
           }
         />
       </SafeAreaView>
-    </Modal>
+    </ResponsiveModal>
   );
 }
 
 const styles = StyleSheet.create({
+  countryPanel: { height: "86%" },
   safe: { flex: 1, backgroundColor: "#FAFAF7" },
   header: {
     flexDirection: "row",

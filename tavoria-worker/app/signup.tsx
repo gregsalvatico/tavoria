@@ -17,7 +17,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { t } from "../lib/i18n";
-import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
+import { useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
 import ActionButton from "../components/ActionButton";
 import {
@@ -360,7 +360,6 @@ export default function Signup() {
             </Text>
           </Pressable>
 
-          <Text style={styles.legal}>{t("auth_pin.sign_up_legal")}</Text>
           <Pressable
             onPress={() =>
               router.replace({
@@ -388,7 +387,7 @@ export default function Signup() {
               loading={busy}
               disabled={!canContinue}
               onPress={onContinue}
-              style={[styles.cta, isDesktop && desktopButtonStyle]}
+              style={styles.cta}
             />
           </View>
         </StickyFooter>
@@ -504,13 +503,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  legal: {
-    marginTop: 14,
-    fontSize: 11,
-    lineHeight: 16,
-    color: "#9CA3AF",
-  },
-
   bottom: {
     alignItems: "center",
     justifyContent: "center",
@@ -522,9 +514,7 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(0,0,0,0.08)",
   },
   bottomInner: { alignItems: "center", alignSelf: "center", maxWidth: 690, width: "100%" },
-  cta: {
-    width: "100%",
-  },
+  cta: { width: "100%" },
   authSwitch: { alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 18, paddingVertical: 8 },
   authSwitchPrompt: { color: "#6B7280", fontSize: 13 },
   authSwitchLink: { color: "#185FA5", fontSize: 13, fontWeight: "800" },

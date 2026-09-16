@@ -140,7 +140,7 @@ export default function VenueDone() {
           <ActionButton
             label={t("venue_done.post_shift")}
             icon="arrow-right"
-            onPress={() => router.replace("/venue-photo")}
+            onPress={() => router.replace("/post-shift")}
             style={styles.cta}
           />
           <ActionButton

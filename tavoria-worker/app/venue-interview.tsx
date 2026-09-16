@@ -36,8 +36,9 @@ export default function VenueInterview() {
   const router = useRouter();
   const isDesktop = useIsDesktop();
   const profile = getVenueProfile();
-  // venue.roles uses lowercase labels (e.g. "Barista") matching worker positions
-  const roles = profile?.roles ?? [];
+  // Venue preferences are role-agnostic. Roles belong to individual shifts,
+  // so this optional interview uses the generic question mix.
+  const roles: string[] = [];
 
   const questions = useMemo<InterviewQuestion[]>(
     () => localizeQuestions(pickQuestionsForRoles(roles)),

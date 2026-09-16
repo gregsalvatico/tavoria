@@ -92,8 +92,10 @@ export default function FilterChips<T extends string>({
 }
 
 const styles = StyleSheet.create({
-  scroll: { flexGrow: 0, maxHeight: 52, width: "100%" },
-  scrollMobile: { maxHeight: 58 },
+  // Keep the row's bottom padding inside the scroll viewport so mobile chips
+  // do not look clipped against the next section.
+  scroll: { flexGrow: 0, maxHeight: 60, width: "100%" },
+  scrollMobile: { maxHeight: 66 },
   row: { gap: 8, paddingBottom: 8, paddingHorizontal: 16, paddingTop: 6 },
   rowMobile: { paddingBottom: 14 },
   rowDesktop: { paddingHorizontal: 24 },

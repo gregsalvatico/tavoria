@@ -152,7 +152,7 @@ export default function VenueBonus() {
 
         {/* Post another shift */}
         <Pressable
-          onPress={() => router.push("/venue-photo")}
+          onPress={() => router.push("/post-shift")}
           style={styles.itemRow}
         >
           <View style={[styles.itemIcon, { backgroundColor: "#FFF4EE" }]}>
