@@ -31,7 +31,9 @@ function mediaItems(row: any): EditableMediaItem[] {
 
 function nextAvailableSlot(items: EditableMediaItem[], kind: MediaKind) {
   const used = new Set(items.filter((item) => item.kind === kind).map((item) => item.slot));
-  return Array.from({ length: LIMITS[kind] }, (_, slot) => slot).find((slot) => !used.has(slot));
+  const firstSlot = kind === "photo" ? 1 : 0;
+  const slotCount = kind === "photo" ? LIMITS.photo - 1 : LIMITS.video;
+  return Array.from({ length: slotCount }, (_, index) => index + firstSlot).find((slot) => !used.has(slot));
 }
 
 export default function WorkerMediaEdit() {
