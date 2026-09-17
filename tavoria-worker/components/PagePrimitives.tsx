@@ -58,29 +58,39 @@ export function FormFlowHeader({
   title,
   subtitle,
   onBack,
+  onClose,
+  closeOnRight = false,
   step,
   total,
 }: {
   title: string;
   subtitle?: string;
   onBack: () => void;
+  onClose?: () => void;
+  closeOnRight?: boolean;
   step?: number;
   total?: number;
 }) {
   const isDesktop = useIsDesktop();
   const showProgress = !isDesktop && step !== undefined && total !== undefined;
+  const close = onClose ?? onBack;
 
   return (
     <PageContainer style={styles.formFlowHeaderContainer}>
       <PageHeader
         title={title}
-        showLeftOnDesktop
+        showLeftOnDesktop={!closeOnRight}
         style={styles.formFlowHeader}
-        left={(
+        left={!closeOnRight ? (
           <HeaderIconButton label={t("common.back")} onPress={onBack}>
             <Feather name="chevron-left" size={24} color={TAVORIA.color.navy} />
           </HeaderIconButton>
-        )}
+        ) : undefined}
+        right={closeOnRight ? (
+          <HeaderIconButton label={t("common.close")} onPress={close}>
+            <Feather name="x" size={22} color={TAVORIA.color.navy} />
+          </HeaderIconButton>
+        ) : undefined}
       />
       {subtitle ? (
         <Text style={[styles.formFlowSubtitle, !isDesktop && styles.formFlowSubtitleMobile]}>
@@ -88,7 +98,7 @@ export function FormFlowHeader({
         </Text>
       ) : null}
       {showProgress ? (
-        <View style={styles.formFlowProgress} accessibilityLabel={`Step ${(step ?? 0) + 1} of ${total}`}>
+        <View style={styles.formFlowProgress} accessibilityLabel={"Step " + ((step ?? 0) + 1) + " of " + total}>
           {Array.from({ length: total ?? 0 }).map((_, index) => (
             <View
               key={index}

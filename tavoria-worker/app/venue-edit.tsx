@@ -188,6 +188,8 @@ export default function VenueEdit() {
           title={t("venue_edit.title")}
           step={stepIndex}
           total={VENUE_EDIT_STEPS.length}
+          closeOnRight
+          onClose={() => router.back()}
           onBack={() => {
             if (stepIndex > 0) {
               goToStep(stepIndex - 1);
@@ -262,12 +264,19 @@ export default function VenueEdit() {
         )}
         {!loading ? (
           <StickyFooter desktopRow>
-            <ActionButton
-              label={stepIndex === VENUE_EDIT_STEPS.length - 1 ? t("venue_edit.save") : t("common.continue")}
-              icon={stepIndex === VENUE_EDIT_STEPS.length - 1 ? "check" : "arrow-right"}
-              loading={saving}
-              onPress={() => { void advance(); }}
-            />
+            <View style={styles.footerActions}>
+              <ActionButton label={t("common.back")} icon="arrow-left" variant="secondary" onPress={() => {
+                if (stepIndex > 0) { goToStep(stepIndex - 1); return; }
+                router.back();
+              }} style={styles.footerButton} />
+              <ActionButton
+                label={stepIndex === VENUE_EDIT_STEPS.length - 1 ? t("venue_edit.save") : t("common.continue")}
+                icon={stepIndex === VENUE_EDIT_STEPS.length - 1 ? "check" : "arrow-right"}
+                loading={saving}
+                onPress={() => { void advance(); }}
+                style={styles.footerButton}
+              />
+            </View>
           </StickyFooter>
         ) : null}
       </KeyboardAvoidingView>
@@ -334,6 +343,8 @@ const styles = StyleSheet.create({
   loadErrorText: { color: TAVORIA.color.muted, fontSize: 14, textAlign: "center" },
   content: { alignSelf: "center", maxWidth: 840, paddingHorizontal: TAVORIA.space.md, paddingTop: TAVORIA.space.sm, paddingBottom: TAVORIA.space.lg, width: "100%" },
   contentDesktop: { paddingHorizontal: TAVORIA.space.lg },
+  footerActions: { alignItems: "center", flexDirection: "row", gap: 10, justifyContent: "center", maxWidth: 420, width: "100%" },
+  footerButton: { flex: 1, width: "auto" },
   flowSection: { marginBottom: TAVORIA.space.lg },
   sectionTitle: { color: TAVORIA.color.navy, fontSize: 18, fontWeight: "800" },
   sectionSub: { color: TAVORIA.color.muted, fontSize: 13, lineHeight: 19, marginBottom: TAVORIA.space.md, marginTop: 5 },

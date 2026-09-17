@@ -14,6 +14,7 @@ import { ROLE_IDS, localizeRole } from "../lib/positions";
 import { normalizeJobPreferences } from "../lib/workerMatching";
 import { patchWorkerProfile } from "../lib/workerProfile";
 import { TAVORIA } from "../lib/designTokens";
+import { FormFlowHeader } from "../components/PagePrimitives";
 
 export default function WorkerProfileEdit() {
   const router = useRouter();
@@ -35,9 +36,13 @@ export default function WorkerProfileEdit() {
     } catch (e: any) { setError(e.message ?? t("talent.invalid")); } finally { setBusy(false); }
   };
   return <SafeAreaView style={styles.safe} edges={["top", "bottom"]}><KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <FormFlowHeader
+      title={t("talent.edit")}
+      closeOnRight
+      onClose={() => router.replace("/candidate")}
+      onBack={() => router.replace("/candidate")}
+    />
     <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-      <Pressable accessibilityLabel={t("talent.close")} onPress={() => router.replace("/candidate")} style={styles.back}><Feather name="arrow-left" size={20} color={TAVORIA.color.navy} /></Pressable>
-      <Text style={styles.title}>{t("talent.edit")}</Text>
       {error ? <Text style={s.error}>{error}</Text> : null}
       {!row ? error ? <Pressable onPress={load}><Text>{t("talent.retry")}</Text></Pressable> : <ActivityIndicator color={TAVORIA.color.orange} /> : <>
         <TalentSection title={t("talent.basics")}>
@@ -66,7 +71,12 @@ export default function WorkerProfileEdit() {
         <PreferenceFields value={row.job_preferences ?? {}} onChange={job_preferences => patch({ job_preferences })} />
       </>}
     </ScrollView>
-    <StickyFooter desktopRow><ActionButton label={t("talent.save")} icon="check" loading={busy} disabled={!row} onPress={save} /></StickyFooter>
+    <StickyFooter desktopRow>
+      <View style={styles.footerActions}>
+        <ActionButton label={t("common.back")} icon="arrow-left" variant="secondary" onPress={() => router.replace("/candidate")} style={styles.footerButton} />
+        <ActionButton label={t("talent.save")} icon="check" loading={busy} disabled={!row} onPress={save} style={styles.footerButton} />
+      </View>
+    </StickyFooter>
     <CountryPicker visible={countryOpen} selectedCode={row?.nationality} onSelect={country => { patch({ nationality: country.code }); setCountryOpen(false); }} onClose={() => setCountryOpen(false)} />
   </KeyboardAvoidingView></SafeAreaView>;
 }
@@ -74,8 +84,8 @@ export default function WorkerProfileEdit() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: TAVORIA.color.paperDeep },
   content: { alignSelf: "center", maxWidth: 840, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 96, width: "100%" },
-  back: { alignSelf: "flex-start", paddingVertical: 10 },
-  title: { color: TAVORIA.color.navy, fontFamily: "InstrumentSerif_400Regular", fontSize: 29, marginBottom: 4 },
+  footerActions: { alignItems: "center", flexDirection: "row", gap: 10, justifyContent: "center", maxWidth: 420, width: "100%" },
+  footerButton: { flex: 1, width: "auto" },
   visibilityRow: { alignItems: "center", flexDirection: "row", gap: 16, justifyContent: "space-between" },
   visibilityCopy: { flex: 1, gap: 4 },
   visibilitySub: { color: TAVORIA.color.muted, fontSize: 13, lineHeight: 19 },

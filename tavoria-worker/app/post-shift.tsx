@@ -18,6 +18,7 @@ import { serializeContractTypes } from "../lib/contractTypes";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   InputAccessoryView,
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   NativeScrollEvent,
@@ -100,6 +101,17 @@ const COMMON_ROLES = [
   "Chef",
   "Cleaner",
 ];
+const ROLE_IMAGES: Record<string, number> = {
+  Barista: require("../assets/position-barista.png"),
+  Waiter: require("../assets/position-waiter.png"),
+  Runner: require("../assets/position-runner.png"),
+  Cashier: require("../assets/position-cashier.png"),
+  Rider: require("../assets/position-rider.png"),
+  Bartender: require("../assets/position-bartender.png"),
+  Cook: require("../assets/position-cook.png"),
+  Chef: require("../assets/position-chef.png"),
+  Cleaner: require("../assets/position-cleaner.png"),
+};
 const POST_SHIFT_STEPS = ["roles", "contract", "schedule", "availability", "pay", "requirements", "review"] as const;
 type PostShiftStep = (typeof POST_SHIFT_STEPS)[number];
 
@@ -258,11 +270,8 @@ export default function PostShift() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {focusKey === "roles" ? <Section title={t("post_shift.for")} sub={t("post_shift.for_sub")}>
-            <View style={styles.sectionMetaRow}>
-              <Text style={styles.sectionMeta}>{t("talent.roleLimit")}</Text>
-            </View>
-            <View style={styles.roleChipWrap}>
+          {focusKey === "roles" ? <Section title={t("post_shift.for")} sub={t("post_shift.for_sub") + " " + t("talent.roleLimit")}>
+            <View style={[styles.roleTileWrap, isDesktop && styles.roleTileWrapDesktop]}>
               {availableRoles.map((role) => {
                 const selected = roles.includes(role);
                 return (
@@ -273,16 +282,23 @@ export default function PostShift() {
                     accessibilityLabel={localizeRole(role)}
                     onPress={() => toggleRole(role)}
                     style={({ hovered, pressed }) => [
-                      styles.roleChip,
-                      selected && styles.roleChipOn,
-                      hovered && !selected && styles.roleChipHovered,
+                      styles.roleTile,
+                      isDesktop && styles.roleTileDesktop,
+                      selected && styles.roleTileOn,
+                      hovered && !selected && styles.roleTileHovered,
                       pressed && styles.controlPressed,
                     ]}
                   >
-                    <Text style={[styles.roleChipTxt, selected && styles.roleChipTxtOn]}>
+                    <Image source={ROLE_IMAGES[role]} style={styles.roleTileImage} resizeMode="cover" />
+                    <View style={styles.roleTileScrim} pointerEvents="none" />
+                    <Text style={styles.roleTileTxt} numberOfLines={1}>
                       {localizeRole(role)}
                     </Text>
-                    {selected ? <Feather name="check" size={14} color="white" /> : null}
+                    {selected ? (
+                      <View style={styles.roleTileCheck}>
+                        <Feather name="check" size={12} color="white" />
+                      </View>
+                    ) : null}
                   </Pressable>
                 );
               })}
@@ -1088,8 +1104,6 @@ const styles = StyleSheet.create({
 
   scroll: { alignSelf: "center", paddingHorizontal: TAVORIA.space.md, paddingTop: TAVORIA.space.sm, paddingBottom: 128, width: "100%" },
   scrollDesktop: { maxWidth: 840, paddingHorizontal: TAVORIA.space.lg },
-  sectionMetaRow: { alignItems: "center", flexDirection: "row", justifyContent: "flex-end", marginBottom: 8 },
-  sectionMeta: { color: TAVORIA.color.muted, fontSize: 12 },
   helperText: { color: TAVORIA.color.muted, fontSize: 12, lineHeight: 17, marginTop: 10 },
   controlPressed: { opacity: 0.72 },
 
@@ -1358,32 +1372,67 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
 
-  // Role chips — pill toggles for picking which position(s) the shift is for
-  roleChipWrap: {
+  // Role image tiles — consistent with the worker role selector
+  roleTileWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    justifyContent: "flex-start",
+    gap: 10,
   },
-  roleChip: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 7,
-    minHeight: 44,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: TAVORIA.radius.small,
+  roleTileWrapDesktop: {
+    gap: 10,
+  },
+  roleTile: {
+    aspectRatio: 1,
     backgroundColor: TAVORIA.color.white,
+    borderColor: TAVORIA.color.border,
+    borderRadius: TAVORIA.radius.medium,
     borderWidth: 1,
-    borderColor: TAVORIA.color.borderStrong,
+    overflow: "hidden",
+    position: "relative",
+    width: "47.5%",
   },
-  roleChipOn: {
-    backgroundColor: TAVORIA.color.navy,
+  roleTileDesktop: {
+    width: "31.5%",
+  },
+  roleTileOn: {
+    borderColor: TAVORIA.color.orange,
+    borderWidth: 2,
+  },
+  roleTileHovered: {
     borderColor: TAVORIA.color.navy,
   },
-  roleChipHovered: { backgroundColor: "#F3F4F0" },
-  roleChipTxt: { fontSize: 14, fontWeight: "700", color: "#0E1A24" },
-  roleChipTxtOn: { color: "white" },
+  roleTileImage: {
+    height: "100%",
+    width: "100%",
+  },
+  roleTileScrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.25)",
+  },
+  roleTileTxt: {
+    bottom: 10,
+    color: "white",
+    fontSize: 14,
+    fontWeight: "800",
+    left: 6,
+    position: "absolute",
+    right: 6,
+    textAlign: "center",
+    textShadowColor: "rgba(0,0,0,0.55)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  roleTileCheck: {
+    alignItems: "center",
+    backgroundColor: TAVORIA.color.orange,
+    borderRadius: 999,
+    height: 22,
+    justifyContent: "center",
+    position: "absolute",
+    right: 8,
+    top: 8,
+    width: 22,
+  },
   rolesEmpty: {
     fontSize: 13,
     color: "#6B7280",

@@ -134,6 +134,8 @@ export default function ShiftEdit() {
       <FormFlowHeader
         title={t("shift_edit.title")}
         subtitle={t("shift_edit.intro")}
+        closeOnRight
+        onClose={() => router.back()}
         onBack={() => router.back()}
       />
 
@@ -226,7 +228,10 @@ export default function ShiftEdit() {
       )}
       {!loading ? (
         <StickyFooter desktopRow>
-          <ActionButton label={t("shift_edit.save")} icon="check" loading={saving} disabled={!canSave} onPress={save} />
+          <View style={styles.footerActions}>
+            <ActionButton label={t("common.back")} icon="arrow-left" variant="secondary" onPress={() => router.back()} style={styles.footerButton} />
+            <ActionButton label={t("shift_edit.save")} icon="check" loading={saving} disabled={!canSave} onPress={save} style={styles.footerButton} />
+          </View>
         </StickyFooter>
       ) : null}
     </SafeAreaView>
@@ -286,6 +291,8 @@ const styles = StyleSheet.create({
   loading: { alignItems: "center", flex: 1, justifyContent: "center" },
   content: { alignSelf: "center", paddingHorizontal: 16, paddingTop: TAVORIA.space.sm, paddingBottom: 24, width: "100%" },
   contentDesktop: { maxWidth: 840, paddingHorizontal: 24 },
+  footerActions: { alignItems: "center", flexDirection: "row", gap: 10, justifyContent: "center", maxWidth: 420, width: "100%" },
+  footerButton: { flex: 1, width: "auto" },
   statusCard: { alignItems: "center", borderRadius: TAVORIA.radius.medium, borderWidth: 1, flexDirection: "row", gap: 14, justifyContent: "space-between", marginBottom: 24, padding: 14 },
   statusCardLive: { backgroundColor: "#EAF3DE", borderColor: "rgba(59,109,17,0.28)" },
   statusCardPaused: { backgroundColor: TAVORIA.color.paper, borderColor: TAVORIA.color.borderStrong },
