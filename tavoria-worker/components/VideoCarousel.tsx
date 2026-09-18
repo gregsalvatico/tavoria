@@ -88,12 +88,19 @@ function VideoCarouselContent({
     setOpen(false);
   };
 
+  useEffect(() => {
+    if (!open) return;
+    const timer = setTimeout(() => {
+      try {
+        player.muted = false;
+        player.play();
+      } catch {}
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [open, player]);
+
   const openPreview = () => {
     setOpen(true);
-    try {
-      player.muted = false;
-      player.play();
-    } catch {}
   };
 
   const goTo = (next: number) => {
