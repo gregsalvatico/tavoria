@@ -87,9 +87,10 @@ export default function VenuePhoto() {
         payScheduleLabel: schedule === "custom" ? customSchedule.trim() : scheduleValue,
         venueStyle: venueStyle ?? undefined,
       });
-      // Venue basics done — straight to first shift post.
+      // Venue setup is complete. Replace the final setup screen so the first
+      // shift cannot navigate back into venue creation.
       // Interview QCM is now a bonus step on /venue-bonus after the post.
-      router.push("/post-shift");
+      router.replace("/post-shift");
     } catch (e: any) {
       setErrorMsg(e?.message || "Could not save. Try again.");
     } finally {

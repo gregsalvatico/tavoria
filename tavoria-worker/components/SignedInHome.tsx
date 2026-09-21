@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -110,6 +110,7 @@ type WorkerRow = {
 };
 
 type CandidateFilter = "all" | "applied" | "not_applied";
+type DeferredDrawerModal = "language" | "contact" | "change_pin" | "qr";
 
 type Props = {
   ctx: AccountContext;
@@ -140,6 +141,7 @@ export default function SignedInHome({
   const [contactOpen, setContactOpen] = useState(false);
   const [changePinOpen, setChangePinOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  const [deferredDrawerModal, setDeferredDrawerModal] = useState<DeferredDrawerModal | null>(null);
   const [rows, setRows] = useState<ShiftRow[]>([]);
   const [candidateRows, setCandidateRows] = useState<WorkerRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -164,6 +166,18 @@ export default function SignedInHome({
   const city = venueMode ? ctx.venueCity : ctx.workerCity;
   const photoUrl = venueMode ? ctx.venuePhotoUrl : ctx.workerPhotoUrl;
   const accountMenu = getAccountMenuSections(venueMode ? "venue" : "worker");
+
+  useEffect(() => {
+    if (drawerOpen || !deferredDrawerModal) return;
+    const timer = setTimeout(() => {
+      if (deferredDrawerModal === "language") setLanguageOpen(true);
+      if (deferredDrawerModal === "contact") setContactOpen(true);
+      if (deferredDrawerModal === "change_pin") setChangePinOpen(true);
+      if (deferredDrawerModal === "qr") setQrOpen(true);
+      setDeferredDrawerModal(null);
+    }, 220);
+    return () => clearTimeout(timer);
+  }, [deferredDrawerModal, drawerOpen]);
 
   const load = useCallback(async () => {
     if (venueMode) return;
@@ -223,6 +237,11 @@ export default function SignedInHome({
     router.push(path as never);
   };
 
+  const openDrawerModal = (modal: DeferredDrawerModal) => {
+    setDeferredDrawerModal(modal);
+    setDrawerOpen(false);
+  };
+
   const applySelectedShift = async () => {
     if (!selectedShift) return;
     setApplyingShift(true);
@@ -238,7 +257,7 @@ export default function SignedInHome({
         return;
       }
       router.push({
-        pathname: "/signup",
+        pathname: "/register",
         params: {
           next: "apply",
           shiftId: result.shiftId,
@@ -531,7 +550,7 @@ export default function SignedInHome({
 
               {ctx.hasVenue && (
                 <DrawerSection>
-                  <DrawerAction icon="printer" label={t("home_in.print_qr")} onPress={() => { setDrawerOpen(false); setQrOpen(true); }} />
+                  <DrawerAction icon="printer" label={t("home_in.print_qr")} onPress={() => openDrawerModal("qr")} />
                   {accountMenu.roleActions.map((item) => <DrawerAction key={item.id} icon={item.icon} label={t(item.labelKey)} detail={item.detailKey ? t(item.detailKey) : undefined} onPress={() => { setDrawerOpen(false); if (item.id === "share") void onShare(); }} />)}
                 </DrawerSection>
               )}
@@ -545,10 +564,9 @@ export default function SignedInHome({
 
               <DrawerSection>
                 {accountMenu.commonActions.map((item) => <DrawerAction key={item.id} icon={item.icon} label={t(item.labelKey)} detail={item.id === "language" ? lang.toUpperCase() : item.detailKey ? t(item.detailKey) : undefined} onPress={() => {
-                  setDrawerOpen(false);
-                  if (item.id === "language") setLanguageOpen(true);
-                  else if (item.id === "change_pin") setChangePinOpen(true);
-                  else setContactOpen(true);
+                  if (item.id === "language") openDrawerModal("language");
+                  else if (item.id === "change_pin") openDrawerModal("change_pin");
+                  else openDrawerModal("contact");
                 }} />)}
                 <DrawerAction icon="log-out" label={t("common.sign_out")} danger onPress={() => { setDrawerOpen(false); void onSignOut(); }} />
               </DrawerSection>

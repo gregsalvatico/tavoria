@@ -1,6 +1,6 @@
 // Venue board — public landing page reached by scanning a venue's door QR.
 // Shows the venue header + all live shifts. If the user has no worker
-// profile yet, they're routed through /signup first and come back here.
+// profile yet, they're routed through /register first and come back here.
 
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -93,8 +93,8 @@ export default function VenueBoard() {
     }
   }, [venueId]);
 
-  // Auth gate: if user is not yet a worker, send them through signup.
-  // After signup, /signup will route back here with the venueId param.
+  // Auth gate: if user is not yet a worker, send them through registration.
+  // After registration, /register will route back here with the venueId param.
   useEffect(() => {
     if (!venueId) return;
     (async () => {
@@ -102,7 +102,7 @@ export default function VenueBoard() {
         const account = await getCurrentUserContext();
         if (!account.hasWorker && !account.hasVenue) {
           router.replace({
-            pathname: "/signup",
+            pathname: "/register",
             params: { next: "venue-board", venueId },
           });
           return;

@@ -35,7 +35,7 @@ const FOCUSED_ROUTES = new Set([
   "scan",
   "shift-edit",
   "shift-media-edit",
-  "signup",
+  "register",
   "signin",
   "terms",
   "venue-media-edit",
@@ -65,7 +65,7 @@ const FOCUSED_ROUTES = new Set([
   "worker-welcome",
 ]);
 
-const AUTH_ROUTES = new Set(["signin", "signup"]);
+const AUTH_ROUTES = new Set(["signin", "register"]);
 
 const DESKTOP_FLOW_ROUTES = new Set([
   "apply",
@@ -198,35 +198,10 @@ function DesktopAuthFrame({
   route: string;
   children: ReactNode;
 }) {
-  const isSignup = route === "signup";
-  const image = isSignup
-    ? require("../assets/position-bartender.png")
-    : require("../assets/venue-cafe.png");
-
   return (
     <View style={styles.desktopFrame}>
-      <View style={styles.authAside}>
-        <Text style={styles.authAsideBrand}>
-          Tavoria<Text style={styles.brandAccent}>.</Text>
-        </Text>
-        <View style={styles.authAsideCopy}>
-          <Text style={styles.authAsideKicker}>
-            {isSignup ? t("auth_pin.sign_up_title").toUpperCase() : t("auth_pin.sign_in_title").toUpperCase()}
-          </Text>
-          <Text style={styles.authAsideTitle}>
-            {isSignup ? t("home.headline_top") : t("home.headline_top")}
-            {"\n"}
-            <Text style={styles.authAsideAccent}>{t("home.headline3")}</Text>
-          </Text>
-          <Text style={styles.authAsideSub}>{t("home.tagline")}</Text>
-        </View>
-        <View style={styles.authAsideImageWrap}>
-          <Image source={image} style={styles.authAsideImage} resizeMode="cover" />
-          <View style={styles.authAsideImageShade} />
-          <Text style={styles.authAsideImageLabel}>
-            {isSignup ? t("home.worker_cta") : t("home_in.browse_shifts")}
-          </Text>
-        </View>
+      <View style={styles.authImageAside}>
+        <Image source={require("../assets/tavoria-signin.png")} style={styles.authImage} resizeMode="cover" />
       </View>
       <View style={styles.authMain}>
         <View style={styles.authMainInner}>{children}</View>
@@ -242,9 +217,18 @@ function DesktopFlowFrame({
   route: string;
   children: ReactNode;
 }) {
-  const workerFlow =
-    route.startsWith("worker-") ||
-    ["apply", "applied", "interview-prep", "record", "scan"].includes(route);
+  const workerFlow = isWorkerFlowRoute(route);
+  if (workerFlow) {
+    return (
+      <View style={styles.desktopFrame}>
+        <DesktopFormFlowSidebar route={route} />
+        <View style={[styles.flowMain, { backgroundColor: "#F1EFE8" }]}>
+          <View style={styles.flowMainInner}>{children}</View>
+        </View>
+      </View>
+    );
+  }
+
   const activeStep = route.includes("welcome") || route === "venue-type" || route === "worker-setup"
     ? 0
     : route.includes("done") || route === "applied"
@@ -291,11 +275,22 @@ type FormFlowStep = {
   icon: keyof typeof Feather.glyphMap;
 };
 
+function isWorkerFlowRoute(route: string) {
+  return route.startsWith("worker-") || ["apply", "applied", "interview-prep", "record", "scan"].includes(route);
+}
+
 function formFlowSteps(route: string): FormFlowStep[] {
   if (route === "worker-media-edit") {
     return [
       { id: "profile", label: t("home_in.my_card"), icon: "user" },
       { id: "media", label: t("talent.media"), icon: "image" },
+    ];
+  }
+  if (isWorkerFlowRoute(route)) {
+    return [
+      { id: "profile", label: t("desktop_flow.worker_step_1"), icon: "user" },
+      { id: "story", label: t("desktop_flow.worker_step_2"), icon: "book-open" },
+      { id: "live", label: t("desktop_flow.worker_step_3"), icon: "check-circle" },
     ];
   }
   if (route === "venue-edit" || route === "venue-profile-media") {
@@ -331,12 +326,23 @@ function formFlowActiveStep(route: string, focus: unknown, steps: FormFlowStep[]
   if (route === "venue-info") return "details";
   if (route === "venue-profile-media" || route === "worker-media-edit") return "media";
   if (typeof focus === "string" && steps.some((step) => step.id === focus)) return focus;
+  if (isWorkerFlowRoute(route)) {
+    if (["worker-setup", "worker-positions", "apply"].includes(route)) return "profile";
+    if (["worker-experience", "interview-prep", "record", "scan"].includes(route)) return "story";
+    return "live";
+  }
   return route === "venue-edit" ? "details" : steps[0]?.id;
 }
 
 function formFlowDestination(route: string, stepId: string) {
   if (route === "worker-media-edit" && stepId === "profile") return "/candidate";
   if (stepId === "media") return route === "worker-media-edit" ? "/worker-media-edit" : "/venue-profile-media";
+  if (isWorkerFlowRoute(route)) {
+    if (["apply", "applied", "interview-prep", "record", "scan", "worker-profile-edit"].includes(route)) return null;
+    if (stepId === "profile") return "/worker-positions";
+    if (stepId === "story") return "/worker-experience";
+    return "/worker-bonus";
+  }
   if (route === "venue-edit" || route === "venue-profile-media") {
     return { pathname: "/venue-edit", params: { focus: stepId } };
   }
@@ -396,7 +402,8 @@ function DesktopFormFlowSidebar({ route }: { route: string }) {
                 key={step.id}
                 onPress={() => {
                   if (!active) {
-                    router.replace(formFlowDestination(route, step.id) as never);
+                    const destination = formFlowDestination(route, step.id);
+                    if (destination) router.replace(destination as never);
                   }
                 }}
                 style={({ hovered, pressed }) => [
@@ -736,63 +743,8 @@ const styles = StyleSheet.create({
     minWidth: 0,
     width: "100%",
   },
-  authAside: {
-    backgroundColor: "#0E1A24",
-    justifyContent: "space-between",
-    padding: 34,
-    width: 390,
-  },
-  authAsideBrand: {
-    color: "#F7F4EE",
-    fontFamily: "InstrumentSerif_400Regular",
-    fontSize: 30,
-  },
-  authAsideCopy: { marginTop: 30 },
-  authAsideKicker: {
-    color: "#F0531C",
-    fontFamily: "DMMono_500Medium",
-    fontSize: 10,
-    letterSpacing: 1.5,
-  },
-  authAsideTitle: {
-    color: "#F7F4EE",
-    fontFamily: "InstrumentSerif_400Regular",
-    fontSize: 47,
-    lineHeight: 51,
-    marginTop: 14,
-  },
-  authAsideAccent: { color: "#F0531C" },
-  authAsideSub: {
-    color: "rgba(247,244,238,0.68)",
-    fontSize: 15,
-    lineHeight: 22,
-    marginTop: 18,
-    maxWidth: 300,
-  },
-  authAsideImageWrap: {
-    borderRadius: 16,
-    height: 190,
-    marginTop: 32,
-    overflow: "hidden",
-    position: "relative",
-  },
-  authAsideImage: { height: "100%", width: "100%" },
-  authAsideImageShade: {
-    backgroundColor: "rgba(14,26,36,0.35)",
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-  },
-  authAsideImageLabel: {
-    bottom: 14,
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "800",
-    left: 16,
-    position: "absolute",
-  },
+  authImageAside: { backgroundColor: "#0E1A24", flex: 1, minWidth: 0, overflow: "hidden" },
+  authImage: { height: "100%", width: "100%" },
   authMain: { flex: 1, minWidth: 0 },
   authMainInner: { flex: 1, width: "100%" },
   flowAside: {

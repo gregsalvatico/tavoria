@@ -21,7 +21,7 @@ export default function Terms() {
         <Pressable
           onPress={() => {
             if (router.canGoBack()) { router.back(); return; }
-            router.replace("/signup");
+            router.replace("/register");
           }}
           hitSlop={12}
           style={styles.backBtn}

@@ -18,9 +18,11 @@ type Props = {
 export default function ResponsiveModal({ visible, onClose, children, panelStyle }: Props) {
   const isDesktop = useIsDesktop();
 
+  if (!visible) return null;
+
   return (
     <Modal
-      visible={visible}
+      visible
       transparent
       animationType={isDesktop ? "fade" : "slide"}
       onRequestClose={onClose}
@@ -36,7 +38,7 @@ export default function ResponsiveModal({ visible, onClose, children, panelStyle
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { elevation: TAVORIA.layer.modal, flex: 1, zIndex: TAVORIA.layer.modal },
   mobileRoot: { justifyContent: "flex-end" },
   desktopRoot: { alignItems: "center", justifyContent: "center", padding: TAVORIA.space.lg },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(14,26,36,0.42)" },

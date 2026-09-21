@@ -37,6 +37,7 @@ export default function VenueProfileHeader({ venue, onEdit, onAvatarReplace }: {
   // Keep the profile image separate from the additional media grid. Older
   // rows may still repeat it in photo_urls, so dedupe that legacy value below.
   const primaryPhoto = venue.photo_url ?? venue.photo_urls?.find(Boolean);
+  const hasPrimaryPhoto = Boolean(primaryPhoto);
   const image = primaryPhoto
     ? { uri: primaryPhoto }
     : VENUE_TYPE_PHOTOS[(venue.type || "cafe").toLowerCase()] ?? VENUE_TYPE_PHOTOS.cafe;
@@ -69,7 +70,18 @@ export default function VenueProfileHeader({ venue, onEdit, onAvatarReplace }: {
           onPress={() => setAvatarActionsOpen(true)}
           style={styles.avatarButton}
         >
-          <Image source={image} style={styles.avatar} resizeMode="cover" />
+          {hasPrimaryPhoto ? (
+            <Image source={image} style={styles.avatar} resizeMode="cover" />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Image source={image} style={styles.avatarPlaceholderImage} resizeMode="cover" />
+              <View style={styles.avatarPlaceholderScrim} />
+              <View style={styles.avatarPlaceholderLabel}>
+                <Feather name="camera" size={13} color="#FFFFFF" />
+                <Text style={styles.avatarPlaceholderText}>{t("profile.add_photo")}</Text>
+              </View>
+            </View>
+          )}
         </Pressable>
         <View style={styles.identityBody}>
           <Text style={styles.eyebrow}>{typeLabel}</Text>
@@ -150,6 +162,11 @@ const styles = StyleSheet.create({
   identity: { alignItems: "center", flexDirection: "row", gap: 14 },
   avatarButton: { borderRadius: 14, overflow: "hidden" },
   avatar: { backgroundColor: "#E6E4DC", borderRadius: 14, height: 88, width: 88 },
+  avatarPlaceholder: { backgroundColor: "#0E1A24", borderRadius: 14, height: 88, overflow: "hidden", position: "relative", width: 88 },
+  avatarPlaceholderImage: { height: "100%", opacity: 0.48, width: "100%" },
+  avatarPlaceholderScrim: { backgroundColor: "rgba(14,26,36,0.34)", ...StyleSheet.absoluteFillObject },
+  avatarPlaceholderLabel: { alignItems: "center", bottom: 9, flexDirection: "row", gap: 5, left: 6, position: "absolute", right: 6 },
+  avatarPlaceholderText: { color: "#FFFFFF", flex: 1, fontSize: 10, fontWeight: "700", textAlign: "center" },
   identityBody: { flex: 1, gap: 4, minWidth: 0 },
   eyebrow: { color: "#626B78", fontFamily: "DMMono_500Medium", fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase" },
   name: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 30, lineHeight: 34 },

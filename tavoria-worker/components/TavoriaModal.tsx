@@ -13,8 +13,13 @@ type Props = {
 
 /** Shared centered dialog used by account utilities and other app-level actions. */
 export default function TavoriaModal({ visible, onClose, title, subtitle, children }: Props) {
+  // Mount the portal only while open so it is appended after any drawer portal.
+  // React Native Web gives every Modal host the same z-index, so DOM order is
+  // what determines which overlay receives focus and pointer events.
+  if (!visible) return null;
+
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.card}>
@@ -51,8 +56,8 @@ export default function TavoriaModal({ visible, onClose, title, subtitle, childr
 }
 
 const styles = StyleSheet.create({
-  backdrop: { alignItems: "center", backgroundColor: "rgba(14,26,36,0.52)", flex: 1, justifyContent: "center", padding: 20 },
-  card: { backgroundColor: TAVORIA.color.paper, borderRadius: 20, maxHeight: "92%", maxWidth: 480, padding: 20, width: "100%" },
+  backdrop: { alignItems: "center", backgroundColor: "rgba(14,26,36,0.52)", elevation: TAVORIA.layer.modal, flex: 1, justifyContent: "center", padding: 20, zIndex: TAVORIA.layer.modal },
+  card: { backgroundColor: TAVORIA.color.paper, borderRadius: 20, elevation: TAVORIA.layer.modal + 1, maxHeight: "92%", maxWidth: 480, padding: 20, width: "100%", zIndex: TAVORIA.layer.modal + 1 },
   header: { alignItems: "flex-start", flexDirection: "row", gap: 12, justifyContent: "space-between" },
   headerCopy: { flex: 1 },
   title: { color: TAVORIA.color.navy, fontFamily: "InstrumentSerif_400Regular", fontSize: 26, lineHeight: 30 },

@@ -184,7 +184,7 @@ export default function ShiftDetail() {
       }
       setApplying(false);
       router.push({
-        pathname: "/signup",
+        pathname: "/register",
         params: {
           next: "apply",
           shiftId: result.shiftId,

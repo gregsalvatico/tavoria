@@ -34,12 +34,14 @@ import { rememberAccount } from "../lib/savedAccounts";
 export default function Signup() {
   const router = useRouter();
   const isDesktop = useIsDesktop();
-  const { next, shiftId, venueId, venueName } = useLocalSearchParams<{
+  const { next, role, shiftId, venueId, venueName } = useLocalSearchParams<{
     next?: string;
+    role?: string;
     shiftId?: string;
     venueId?: string;
     venueName?: string;
   }>();
+  const isRoleChooser = !next && role !== "worker";
   const isProfileFlow = next === "worker-profile";
   const isApplyFlow = next === "apply";
   const isVenueBoardFlow = next === "venue-board";
@@ -171,26 +173,21 @@ export default function Signup() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <View style={styles.header}>
-          <Pressable
-            onPress={() => {
-              if (router.canGoBack()) { router.back(); return; }
-              router.replace("/");
-            }}
-            hitSlop={12}
-            style={styles.iconBtn}
-          >
-            <Feather name="chevron-left" size={26} color="#0E1A24" />
-          </Pressable>
           <View style={{ width: 32 }} />
         </View>
 
-        <ScrollView
-          style={styles.formScroll}
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          showsHorizontalScrollIndicator={false}
-        >
+        {isRoleChooser ? (
+          <SignupRoleChooser
+            onChooseWorker={() => router.replace("/register?role=worker")}
+            onChooseVenue={() => router.replace("/venue-type")}
+          />
+        ) : <ScrollView
+            style={styles.formScroll}
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            showsHorizontalScrollIndicator={false}
+          >
           {isApplyFlow ? (
             <View style={styles.breadcrumb}>
               <Feather name="briefcase" size={13} color="#854F0B" />
@@ -377,22 +374,63 @@ export default function Signup() {
             <Text style={styles.authSwitchPrompt}>{t("auth_pin.already_have_account")}</Text>
             <Text style={styles.authSwitchLink}>{t("auth_pin.sign_in_title")}</Text>
           </Pressable>
-        </ScrollView>
+          </ScrollView>}
 
-        <StickyFooter>
-          <View style={styles.bottomInner}>
-            <ActionButton
-              label={t("common.continue")}
-              icon="arrow-right"
-              loading={busy}
-              disabled={!canContinue}
-              onPress={onContinue}
-              style={styles.cta}
-            />
-          </View>
-        </StickyFooter>
+        {!isRoleChooser ? (
+          <StickyFooter>
+            <View style={styles.bottomInner}>
+              <ActionButton
+                label={t("common.continue")}
+                icon="arrow-right"
+                loading={busy}
+                disabled={!canContinue}
+                onPress={onContinue}
+                style={styles.cta}
+              />
+            </View>
+          </StickyFooter>
+        ) : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+function SignupRoleChooser({
+  onChooseWorker,
+  onChooseVenue,
+}: {
+  onChooseWorker: () => void;
+  onChooseVenue: () => void;
+}) {
+  return (
+    <ScrollView
+      style={styles.choiceScroll}
+      contentContainerStyle={styles.choiceContent}
+      showsVerticalScrollIndicator={false}
+    >
+      <Text style={styles.h1}>
+        <Text style={{ color: "#F0531C" }}>{t("auth_pin.sign_up_title").charAt(0)}</Text>
+        {t("auth_pin.sign_up_title").slice(1)}
+      </Text>
+      <Text style={styles.h2}>{t("home.choose_path")}</Text>
+
+      <View style={styles.choiceOptions}>
+        <Pressable style={styles.choiceCard} onPress={onChooseWorker} accessibilityRole="button">
+          <View style={[styles.choiceIcon, styles.choiceWorkerIcon]}>
+            <Feather name="user" size={19} color="#185FA5" />
+          </View>
+          <Text style={styles.choiceLabel}>{t("home.worker_cta")}</Text>
+          <Feather name="arrow-up-right" size={18} color="#6B7280" />
+        </Pressable>
+        <Pressable style={[styles.choiceCard, styles.choiceCardPrimary]} onPress={onChooseVenue} accessibilityRole="button">
+          <View style={[styles.choiceIcon, styles.choiceVenueIcon]}>
+            <Feather name="briefcase" size={19} color="#F0531C" />
+          </View>
+          <Text style={styles.choiceLabelPrimary}>{t("home.venue_cta")}</Text>
+          <Feather name="arrow-up-right" size={18} color="#F7F4EE" />
+        </Pressable>
+      </View>
+    </ScrollView>
   );
 }
 
@@ -425,6 +463,16 @@ const styles = StyleSheet.create({
 
   formScroll: { alignSelf: "center", flex: 1, maxWidth: 690, width: "100%" },
   scroll: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 14 },
+  choiceScroll: { alignSelf: "center", flex: 1, maxWidth: 690, width: "100%" },
+  choiceContent: { flexGrow: 1, justifyContent: "center", paddingHorizontal: 20, paddingVertical: 32 },
+  choiceOptions: { flexDirection: "row", gap: 12, marginTop: 28 },
+  choiceCard: { alignItems: "center", backgroundColor: "#FFFFFF", borderColor: "rgba(14,26,36,0.12)", borderRadius: 14, borderWidth: 1, flex: 1, gap: 13, minHeight: 126, justifyContent: "center", paddingHorizontal: 16, paddingVertical: 18 },
+  choiceCardPrimary: { backgroundColor: "#F0531C", borderColor: "#F0531C" },
+  choiceIcon: { alignItems: "center", borderRadius: 10, height: 38, justifyContent: "center", width: 38 },
+  choiceWorkerIcon: { backgroundColor: "#E7F0F9" },
+  choiceVenueIcon: { backgroundColor: "rgba(247,244,238,0.18)" },
+  choiceLabel: { color: "#0E1A24", fontSize: 14, fontWeight: "800", textAlign: "center" },
+  choiceLabelPrimary: { color: "#F7F4EE", fontSize: 14, fontWeight: "800", textAlign: "center" },
 
   breadcrumb: {
     alignSelf: "flex-start",

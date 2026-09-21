@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { Link, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { Link, Redirect, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { clearVenueProfile } from "../lib/venueProfile";
@@ -13,7 +13,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -28,7 +27,6 @@ import { downloadVenueQRPoster } from "../lib/qrPoster";
 import { getVenueProfile } from "../lib/venueProfile";
 import { openExternalLink } from "../lib/externalLinks";
 import SignedInHome from "../components/SignedInHome";
-import DesktopLanding from "../components/DesktopLanding";
 import ShareTavoriaModal from "../components/ShareTavoriaModal";
 import TavoriaModal from "../components/TavoriaModal";
 import {
@@ -47,8 +45,6 @@ const EMPTY_HOME_CONTEXT: HomeContext = { hasVenue: false, hasWorker: false };
 export default function Welcome() {
   const router = useRouter();
   const { role: roleParam } = useLocalSearchParams<{ role?: string }>();
-  const { width } = useWindowDimensions();
-  const isDesktop = Platform.OS === "web" && width >= 1024;
   const selectedRole = roleParam === "worker" || roleParam === "venue" ? roleParam : undefined;
   // Bump on language change to force re-render
   const [lang, setLang] = useState<Language>(() => getCurrentLang());
@@ -244,101 +240,8 @@ export default function Welcome() {
     );
   }
 
-  // Signed-out home is a clean flex layout (no ScrollView) so iOS doesn't
-  // auto-adjust content insets and shove the top off-screen.
   if (!signedIn) {
-    if (isDesktop) {
-      return (
-        <DesktopLanding
-          currentLanguage={lang}
-          onLanguageChange={setLang}
-        />
-      );
-    }
-
-    return (
-      <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-        <View style={styles.signedOutRoot}>
-          {/* TOP GROUP — topBar + wordmark + hero (all pinned to top) */}
-          <View>
-            <View style={styles.topBar}>
-              <Pressable
-                onPress={() => setPickerOpen(true)}
-                hitSlop={8}
-                style={styles.langBtn}
-              >
-                <Feather name="globe" size={15} color="#46505A" />
-                <Text style={styles.langCode}>{current.code.toUpperCase()}</Text>
-                <Feather name="chevron-down" size={14} color="#46505A" />
-              </Pressable>
-              <Link href="/signin" asChild>
-                <Pressable hitSlop={8} style={styles.topLink}>
-                  <Text style={styles.topLinkTxt}>{t("home.sign_in")}</Text>
-                </Pressable>
-              </Link>
-            </View>
-
-            <View style={styles.signedOutTop}>
-              <Text style={styles.wordmark}>
-                <Text style={styles.accentLetter}>T</Text>avoria
-                <Text style={styles.accentLetter}>.</Text>
-              </Text>
-              <Text style={styles.headline}>
-                {t("home.headline_top")}{"\n"}
-                <Text style={styles.accent}>{t("home.headline3")}</Text>
-              </Text>
-              <Text style={styles.sub}>{t("home.tagline")}</Text>
-            </View>
-          </View>
-
-          {/* Clear action hierarchy: venue signup, worker signup, then job browsing. */}
-          <View style={styles.signedOutBottom}>
-            <Link href="/venue-type" asChild>
-              <Pressable style={styles.landingVenueBtn}>
-                <Text style={styles.landingVenueBtnText}>{t("home.venue_cta")}</Text>
-                <Feather name="arrow-right" size={19} color="#F7F4EE" />
-              </Pressable>
-            </Link>
-
-            <Link href="/signup?next=worker-profile" asChild>
-              <Pressable style={styles.landingWorkerBtn}>
-                <Text style={styles.landingWorkerBtnText}>{t("home.worker_cta")}</Text>
-                <Feather name="arrow-right" size={19} color="#0E1A24" />
-              </Pressable>
-            </Link>
-
-            <Link href="/scan" asChild>
-              <Pressable style={styles.scanQrLink}>
-                <Feather name="maximize" size={15} color="#5C6670" />
-                <Text style={styles.scanQrLinkText}>{t("home.scan_qr")}</Text>
-              </Pressable>
-            </Link>
-
-            <LegalFooter />
-          </View>
-        </View>
-
-        <TavoriaModal visible={pickerOpen} onClose={() => setPickerOpen(false)} title={t("language.pick")}>
-          {LANGUAGES.map((l) => (
-            <Pressable
-              key={l.code}
-              onPress={async () => {
-                await setLanguage(l.code);
-                setLang(l.code);
-                setPickerOpen(false);
-              }}
-              style={[styles.langRow, l.code === lang && styles.langRowOn]}
-            >
-              <Text style={styles.langRowFlag}>{l.flag}</Text>
-              <Text style={styles.langRowLbl}>{l.label}</Text>
-              <View style={styles.langRowCheck}>
-                {l.code === lang && <Feather name="check-circle" size={20} color="#F0531C" />}
-              </View>
-            </Pressable>
-          ))}
-        </TavoriaModal>
-      </SafeAreaView>
-    );
+    return <Redirect href="/signin" />;
   }
 
   return (
@@ -577,7 +480,7 @@ export default function Welcome() {
 
               {/* Signup tiles */}
               <View style={styles.splitRow}>
-                <Link href="/signup?next=worker-profile" asChild>
+                <Link href="/register?next=worker-profile" asChild>
                   <Pressable style={styles.tileWorker}>
                     <Text style={styles.splitEmoji}>👤</Text>
                     <Text style={styles.splitTitle}>
@@ -606,7 +509,7 @@ export default function Welcome() {
           {/* Signed in but no profiles yet: prompt to start */}
           {signedIn && !ctx.hasVenue && !ctx.hasWorker && (
             <View style={styles.splitRow}>
-              <Link href="/signup?next=worker-profile" asChild>
+              <Link href="/register?next=worker-profile" asChild>
                 <Pressable style={styles.splitBtn}>
                   <Text style={styles.splitEmoji}>👤</Text>
                   <Text style={styles.splitTitle}>

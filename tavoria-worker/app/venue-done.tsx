@@ -15,6 +15,7 @@ import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
 import ActionButton from "../components/ActionButton";
+import { VENUE_TYPE_OPTIONS, venueTypeId } from "../components/VenueTypePicker";
 
 export default function VenueDone() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function VenueDone() {
   const venueName = (profile?.name || "Bar Centrale").toUpperCase();
   const venueCity = profile?.city || "Milan";
   const venueType = profile?.type || "Café";
+  const venueImage = VENUE_TYPE_OPTIONS.find((option) => option.id === venueTypeId(venueType))?.image ?? VENUE_TYPE_OPTIONS[0].image;
   const scale = useRef(new Animated.Value(0.4)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const pulse = useRef(new Animated.Value(1)).current;
@@ -77,7 +79,7 @@ export default function VenueDone() {
         <View style={styles.center}>
           <Animated.View style={[styles.previewWrap, { opacity, transform: [{ scale }] }]}>
             <Image
-              source={require("../assets/venue-cafe.png")}
+              source={venueImage}
               style={styles.previewImg}
               resizeMode="cover"
             />

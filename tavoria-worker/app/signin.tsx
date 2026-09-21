@@ -315,7 +315,7 @@ export default function SignIn() {
                 return;
               }
               router.replace({
-                pathname: "/signup",
+                pathname: "/register",
                 params: {
                   ...(next ? { next } : {}),
                   ...(shiftId ? { shiftId } : {}),

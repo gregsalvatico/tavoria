@@ -34,6 +34,8 @@ export default function SheetModal({ visible, title, onClose, children, desktop 
     outputRange: [380, 0],
   });
 
+  if (!visible) return null;
+
   const panel = (
     <>
       <View style={styles.header}>
@@ -68,7 +70,7 @@ export default function SheetModal({ visible, title, onClose, children, desktop 
   }
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
+    <Modal visible transparent animationType="none" onRequestClose={onClose}>
       <View style={styles.root}>
         <Pressable
           accessibilityRole="button"
@@ -83,7 +85,7 @@ export default function SheetModal({ visible, title, onClose, children, desktop 
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, justifyContent: "flex-end" },
+  root: { elevation: TAVORIA.layer.drawer, flex: 1, justifyContent: "flex-end", zIndex: TAVORIA.layer.drawer },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(14,26,36,0.42)" },
   sheet: {
     alignSelf: "center",
@@ -94,7 +96,7 @@ const styles = StyleSheet.create({
     maxWidth: 680,
     width: "100%",
   },
-  sidebar: { backgroundColor: TAVORIA.color.paper, borderLeftColor: TAVORIA.color.borderStrong, borderLeftWidth: 1, flexShrink: 0, height: "100%", width: 380 },
+  sidebar: { backgroundColor: TAVORIA.color.paper, borderLeftColor: TAVORIA.color.borderStrong, borderLeftWidth: 1, elevation: TAVORIA.layer.drawer, flexShrink: 0, height: "100%", width: 380, zIndex: TAVORIA.layer.drawer },
   header: { alignItems: "center", borderBottomColor: TAVORIA.color.border, borderBottomWidth: StyleSheet.hairlineWidth, flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 20, paddingBottom: 12, paddingTop: TAVORIA.space.lg },
   title: { color: TAVORIA.color.navy, flex: 1, fontFamily: "InstrumentSerif_400Regular", fontSize: 25, lineHeight: 30, minWidth: 0 },
   headerActions: { alignItems: "center", flexDirection: "row", flexShrink: 0, gap: 4 },

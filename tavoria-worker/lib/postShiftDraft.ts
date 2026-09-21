@@ -13,6 +13,7 @@ export type PostShiftDraft = {
   customContract: string;
   payUnit: "hour" | "day" | "week" | "month" | "later";
   payInput: string;
+  skipPay: boolean;
   payUnitTouched: boolean;
 };
 
@@ -30,6 +31,7 @@ function emptyDraft(): PostShiftDraft {
     customContract: "",
     payUnit: "hour",
     payInput: "",
+    skipPay: false,
     payUnitTouched: false,
   };
 }
@@ -38,8 +40,11 @@ function emptyDraft(): PostShiftDraft {
 export function getPostShiftDraft(): PostShiftDraft {
   const draft = current ?? emptyDraft();
   current = draft;
+  const legacySkipPay = draft.payUnit === "later";
   return {
     ...draft,
+    payUnit: legacySkipPay ? "hour" : draft.payUnit,
+    skipPay: draft.skipPay ?? legacySkipPay,
     roles: [...draft.roles],
     requirements: { ...draft.requirements },
     contracts: [...draft.contracts],

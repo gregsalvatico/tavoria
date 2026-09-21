@@ -29,6 +29,7 @@ import {
   ScrollView,
   StyleProp,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -141,6 +142,7 @@ export default function PostShift() {
 
   const [payUnit, setPayUnit] = useState(() => getPostShiftDraft().payUnit);
   const [payInput, setPayInput] = useState(() => getPostShiftDraft().payInput);
+  const [skipPay, setSkipPay] = useState(() => getPostShiftDraft().skipPay);
   const [payUnitTouched, setPayUnitTouched] = useState(() => getPostShiftDraft().payUnitTouched);
   const defaultPayUnitApplied = useRef(false);
 
@@ -161,20 +163,23 @@ export default function PostShift() {
   };
 
   useEffect(() => {
-    if (defaultPayUnitApplied.current || contracts.length === 0 || payUnitTouched || payUnit === "later") return;
+    if (defaultPayUnitApplied.current || contracts.length === 0 || payUnitTouched || skipPay) return;
     const first = CONTRACTS.find((item) => item.id === contracts[0]);
     if (!first) return;
     defaultPayUnitApplied.current = true;
     setPayUnit(first.defaultUnit);
     patchPostShiftDraft({ payUnit: first.defaultUnit });
-  }, [contracts, payUnit, payUnitTouched]);
+  }, [contracts, payUnit, payUnitTouched, skipPay]);
 
-  const onPickPayUnit = (u: "hour" | "day" | "week" | "month" | "later") => {
+  const onPickPayUnit = (u: "hour" | "day" | "week" | "month") => {
     setPayUnit(u);
     setPayUnitTouched(true);
-    const nextPayInput = u === "later" ? "" : payInput;
-    if (u === "later") setPayInput(nextPayInput);
-    patchPostShiftDraft({ payUnit: u, payUnitTouched: true, payInput: nextPayInput });
+    patchPostShiftDraft({ payUnit: u, payUnitTouched: true });
+  };
+
+  const onToggleSkipPay = (value: boolean) => {
+    setSkipPay(value);
+    patchPostShiftDraft({ skipPay: value });
   };
 
   // Which time field is being edited (e.g. "0-from", "1-to") — controls the modal
@@ -229,7 +234,7 @@ export default function PostShift() {
   const validHours = currentShift.fromMins !== currentShift.toMins;
   const validStart = Boolean(startWhen) && (startWhen !== "pickdate" || Boolean(pickedDate));
   const validSchedule = days.length > 0 || Boolean(pickedDate) || startWhen === "now" || startWhen === "asap";
-  const validPay = payUnit === "later" || (Number.isFinite(payAmount) && payAmount > 0);
+  const validPay = skipPay || (Number.isFinite(payAmount) && payAmount > 0);
   const validRequirements = requirements.minimumExperience === undefined || (
     Number.isFinite(requirements.minimumExperience) &&
     requirements.minimumExperience >= 0 &&
@@ -259,12 +264,13 @@ export default function PostShift() {
         step={stepIndex}
         total={POST_SHIFT_STEPS.length}
         contentMaxWidth={840}
+        closeOnRight
+        onClose={() => router.replace("/")}
         onBack={() => {
           if (stepIndex > 0) {
             goToStep(stepIndex - 1);
             return;
           }
-          if (router.canGoBack()) { router.back(); return; }
           router.replace("/");
         }}
       />
@@ -442,25 +448,40 @@ export default function PostShift() {
           </Section> : null}
 
           {focusKey === "pay" ? <Section title={t("post_shift.pay")} style={styles.paySection}>
-            <View style={styles.payUnitRow}>
-              {PAY_UNITS.map((unit) => {
-                const selected = payUnit === unit.id;
-                return (
-                  <Pressable
-                    key={unit.id}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected }}
-                    accessibilityLabel={t(`post_shift.per_${unit.id}`)}
-                    onPress={() => onPickPayUnit(unit.id)}
-                    style={({ hovered, pressed }) => [styles.payUnitOption, selected && styles.payUnitOptionOn, hovered && !selected && styles.payUnitOptionHovered, pressed && styles.controlPressed]}
-                  >
-                    <Text style={[styles.payUnitText, selected && styles.payUnitTextOn]}>{t(`post_shift.per_${unit.id}`)}</Text>
-                  </Pressable>
-                );
-              })}
+            <View style={styles.payToggleRow}>
+              <View style={styles.payToggleCopy}>
+                <Text style={styles.payToggleTitle}>{t("post_shift.skip_pay")}</Text>
+                <Text style={styles.payToggleSub}>{t("post_shift.pay_later_hint")}</Text>
+              </View>
+              <Switch
+                accessibilityLabel={t("post_shift.skip_pay")}
+                accessibilityRole="switch"
+                value={skipPay}
+                onValueChange={onToggleSkipPay}
+                trackColor={{ false: "#D9D8D3", true: TAVORIA.color.orange }}
+                thumbColor={TAVORIA.color.white}
+                ios_backgroundColor="#D9D8D3"
+              />
             </View>
-            {payUnit !== "later" ? (
-              <>
+            {!skipPay ? (
+              <View style={styles.payFields}>
+                <View style={styles.payUnitRow}>
+                  {PAY_UNITS.map((unit) => {
+                    const selected = payUnit === unit.id;
+                    return (
+                      <Pressable
+                        key={unit.id}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected }}
+                        accessibilityLabel={t(`post_shift.per_${unit.id}`)}
+                        onPress={() => onPickPayUnit(unit.id)}
+                        style={({ hovered, pressed }) => [styles.payUnitOption, selected && styles.payUnitOptionOn, hovered && !selected && styles.payUnitOptionHovered, pressed && styles.controlPressed]}
+                      >
+                        <Text style={[styles.payUnitText, selected && styles.payUnitTextOn]}>{t(`post_shift.per_${unit.id}`)}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
                 <View style={styles.payInputRow}>
                   <Text style={styles.payCurrency}>€</Text>
                   <TextInput
@@ -482,28 +503,8 @@ export default function PostShift() {
                   <Text style={styles.payUnitLabel}>{t(`post_shift.per_${payUnit}`)}</Text>
                 </View>
                 <Text style={styles.payHint}>{t(`post_shift.pay_hint_${payUnit}`)}</Text>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={t("post_shift.skip_pay")}
-                  onPress={() => onPickPayUnit("later")}
-                  style={({ hovered, pressed }) => [
-                    styles.discussLaterLink,
-                    hovered && styles.discussLaterHovered,
-                    pressed && styles.controlPressed,
-                  ]}
-                >
-                  <View style={styles.discussLaterIcon}>
-                    <Feather name="message-circle" size={14} color={TAVORIA.color.muted} />
-                  </View>
-                  <Text style={styles.discussLaterTxt}>{t("post_shift.skip_pay")}</Text>
-                </Pressable>
-              </>
-            ) : (
-              <View style={styles.payLaterBox}>
-                <Feather name="message-circle" size={16} color={TAVORIA.color.muted} />
-                <Text style={styles.payLaterTxt}>{t("post_shift.pay_later_hint")}</Text>
               </View>
-            )}
+            ) : null}
           </Section> : null}
 
           {focusKey === "requirements" ? (
@@ -521,7 +522,7 @@ export default function PostShift() {
               <View style={styles.reviewBox}>
                 <Text style={styles.reviewTitle}>{t("post_shift.review")}</Text>
                 <Text style={styles.reviewValue}>
-                  {[roles.map(localizeRole).join(" · "), contracts.map((id) => id === "custom" ? customContract.trim() : t(`post_shift.${CONTRACT_KEYS[id] ?? id}`)).filter(Boolean).join(" · ") || null, validHours ? `${fmt(currentShift.fromMins)}–${fmt(currentShift.toMins)}` : null, payUnit === "later" ? t("post_shift.pay_later_short") : payAmount > 0 ? `€${payAmount} / ${t(`post_shift.per_${payUnit}`)}` : null].filter(Boolean).join(" · ") || t("post_shift.review_empty")}
+                  {[roles.map(localizeRole).join(" · "), contracts.map((id) => id === "custom" ? customContract.trim() : t(`post_shift.${CONTRACT_KEYS[id] ?? id}`)).filter(Boolean).join(" · ") || null, validHours ? `${fmt(currentShift.fromMins)}–${fmt(currentShift.toMins)}` : null, skipPay ? t("post_shift.pay_later_short") : payAmount > 0 ? `€${payAmount} / ${t(`post_shift.per_${payUnit}`)}` : null].filter(Boolean).join(" · ") || t("post_shift.review_empty")}
                 </Text>
               </View>
               {!canSubmit && <Text style={styles.completeHint}>{validRequirements ? t("post_shift.complete_hint") : t("talent.invalid")}</Text>}
@@ -538,7 +539,6 @@ export default function PostShift() {
               variant="secondary"
               onPress={() => {
                 if (stepIndex > 0) { goToStep(stepIndex - 1); return; }
-                if (router.canGoBack()) { router.back(); return; }
                 router.replace("/");
               }}
               style={styles.footerButton}
@@ -599,10 +599,10 @@ export default function PostShift() {
                   hours_end: fmtHHMM(currentShift.toMins),
                   start_when: startWhen ?? undefined,
                   start_date: startDate,
-                  // "later" is a UI-only state. Store no unit when pay is
-                  // intentionally left for the interview.
-                  pay_unit: payUnit === "later" ? undefined : payUnit,
-                  pay_amount: payUnit === "later" ? undefined : payAmount,
+                  // Store no pay value when the venue will discuss it during
+                  // the interview.
+                  pay_unit: skipPay ? undefined : payUnit,
+                  pay_amount: skipPay ? undefined : payAmount,
                 });
                 setPostedShift({
                   roles,
@@ -612,7 +612,7 @@ export default function PostShift() {
                   startWhen,
                   pickedDate: startDate ?? null,
                   payUnit,
-                  pay: payUnit === "later" ? 0 : payAmount,
+                  pay: skipPay ? 0 : payAmount,
                 });
                 clearPostShiftDraft();
                 router.replace("/venue-bonus");
@@ -1327,18 +1327,22 @@ const styles = StyleSheet.create({
   optionTitle: { color: TAVORIA.color.navy, fontSize: 15, fontWeight: "700" },
   optionSub: { color: TAVORIA.color.muted, fontSize: 12, lineHeight: 16, marginTop: 2 },
 
-  paySection: { marginTop: 18 },
+  paySection: { marginTop: 18, paddingBottom: 20 },
+  payToggleRow: { alignItems: "center", backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.medium, borderWidth: 1, flexDirection: "row", gap: 12, minHeight: 72, paddingHorizontal: 14, paddingVertical: 12 },
+  payToggleCopy: { flex: 1, minWidth: 0 },
+  payToggleTitle: { color: TAVORIA.color.navy, fontSize: 14, fontWeight: "700" },
+  payToggleSub: { color: TAVORIA.color.muted, fontSize: 12, lineHeight: 17, marginTop: 3 },
+  payFields: { gap: 12, marginTop: 12 },
   payUnitRow: { backgroundColor: TAVORIA.color.paperDeep, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.medium, borderWidth: 1, flexDirection: "row", gap: 4, padding: 4 },
   payUnitOption: { alignItems: "center", borderColor: "transparent", borderRadius: TAVORIA.radius.small, borderWidth: 1, flex: 1, height: 44, justifyContent: "center", paddingHorizontal: 8 },
   payUnitOptionOn: { backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border },
   payUnitOptionHovered: { backgroundColor: "rgba(255,255,255,0.65)" },
   payUnitText: { color: TAVORIA.color.muted, fontSize: 13, fontWeight: "600", textAlign: "center" },
   payUnitTextOn: { color: TAVORIA.color.navy },
-  payInputRow: { alignItems: "center", backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.medium, borderWidth: 1, flexDirection: "row", gap: 6, marginTop: 12, minHeight: 58, paddingHorizontal: 16 },
+  payInputRow: { alignItems: "center", backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.medium, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 58, paddingHorizontal: 16 },
   payCurrency: { color: TAVORIA.color.navy, fontSize: 24, fontWeight: "800" },
   payInput: { color: TAVORIA.color.navy, flex: 1, fontSize: 24, fontWeight: "700", padding: 0, textAlignVertical: "center" },
   payUnitLabel: { color: TAVORIA.color.muted, fontSize: 13 },
-  discussLaterHovered: { backgroundColor: "rgba(14,26,36,0.06)" },
   reviewBox: { backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.small, borderWidth: 1, marginTop: 28, padding: 14 },
   reviewTitle: { color: TAVORIA.color.muted, fontFamily: TAVORIA.type.label, fontSize: 10, letterSpacing: 1, textTransform: "uppercase" },
   reviewValue: { color: TAVORIA.color.navy, fontSize: 14, lineHeight: 20, marginTop: 7 },
@@ -1582,27 +1586,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
     textTransform: "uppercase",
   },
-  discussLaterLink: {
-    alignItems: "center",
-    backgroundColor: TAVORIA.color.white,
-    borderColor: TAVORIA.color.border,
-    borderRadius: TAVORIA.radius.medium,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 10,
-    minHeight: 52,
-    paddingHorizontal: 12,
-  },
-  discussLaterIcon: {
-    alignItems: "center",
-    backgroundColor: TAVORIA.color.paperDeep,
-    borderRadius: TAVORIA.radius.small,
-    height: 30,
-    justifyContent: "center",
-    width: 30,
-  },
-  discussLaterTxt: { color: TAVORIA.color.navy, flex: 1, fontSize: 13, fontWeight: "700" },
 
   asapTile: {
     flexDirection: "row",
@@ -1674,18 +1657,6 @@ const styles = StyleSheet.create({
   },
   payUnit: { fontSize: 14, color: "#6B7280", fontWeight: "500" },
   payHint: { fontSize: 12, color: "#6B7280", marginTop: 6 },
-  payLaterBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 16,
-    borderRadius: 12,
-    backgroundColor: "rgba(11,15,26,0.04)",
-    borderWidth: 0.5,
-    borderColor: "rgba(0,0,0,0.10)",
-  },
-  payLaterTxt: { flex: 1, fontSize: 13, color: "#6B7280" },
 
   modalBackdrop: {
     flex: 1,

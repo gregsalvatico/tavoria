@@ -53,7 +53,7 @@ export default function WorkerWelcome() {
             label="Start — it's free"
             icon="arrow-right"
             variant="secondary"
-            onPress={() => router.push("/signup?next=worker-profile")}
+            onPress={() => router.push("/register?next=worker-profile")}
             style={[styles.ctaButton, isDesktop && desktopButtonStyle]}
           />
           <Text style={styles.tinyTxt}>

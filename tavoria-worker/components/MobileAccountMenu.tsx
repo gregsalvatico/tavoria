@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Image,
   ImageSourcePropType,
@@ -26,6 +26,8 @@ type NavigationItem = {
   selected?: boolean;
   onPress: () => void;
 };
+
+type DeferredModal = "language" | "contact" | "change_pin" | "qr";
 
 type Props = {
   visible: boolean;
@@ -57,6 +59,7 @@ export default function MobileAccountMenu({
   const [contactOpen, setContactOpen] = useState(false);
   const [changePinOpen, setChangePinOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  const [deferredModal, setDeferredModal] = useState<DeferredModal | null>(null);
   const menu = getAccountMenuSections(role);
   const displayName = role === "venue"
     ? context.venueName || t("home_in.continue_venue")
@@ -66,6 +69,30 @@ export default function MobileAccountMenu({
   const closeAnd = (action: () => void) => {
     onClose();
     action();
+  };
+
+  useEffect(() => {
+    if (visible || !deferredModal) return;
+    const timer = setTimeout(() => {
+      if (deferredModal === "language") setLanguageOpen(true);
+      if (deferredModal === "contact") setContactOpen(true);
+      if (deferredModal === "change_pin") setChangePinOpen(true);
+      if (deferredModal === "qr") setQrOpen(true);
+      setDeferredModal(null);
+    }, 220);
+    return () => clearTimeout(timer);
+  }, [deferredModal, visible]);
+
+  const closeDrawerAndOpen = (modal: DeferredModal) => {
+    if (!visible) {
+      if (modal === "language") setLanguageOpen(true);
+      if (modal === "contact") setContactOpen(true);
+      if (modal === "change_pin") setChangePinOpen(true);
+      if (modal === "qr") setQrOpen(true);
+      return;
+    }
+    setDeferredModal(modal);
+    onClose();
   };
 
   return (
@@ -110,9 +137,9 @@ export default function MobileAccountMenu({
                 </DrawerSection>
               ) : null}
 
-              <DrawerSection>
-                {role === "venue" ? (
-                  <DrawerAction icon="printer" label={t("home_in.print_qr")} onPress={() => closeAnd(() => setQrOpen(true))} />
+                <DrawerSection>
+                  {role === "venue" ? (
+                  <DrawerAction icon="printer" label={t("home_in.print_qr")} onPress={() => closeDrawerAndOpen("qr")} />
                 ) : null}
                 {role === "worker" ? (
                   <DrawerAction icon="maximize" label={t("home.scan_qr")} onPress={() => closeAnd(() => onNavigate("/scan"))} />
@@ -138,10 +165,9 @@ export default function MobileAccountMenu({
                     label={t(item.labelKey)}
                     detail={item.id === "language" ? currentLanguage.toUpperCase() : item.detailKey ? t(item.detailKey) : undefined}
                     onPress={() => {
-                      onClose();
-                      if (item.id === "language") setLanguageOpen(true);
-                      else if (item.id === "change_pin") setChangePinOpen(true);
-                      else setContactOpen(true);
+                      if (item.id === "language") closeDrawerAndOpen("language");
+                      else if (item.id === "change_pin") closeDrawerAndOpen("change_pin");
+                      else closeDrawerAndOpen("contact");
                     }}
                   />
                 ))}

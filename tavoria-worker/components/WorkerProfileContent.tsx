@@ -89,7 +89,7 @@ export default function WorkerProfileContent({ row, owner, onEdit }: { row: any;
             style={styles.addProfilePhoto}
           >
             <Feather name="camera" size={17} color="#626B78" />
-            <Text style={styles.addProfilePhotoText}>{t("talent.add")}</Text>
+            <Text style={styles.addProfilePhotoText}>{t("worker_photos.add_photo")}</Text>
           </Pressable>
         ) : null}
         <View style={styles.identityBody}>
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   edit: { alignItems: "center", backgroundColor: "#FFFFFF", borderColor: "rgba(14,26,36,0.16)", borderRadius: 22, borderWidth: 1, height: 42, justifyContent: "center", width: 42 },
   profilePhotoWrap: { backgroundColor: "#E6E4DC", borderRadius: 14, height: 136, overflow: "hidden", width: 112 },
   profilePhoto: { height: "100%", width: "100%" },
-  addProfilePhoto: { alignItems: "center", backgroundColor: "#E8E6DE", borderRadius: 14, height: 136, justifyContent: "center", width: 112 },
+  addProfilePhoto: { alignItems: "center", backgroundColor: "#E8E6DE", borderColor: "#B8BCB5", borderRadius: 14, borderStyle: "dashed", borderWidth: 1, height: 136, justifyContent: "center", width: 112 },
   addProfilePhotoText: { color: "#626B78", fontSize: 12, marginTop: 7 },
   status: { alignItems: "center", flexDirection: "row", gap: 7, marginBottom: 2 },
   statusDot: { backgroundColor: "#477354", borderRadius: 4, height: 7, width: 7 },

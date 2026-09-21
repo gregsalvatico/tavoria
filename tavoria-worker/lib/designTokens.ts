@@ -32,6 +32,10 @@ export const TAVORIA = {
     minHeight: 44,
     compactHeight: 36,
   },
+  layer: {
+    drawer: 20,
+    modal: 1000,
+  },
   type: {
     display: "InstrumentSerif_400Regular",
     body: "HankenGrotesk_400Regular",

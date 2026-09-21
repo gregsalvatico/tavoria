@@ -104,7 +104,7 @@ export default function Apply() {
           {OPEN_SHIFTS.map((s) => (
             <Pressable
               key={s.id}
-              onPress={() => router.push("/signup")}
+              onPress={() => router.push("/register")}
               style={styles.shiftCard}
             >
               <View style={styles.shiftCardHeader}>
