@@ -31,6 +31,7 @@ import { localizeContractType } from "../lib/contractTypes";
 import { localizeRole, localizeRoles } from "../lib/positions";
 import ContactPersonModal from "../components/ContactPersonModal";
 import ActionButton from "../components/ActionButton";
+import Chip from "../components/Chip";
 import { desktopButtonStyle } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
 import VenueMediaGallery from "../components/VenueMediaGallery";
@@ -327,21 +328,25 @@ export default function ShiftDetail() {
                 style={[styles.heroImg, isDesktop && styles.heroImgDesktop]}
               />
               {isUrgent && (
-                <View style={styles.urgentBanner}>
-                  <Feather name="zap" size={14} color="white" />
-                  <Text style={styles.urgentBannerTxt}>
-                    {shift.start_when === "now"
-                      ? t("shift_detail.need_now_banner")
-                      : t("shift_detail.asap_banner")}
-                  </Text>
-                </View>
+                <Chip
+                  label={shift.start_when === "now" ? t("shift_detail.need_now_banner") : t("shift_detail.asap_banner")}
+                  icon="zap"
+                  selected
+                  selectedTone={shift.start_when === "now" ? "dark" : "accent"}
+                  size="compact"
+                  style={[styles.urgentBanner, shift.start_when === "now" ? styles.urgentBannerNow : styles.urgentBannerAsap]}
+                />
               )}
             </Pressable>
 
-          <VenueMediaGallery
-            photoUrls={previewPhotoUrls}
-            videoUrls={previewVideoUrls}
-          />
+          {(previewPhotoUrls.length > 0 || previewVideoUrls.length > 0) ? (
+            <View style={styles.additionalMedia}>
+              <VenueMediaGallery
+                photoUrls={previewPhotoUrls}
+                videoUrls={previewVideoUrls}
+              />
+            </View>
+          ) : null}
         </View>
 
         <View style={[styles.card, isDesktop && styles.cardDesktop]}>
@@ -566,11 +571,7 @@ function ContactMethod({ icon, label, value }: { icon: keyof typeof Feather.glyp
 }
 
 function Tag({ children }: { children: React.ReactNode }) {
-  return (
-    <View style={styles.tag}>
-      <Text style={styles.tagTxt}>{children}</Text>
-    </View>
-  );
+  return <Chip label={String(children)} size="compact" style={styles.tag} />;
 }
 
 function KV({
@@ -616,6 +617,7 @@ const styles = StyleSheet.create({
   detailGrid: { alignItems: "flex-start", flexDirection: "row", gap: 24, maxWidth: 1180, alignSelf: "center", width: "100%" },
   mediaColumn: { minWidth: 0, width: "100%" },
   mediaColumnDesktop: { flex: 1, width: 0 },
+  additionalMedia: { marginTop: TAVORIA.space.sm },
 
   loadingWrap: { flex: 1, justifyContent: "center", alignItems: "center" },
   errorWrap: {
@@ -653,24 +655,9 @@ const styles = StyleSheet.create({
   heroDesktop: { height: 360, marginBottom: 0, minWidth: 0, width: "100%" },
   heroImgDesktop: { height: "100%" },
   heroImg: { width: "100%", height: 220 },
-  urgentBanner: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "#E24B4A",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  urgentBannerTxt: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "900",
-    letterSpacing: 0.6,
-  },
+  urgentBanner: { left: 12, position: "absolute", top: 12 },
+  urgentBannerNow: { backgroundColor: TAVORIA.color.orange, borderColor: TAVORIA.color.orange },
+  urgentBannerAsap: { backgroundColor: TAVORIA.color.orangeSoft, borderColor: TAVORIA.color.orange },
 
   card: {
     backgroundColor: TAVORIA.color.white,
@@ -699,18 +686,8 @@ const styles = StyleSheet.create({
     gap: 6,
     alignItems: "center",
   },
-  tag: {
-    backgroundColor: TAVORIA.color.paperDeep,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  tagTxt: { fontSize: 11, fontWeight: "700", color: "#0E1A24" },
-  iconRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
+  tag: { backgroundColor: TAVORIA.color.paperDeep, borderColor: TAVORIA.color.paperDeep },
+  iconRow: { alignItems: "center", flexDirection: "row", gap: 4, minHeight: 36 },
   metaTxt: { fontSize: 12, color: "#6B7280" },
 
   paySection: {

@@ -309,7 +309,11 @@ export default function SignIn() {
           )}
 
           <Pressable
-            onPress={() =>
+            onPress={() => {
+              if (selectedRole === "venue") {
+                router.replace("/venue-type");
+                return;
+              }
               router.replace({
                 pathname: "/signup",
                 params: {
@@ -318,8 +322,8 @@ export default function SignIn() {
                   ...(venueId ? { venueId } : {}),
                   ...(venueName ? { venueName } : {}),
                 },
-              })
-            }
+              });
+            }}
             style={styles.authSwitch}
           >
             <Text style={styles.authSwitchPrompt}>{t("auth_pin.new_here")}</Text>

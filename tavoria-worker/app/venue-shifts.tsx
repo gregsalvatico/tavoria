@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 999,
-    backgroundColor: "#E24B4A",
+    backgroundColor: TAVORIA.color.orange,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 5,

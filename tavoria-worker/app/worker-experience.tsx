@@ -25,6 +25,7 @@ import { t } from "../lib/i18n";
 import { desktopButtonStyle, useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
 import ActionButton from "../components/ActionButton";
+import Chip from "../components/Chip";
 import ResponsiveModal from "../components/ResponsiveModal";
 import { FlowTopBar } from "../components/PagePrimitives";
 import { PreferenceFields, validPreferences } from "../components/TalentFields";
@@ -229,17 +230,7 @@ export default function WorkerExperience() {
           <View style={styles.chipWrap}>
             {EXPERIENCE.map((e) => {
               const on = years === e.id;
-              return (
-                <Pressable
-                  key={e.id}
-                  onPress={() => setYears(e.id)}
-                  style={[styles.chip, on && styles.chipOn]}
-                >
-                  <Text style={[styles.chipTxt, on && styles.chipTxtOn]}>
-                    {t(e.labelKey)}
-                  </Text>
-                </Pressable>
-              );
+              return <Chip key={e.id} label={t(e.labelKey)} selected={on} size="compact" onPress={() => setYears(e.id)} />;
             })}
           </View>
 
@@ -247,49 +238,14 @@ export default function WorkerExperience() {
           <View style={styles.chipWrap}>
             {LANGUAGES.map((l) => {
               const on = languages.includes(l.code);
-              return (
-                <Pressable
-                  key={l.code}
-                  onPress={() => toggleLang(l.code)}
-                  style={[styles.chip, on && styles.chipOn]}
-                >
-                  <Text style={[styles.chipTxt, on && styles.chipTxtOn]}>
-                    {t(l.labelKey)}
-                  </Text>
-                </Pressable>
-              );
+              return <Chip key={l.code} label={t(l.labelKey)} selected={on} size="compact" onPress={() => toggleLang(l.code)} />;
             })}
 
             {/* Custom-language tags */}
-            {otherLangs.map((l) => (
-              <Pressable
-                key={`other-${l}`}
-                onPress={() => removeOtherLang(l)}
-                style={[styles.chip, styles.chipOther]}
-              >
-                <Text style={[styles.chipTxt, styles.chipTxtOther]}>{l}</Text>
-                <Feather
-                  name="x"
-                  size={12}
-                  color="white"
-                  style={{ marginLeft: 4 }}
-                />
-              </Pressable>
-            ))}
+            {otherLangs.map((l) => <Chip key={`other-${l}`} label={l} selected size="compact" trailingIcon="x" onPress={() => removeOtherLang(l)} />)}
 
             {/* "Other" add chip */}
-            <Pressable
-              onPress={() => setOtherOpen(true)}
-              style={[styles.chip, styles.chipAddOther]}
-            >
-              <Feather
-                name="plus"
-                size={13}
-                color="#9CA3AF"
-                style={{ marginRight: 4 }}
-              />
-              <Text style={styles.chipAddOtherTxt}>{t("worker_experience.other_chip")}</Text>
-            </Pressable>
+            <Chip label={t("worker_experience.other_chip")} icon="plus" size="compact" onPress={() => setOtherOpen(true)} />
           </View>
 
           <Text style={styles.sectionTitle}>{t("worker_experience.city")}</Text>
@@ -488,39 +444,6 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 6,
     justifyContent: "center",
-  },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: "white",
-    borderWidth: 0.5,
-    borderColor: "rgba(0,0,0,0.10)",
-  },
-  chipOn: { backgroundColor: "#0E1A24", borderColor: "#0E1A24" },
-  chipTxt: { fontSize: 13, fontWeight: "600", color: "#0E1A24" },
-  chipTxtOn: { color: "white" },
-
-  chipOther: {
-    backgroundColor: "#534AB7",
-    borderColor: "#534AB7",
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  chipTxtOther: { color: "white" },
-  chipAddOther: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderStyle: "dashed",
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.18)",
-    backgroundColor: "transparent",
-  },
-  chipAddOtherTxt: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#9CA3AF",
-    fontStyle: "italic",
   },
 
   locateBtn: {

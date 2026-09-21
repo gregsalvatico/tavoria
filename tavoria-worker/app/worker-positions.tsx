@@ -15,6 +15,7 @@ import { t } from "../lib/i18n";
 import { useIsDesktop } from "../lib/responsive";
 import StickyFooter from "../components/StickyFooter";
 import ActionButton from "../components/ActionButton";
+import Chip from "../components/Chip";
 import { FlowTopBar } from "../components/PagePrimitives";
 import { localizeRole } from "../lib/positions";
 import { getWorkerProfile, patchWorkerProfile } from "../lib/workerProfile";
@@ -147,15 +148,7 @@ export default function WorkerPositions() {
         <View style={styles.chipWrap}>
           {AGE_RANGES.map((r) => {
             const on = ageRange === r;
-            return (
-              <Pressable
-                key={r}
-                onPress={() => setAgeRange(r)}
-                style={[styles.chip, on && styles.chipOn]}
-              >
-                <Text style={[styles.chipTxt, on && styles.chipTxtOn]}>{r}</Text>
-              </Pressable>
-            );
+            return <Chip key={r} label={r} selected={on} size="compact" onPress={() => setAgeRange(r)} />;
           })}
         </View>
 
@@ -331,17 +324,6 @@ const styles = StyleSheet.create({
     gap: 6,
     justifyContent: "center",
   },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: "white",
-    borderWidth: 0.5,
-    borderColor: "rgba(0,0,0,0.10)",
-  },
-  chipOn: { backgroundColor: "#0E1A24", borderColor: "#0E1A24" },
-  chipTxt: { fontSize: 13, fontWeight: "600", color: "#0E1A24" },
-  chipTxtOn: { color: "white" },
 
   bottom: {
     paddingBottom: 24,

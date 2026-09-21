@@ -2,19 +2,17 @@ import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  Alert,
   Pressable,
   Share,
   StyleProp,
   StyleSheet,
   ViewStyle,
 } from "react-native";
-import { clearVenueProfile, getVenueProfile } from "../lib/venueProfile";
+import { clearVenueProfile } from "../lib/venueProfile";
 import { clearWorkerProfile } from "../lib/workerProfile";
 import { getCachedHomeContext, setCachedHomeContext, subscribeToHomeContext, type HomeContext } from "../lib/homeContextCache";
 import { supabase } from "../lib/supabase";
 import { setLanguage, t, useLanguage } from "../lib/i18n";
-import { downloadVenueQRPoster } from "../lib/qrPoster";
 import { TAVORIA } from "../lib/designTokens";
 import { PageHeader, RefreshIconButton } from "./PagePrimitives";
 import MobileAccountMenu from "./MobileAccountMenu";
@@ -57,21 +55,6 @@ export default function VenueScreenHeader({ title, active, onBack, onRefresh, re
         url: "https://tavoriapp.com",
       });
     } catch {}
-  };
-
-  const printQr = async () => {
-    const venue = getVenueProfile();
-    const venueId = context.venueId ?? venue?.id;
-    if (!venueId) return;
-    try {
-      await downloadVenueQRPoster({
-        venueId,
-        venueName: context.venueName ?? venue?.name ?? "",
-        venueCity: context.venueCity ?? venue?.city,
-      });
-    } catch (error) {
-      Alert.alert(t("home_in.print_qr"), String((error as Error)?.message ?? error));
-    }
   };
 
   return (
@@ -127,7 +110,6 @@ export default function VenueScreenHeader({ title, active, onBack, onRefresh, re
         onChangeLanguage={async (language) => {
           await setLanguage(language);
         }}
-        onPrintQr={printQr}
         onShare={shareTavoria}
         onSignOut={signOut}
       />

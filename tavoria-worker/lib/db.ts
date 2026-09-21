@@ -125,17 +125,16 @@ export type ShiftInsert = {
 
 export async function insertShift(input: ShiftInsert) {
   await ensureSession();
-  let { data, error } = await supabase
-    .from("shifts")
-    .insert(input)
-    .select()
-    .single();
+  // The create path does not need the inserted row back. Avoid chaining a
+  // SELECT here: under RLS, INSERT may be allowed while a read-back policy is
+  // missing or more restrictive, which makes a successful post look failed.
+  let { error } = await supabase.from("shifts").insert(input);
   if (error && isMissingFeatureColumn(error)) {
     const { worker_requirements: _requirements, photo_urls: _photos, video_urls: _videos, ...legacyInput } = input;
-    ({ data, error } = await supabase.from("shifts").insert(legacyInput).select().single());
+    ({ error } = await supabase.from("shifts").insert(legacyInput));
   }
   if (error) throw error;
-  return data as { id: string };
+  return { id: "" };
 }
 
 // Update a shift's status: 'live' (visible to workers) or 'paused' (hidden).

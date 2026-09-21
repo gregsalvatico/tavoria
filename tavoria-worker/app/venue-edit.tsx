@@ -21,7 +21,7 @@ import { t } from "../lib/i18n";
 import { useIsDesktop } from "../lib/responsive";
 import ActionButton from "../components/ActionButton";
 import StickyFooter from "../components/StickyFooter";
-import { FormFlowHeader } from "../components/PagePrimitives";
+import { FormFlowHeader, ListSurface } from "../components/PagePrimitives";
 import { TAVORIA } from "../lib/designTokens";
 import VenueProfileFields from "../components/VenueProfileFields";
 import { customPayScheduleValue, normalizePaySchedule, storedPayScheduleValue } from "../lib/venueOptions";
@@ -144,6 +144,34 @@ export default function VenueEdit() {
     }
   };
 
+  const leaveFlow = async () => {
+    setSaving(true);
+    try {
+      await persistDraft();
+      if (stepIndex > 0) {
+        goToStep(stepIndex - 1);
+      } else {
+        router.back();
+      }
+    } catch (error: any) {
+      Alert.alert(t("talent.loadError"), error?.message ?? t("talent.retry"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const closeFlow = async () => {
+    setSaving(true);
+    try {
+      await persistDraft();
+      router.back();
+    } catch (error: any) {
+      Alert.alert(t("talent.loadError"), error?.message ?? t("talent.retry"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const save = async () => {
     if (!venueId || !name.trim() || !email.trim()) {
       Alert.alert(t("talent.invalid"), `${t("venue_info.venue_name")} and ${t("signup.email")} are required.`);
@@ -189,14 +217,8 @@ export default function VenueEdit() {
           step={stepIndex}
           total={VENUE_EDIT_STEPS.length}
           closeOnRight
-          onClose={() => router.back()}
-          onBack={() => {
-            if (stepIndex > 0) {
-              goToStep(stepIndex - 1);
-              return;
-            }
-            router.back();
-          }}
+          onClose={() => { void closeFlow(); }}
+          onBack={() => { void leaveFlow(); }}
         />
         {loading ? (
           <View style={styles.loading}><ActivityIndicator size="large" color="#F0531C" /></View>
@@ -243,21 +265,25 @@ export default function VenueEdit() {
                 onOpenCustomSchedule={() => undefined}
               />
             </View> : null}
-            {focusKey === "contact" ? <View>
-              <View style={styles.contactSettings}>
-                <Text style={styles.contactTitle}>{t("venue_edit.contact_title")}</Text>
-                <Text style={styles.contactSub}>{t("venue_edit.contact_sub")}</Text>
-                <ContactToggle icon="mail" label={t("venue_card.email")} detail={email || t("venue_edit.add_email")} value={shareEmail} onPress={() => setShareEmail((value) => !value)} disabled={!email} />
-                <ContactToggle icon="phone" label={t("venue_info.phone")} detail={phone || t("venue_edit.add_phone")} value={sharePhone} onPress={() => setSharePhone((value) => !value)} disabled={!phone} />
-                <ContactToggle icon="map-pin" label={t("venue_card.directions")} detail={address || t("venue_edit.add_address")} value={allowInPerson} onPress={() => setAllowInPerson((value) => !value)} disabled={!address} />
+            {focusKey === "contact" ? <View style={styles.contactFlow}>
+              <View style={styles.contactSection}>
+                <Text style={styles.sectionTitle}>{t("venue_edit.contact_title")}</Text>
+                <Text style={styles.sectionSub}>{t("venue_edit.contact_sub")}</Text>
+                <ListSurface>
+                  <ContactToggle icon="mail" label={t("venue_card.email")} detail={email || t("venue_edit.add_email")} value={shareEmail} onPress={() => setShareEmail((value) => !value)} disabled={!email} />
+                  <ContactToggle icon="phone" label={t("venue_info.phone")} detail={phone || t("venue_edit.add_phone")} value={sharePhone} onPress={() => setSharePhone((value) => !value)} disabled={!phone} />
+                  <ContactToggle icon="map-pin" label={t("venue_card.directions")} detail={address || t("venue_edit.add_address")} value={allowInPerson} onPress={() => setAllowInPerson((value) => !value)} disabled={!address} />
+                </ListSurface>
               </View>
-              <View style={styles.contactSettings}>
-                <Text style={styles.contactTitle}>{t("venue_edit.interview_title")}</Text>
-                <Text style={styles.contactSub}>{t("venue_edit.interview_sub")}</Text>
-                <InterviewFormatToggle icon="map-pin" label={t("venue_card.directions")} value={interviewOptions.includes("venue")} onPress={() => toggleInterviewOption("venue", interviewOptions, setInterviewOptions)} />
-                <InterviewFormatToggle icon="phone" label={t("venue_info.phone")} value={interviewOptions.includes("phone")} onPress={() => toggleInterviewOption("phone", interviewOptions, setInterviewOptions)} />
-                <InterviewFormatToggle icon="video" label={t("talent.videos")} value={interviewOptions.includes("video")} onPress={() => toggleInterviewOption("video", interviewOptions, setInterviewOptions)} />
-                <InterviewFormatToggle icon="edit-3" label={t("common.other")} value={interviewOptions.includes("other")} onPress={() => toggleInterviewOption("other", interviewOptions, setInterviewOptions)} />
+              <View style={styles.contactSection}>
+                <Text style={styles.sectionTitle}>{t("venue_edit.interview_title")}</Text>
+                <Text style={styles.sectionSub}>{t("venue_edit.interview_sub")}</Text>
+                <ListSurface>
+                  <InterviewFormatToggle icon="map-pin" label={t("venue_card.directions")} value={interviewOptions.includes("venue")} onPress={() => toggleInterviewOption("venue", interviewOptions, setInterviewOptions)} />
+                  <InterviewFormatToggle icon="phone" label={t("venue_info.phone")} value={interviewOptions.includes("phone")} onPress={() => toggleInterviewOption("phone", interviewOptions, setInterviewOptions)} />
+                  <InterviewFormatToggle icon="video" label={t("talent.videos")} value={interviewOptions.includes("video")} onPress={() => toggleInterviewOption("video", interviewOptions, setInterviewOptions)} />
+                  <InterviewFormatToggle icon="edit-3" label={t("common.other")} value={interviewOptions.includes("other")} onPress={() => toggleInterviewOption("other", interviewOptions, setInterviewOptions)} />
+                </ListSurface>
               </View>
             </View> : null}
           </ScrollView>
@@ -265,10 +291,7 @@ export default function VenueEdit() {
         {!loading ? (
           <StickyFooter desktopRow>
             <View style={styles.footerActions}>
-              <ActionButton label={t("common.back")} icon="arrow-left" variant="secondary" onPress={() => {
-                if (stepIndex > 0) { goToStep(stepIndex - 1); return; }
-                router.back();
-              }} style={styles.footerButton} />
+              <ActionButton label={t("common.back")} icon="arrow-left" variant="secondary" onPress={() => { void leaveFlow(); }} style={styles.footerButton} />
               <ActionButton
                 label={stepIndex === VENUE_EDIT_STEPS.length - 1 ? t("venue_edit.save") : t("common.continue")}
                 icon={stepIndex === VENUE_EDIT_STEPS.length - 1 ? "check" : "arrow-right"}
@@ -360,10 +383,9 @@ const styles = StyleSheet.create({
   label: { color: "#0E1A24", fontSize: 12, fontWeight: "800", marginBottom: 7 },
   inputWrap: { alignItems: "center", backgroundColor: "white", borderColor: "rgba(14,26,36,0.12)", borderRadius: 13, borderWidth: 1, flexDirection: "row", gap: 10, minHeight: 52, paddingHorizontal: 14 },
   input: { color: "#0E1A24", flex: 1, fontSize: 15, minHeight: 50 },
-  contactSettings: { backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.medium, borderWidth: 1, marginTop: 4, padding: 14 },
-  contactTitle: { color: "#0E1A24", fontSize: 14, fontWeight: "800" },
-  contactSub: { color: "#5D6670", fontSize: 12, lineHeight: 17, marginBottom: 8, marginTop: 3 },
-  toggleRow: { alignItems: "center", borderTopColor: "rgba(14,26,36,0.10)", borderTopWidth: 1, flexDirection: "row", gap: 10, paddingVertical: 11 },
+  contactFlow: { gap: TAVORIA.space.lg },
+  contactSection: { gap: TAVORIA.space.sm },
+  toggleRow: { alignItems: "center", borderBottomColor: TAVORIA.color.border, borderBottomWidth: StyleSheet.hairlineWidth, flexDirection: "row", gap: TAVORIA.space.sm, minHeight: 58, paddingHorizontal: TAVORIA.space.sm },
   toggleRowDisabled: { opacity: 0.45 },
   toggleIcon: { alignItems: "center", backgroundColor: TAVORIA.color.paperDeep, borderRadius: 9, height: 32, justifyContent: "center", width: 32 },
   toggleLabel: { color: "#0E1A24", fontSize: 13, fontWeight: "800" },

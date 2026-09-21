@@ -28,13 +28,16 @@ import {
 import { LANGUAGES, type Language, t } from "../lib/i18n";
 import { formatLocalizedDate } from "../lib/dateFormat";
 import { localizeRoles } from "../lib/positions";
-import { openExternalLink } from "../lib/externalLinks";
 import AppBottomNav from "./AppBottomNav";
+import ChangePinModal from "./ChangePinModal";
+import ContactTavoriaModal from "./ContactTavoriaModal";
+import { VenueQrModal } from "./VenueQrFab";
 import WorkerDirectory from "./WorkerDirectory";
 import FilterChips, { FilterToggleChip } from "./FilterChips";
 import { FilterBar, ListRow, ListSurface, PageContainer, PageHeader, RefreshIconButton } from "./PagePrimitives";
 import SheetModal from "./SheetModal";
 import PreviewMedia from "./PreviewMedia";
+import TavoriaModal from "./TavoriaModal";
 import {
   matchesShiftTime,
   getShiftTimeFilters,
@@ -44,6 +47,7 @@ import { TAVORIA } from "../lib/designTokens";
 import { getAccountMenuSections } from "../lib/accountNavigation";
 import { applyToShift } from "../lib/applyShift";
 import ActionButton from "./ActionButton";
+import Chip from "./Chip";
 
 const VENUE_TYPE_PHOTOS: Record<string, number> = {
   cafe: require("../assets/venue-cafe.png"),
@@ -114,7 +118,6 @@ type Props = {
   pendingCount: number;
   workerCounts: WorkerStatusCounts;
   onChangeLanguage: (language: Language) => Promise<void>;
-  onPrintQr: () => Promise<void>;
   onShare: () => void | Promise<void>;
   onSignOut: () => Promise<void>;
 };
@@ -126,7 +129,6 @@ export default function SignedInHome({
   pendingCount,
   workerCounts,
   onChangeLanguage,
-  onPrintQr,
   onShare,
   onSignOut,
 }: Props) {
@@ -136,6 +138,8 @@ export default function SignedInHome({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const [changePinOpen, setChangePinOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
   const [rows, setRows] = useState<ShiftRow[]>([]);
   const [candidateRows, setCandidateRows] = useState<WorkerRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -527,7 +531,7 @@ export default function SignedInHome({
 
               {ctx.hasVenue && (
                 <DrawerSection>
-                  <DrawerAction icon="printer" label={t("home_in.print_qr")} onPress={() => { setDrawerOpen(false); void onPrintQr(); }} />
+                  <DrawerAction icon="printer" label={t("home_in.print_qr")} onPress={() => { setDrawerOpen(false); setQrOpen(true); }} />
                   {accountMenu.roleActions.map((item) => <DrawerAction key={item.id} icon={item.icon} label={t(item.labelKey)} detail={item.detailKey ? t(item.detailKey) : undefined} onPress={() => { setDrawerOpen(false); if (item.id === "share") void onShare(); }} />)}
                 </DrawerSection>
               )}
@@ -543,7 +547,7 @@ export default function SignedInHome({
                 {accountMenu.commonActions.map((item) => <DrawerAction key={item.id} icon={item.icon} label={t(item.labelKey)} detail={item.id === "language" ? lang.toUpperCase() : item.detailKey ? t(item.detailKey) : undefined} onPress={() => {
                   setDrawerOpen(false);
                   if (item.id === "language") setLanguageOpen(true);
-                  else if (item.id === "change_pin") go("/change-pin");
+                  else if (item.id === "change_pin") setChangePinOpen(true);
                   else setContactOpen(true);
                 }} />)}
                 <DrawerAction icon="log-out" label={t("common.sign_out")} danger onPress={() => { setDrawerOpen(false); void onSignOut(); }} />
@@ -554,84 +558,32 @@ export default function SignedInHome({
         </View>
       </Modal>
 
-      <Modal
-        visible={languageOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setLanguageOpen(false)}
-      >
-        <Pressable style={styles.languageBackdrop} onPress={() => setLanguageOpen(false)} />
-        <View style={styles.languageSheet}>
-          <View style={styles.sheetHandle} />
-          <Text style={styles.languageTitle}>{t("language.pick")}</Text>
-          {LANGUAGES.map((language) => (
-            <Pressable
-              key={language.code}
-              style={[styles.languageRow, language.code === lang && styles.languageRowActive]}
-              onPress={async () => {
-                await onChangeLanguage(language.code);
-                setLanguageOpen(false);
-              }}
-            >
-              <Text style={styles.languageFlag}>{language.flag}</Text>
-              <Text style={styles.languageLabel}>{language.label}</Text>
-              <View style={styles.languageCheck}>
-                {language.code === lang && <Feather name="check-circle" size={20} color="#F0531C" />}
-              </View>
-            </Pressable>
-          ))}
-        </View>
-      </Modal>
-
-      <Modal
-        visible={contactOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setContactOpen(false)}
-      >
-        <Pressable style={styles.contactBackdrop} onPress={() => setContactOpen(false)}>
-          <Pressable style={styles.contactSheet} onPress={(event) => event.stopPropagation()}>
-            <View style={styles.sheetHandle} />
-            <Text style={styles.contactTitle}>{t("team_contact.title")}</Text>
-            <Text style={styles.contactSub}>{t("team_contact.subtitle")}</Text>
-            <Pressable
-              style={styles.contactOption}
-              onPress={() => {
-                setContactOpen(false);
-                void openExternalLink("mailto:hello@tavoriapp.com", t("external_link.email"));
-              }}
-            >
-              <View style={styles.contactOptionIcon}>
-                <Feather name="mail" size={19} color="#0E1A24" />
-              </View>
-              <View style={styles.contactOptionText}>
-                <Text style={styles.contactOptionTitle}>{t("team_contact.email")}</Text>
-                <Text style={styles.contactOptionDetail}>{t("team_contact.email_detail")}</Text>
-              </View>
-              <Feather name="chevron-right" size={18} color="#6B7280" />
-            </Pressable>
-            <Pressable
-              style={styles.contactOption}
-              onPress={() => {
-                setContactOpen(false);
-                void openExternalLink("https://www.instagram.com/tavoriapp/", t("team_contact.instagram"));
-              }}
-            >
-              <View style={styles.contactOptionIcon}>
-                <Feather name="instagram" size={19} color="#0E1A24" />
-              </View>
-              <View style={styles.contactOptionText}>
-                <Text style={styles.contactOptionTitle}>{t("team_contact.instagram")}</Text>
-                <Text style={styles.contactOptionDetail}>{t("team_contact.instagram_detail")}</Text>
-              </View>
-              <Feather name="chevron-right" size={18} color="#6B7280" />
-            </Pressable>
-            <Pressable onPress={() => setContactOpen(false)} style={styles.cancelContactBtn}>
-              <Text style={styles.cancelContactText}>{t("team_contact.cancel")}</Text>
-            </Pressable>
+      <TavoriaModal visible={languageOpen} onClose={() => setLanguageOpen(false)} title={t("language.pick")}>
+        {LANGUAGES.map((language) => (
+          <Pressable
+            key={language.code}
+            style={({ hovered, pressed }) => [
+              styles.languageRow,
+              language.code === lang && styles.languageRowActive,
+              hovered && styles.languageRowHovered,
+              pressed && styles.languageRowPressed,
+            ]}
+            onPress={async () => {
+              await onChangeLanguage(language.code);
+              setLanguageOpen(false);
+            }}
+          >
+            <Text style={styles.languageFlag}>{language.flag}</Text>
+            <Text style={styles.languageLabel}>{language.label}</Text>
+            <View style={styles.languageCheck}>
+              {language.code === lang && <Feather name="check-circle" size={20} color="#F0531C" />}
+            </View>
           </Pressable>
-        </Pressable>
-      </Modal>
+        ))}
+      </TavoriaModal>
+      <ContactTavoriaModal visible={contactOpen} onClose={() => setContactOpen(false)} />
+      <ChangePinModal visible={changePinOpen} onClose={() => setChangePinOpen(false)} />
+      <VenueQrModal visible={qrOpen} onClose={() => setQrOpen(false)} />
     </SafeAreaView>
   );
 }
@@ -768,10 +720,14 @@ function HomeShiftRow({
             {venueMode ? roles : row.venue?.name || t("shift_detail.default_venue")}
           </Text>
           {urgent && (
-            <View style={styles.urgentBadge}>
-              <Feather name="zap" size={10} color="#B91C1C" />
-              <Text style={styles.urgentText}>{row.start_when === "now" ? "NOW" : "ASAP"}</Text>
-            </View>
+            <Chip
+              label={row.start_when === "now" ? "NOW" : "ASAP"}
+              icon="zap"
+              selected
+              selectedTone={row.start_when === "now" ? "dark" : "accent"}
+              size="compact"
+              style={[styles.urgentBadge, row.start_when === "now" ? styles.urgentBadgeNow : styles.urgentBadgeAsap]}
+            />
           )}
         </View>
         {!venueMode && <Text style={styles.shiftRoles} numberOfLines={1}>{roles}</Text>}
@@ -948,8 +904,9 @@ const styles = StyleSheet.create({
   shiftWhen: { color: "#6B7280", flexShrink: 1, fontSize: 12 },
   shiftCity: { color: "#8A8F98", fontSize: 11, marginTop: 4 },
   shiftStatus: { color: "#0F6E56", fontSize: 9, fontWeight: "800", letterSpacing: 0.8, marginTop: 4 },
-  urgentBadge: { alignItems: "center", backgroundColor: "#FDECEC", borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 7, paddingVertical: 4 },
-  urgentText: { color: "#B91C1C", fontSize: 9, fontWeight: "800" },
+  urgentBadge: {},
+  urgentBadgeNow: { backgroundColor: TAVORIA.color.orange, borderColor: TAVORIA.color.orange },
+  urgentBadgeAsap: { backgroundColor: TAVORIA.color.orangeSoft, borderColor: TAVORIA.color.orange },
   candidateAvatar: { borderRadius: TAVORIA.radius.medium, height: 72, width: 64 },
   candidateAvatarEmpty: { alignItems: "center", backgroundColor: "#FFE9DB", justifyContent: "center" },
   candidateInitial: { color: TAVORIA.color.orange, fontFamily: "InstrumentSerif_400Regular", fontSize: 27 },
@@ -990,24 +947,11 @@ const styles = StyleSheet.create({
   drawerActionDetail: { color: "#8A8F98", fontSize: 11, marginTop: 2 },
   drawerBadge: { alignItems: "center", backgroundColor: "#F0531C", borderRadius: 999, justifyContent: "center", minWidth: 22, paddingHorizontal: 6, paddingVertical: 3 },
   drawerBadgeText: { color: "white", fontSize: 10, fontWeight: "800" },
-  languageBackdrop: { backgroundColor: "rgba(14,26,36,0.46)", flex: 1 },
-  languageSheet: { backgroundColor: "white", borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: 28, paddingHorizontal: 20, paddingTop: 12 },
-  sheetHandle: { alignSelf: "center", backgroundColor: "#D7D9DC", borderRadius: 999, height: 4, marginBottom: 16, width: 36 },
-  languageTitle: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 24, marginBottom: 14 },
   languageRow: { alignItems: "center", backgroundColor: "#F7F4EE", borderRadius: 16, flexDirection: "row", gap: 12, marginBottom: 8, paddingHorizontal: 14, paddingVertical: 13 },
   languageRowActive: { backgroundColor: "#FFF1E8", borderColor: "#F0531C", borderWidth: 1 },
+  languageRowHovered: { backgroundColor: "#F1EFE8" },
+  languageRowPressed: { opacity: 0.72 },
   languageFlag: { fontSize: 22, textAlign: "center", width: 26 },
   languageLabel: { color: "#0E1A24", flex: 1, fontSize: 16, fontWeight: "700" },
   languageCheck: { alignItems: "center", justifyContent: "center", width: 20 },
-  contactBackdrop: { backgroundColor: "rgba(14,26,36,0.46)", flex: 1, justifyContent: "flex-end" },
-  contactSheet: { backgroundColor: "white", borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: 28, paddingHorizontal: 20, paddingTop: 12 },
-  contactTitle: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 24, marginBottom: 5 },
-  contactSub: { color: "#6B7280", fontSize: 13, lineHeight: 19, marginBottom: 14 },
-  contactOption: { alignItems: "center", backgroundColor: "#F7F4EE", borderRadius: 16, flexDirection: "row", gap: 12, marginBottom: 8, paddingHorizontal: 14, paddingVertical: 13 },
-  contactOptionIcon: { alignItems: "center", backgroundColor: "#FFF1E8", borderRadius: 11, height: 38, justifyContent: "center", width: 38 },
-  contactOptionText: { flex: 1 },
-  contactOptionTitle: { color: "#0E1A24", fontSize: 15, fontWeight: "700" },
-  contactOptionDetail: { color: "#6B7280", fontSize: 12, marginTop: 2 },
-  cancelContactBtn: { alignItems: "center", marginTop: 8, paddingVertical: 10 },
-  cancelContactText: { color: "#6B7280", fontSize: 14, fontWeight: "700" },
 });

@@ -1,9 +1,10 @@
 import { ReactNode } from "react";
-import { Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { t } from "../lib/i18n";
 import { localizeRole } from "../lib/positions";
 import { JobPreferences, normalizeJobPreferences, WEEK_DAYS, WorkerRequirements } from "../lib/workerMatching";
 import { TAVORIA } from "../lib/designTokens";
+import Chip from "./Chip";
 
 export const talentStyles = StyleSheet.create({
   section: { gap: 16, paddingVertical: 24, borderBottomWidth: 1, borderBottomColor: TAVORIA.color.border },
@@ -17,12 +18,6 @@ export const talentStyles = StyleSheet.create({
   row: { flexDirection: "row", gap: 12, flexWrap: "wrap" },
   field: { minWidth: 0 },
   inlineField: { flexGrow: 1, flexBasis: 180, minWidth: 140 },
-  option: { minHeight: TAVORIA.control.compactHeight, paddingHorizontal: 12, paddingVertical: 8, borderRadius: TAVORIA.radius.small, borderWidth: 1, borderColor: TAVORIA.color.borderStrong, justifyContent: "center", backgroundColor: TAVORIA.color.white },
-  selected: { borderColor: TAVORIA.color.navy, backgroundColor: TAVORIA.color.navy },
-  optionHovered: { backgroundColor: "#F3F4F0" },
-  optionPressed: { opacity: 0.78 },
-  optionText: { fontSize: 13, color: TAVORIA.color.navy },
-  selectedText: { color: TAVORIA.color.white },
   error: { color: TAVORIA.color.error, fontSize: 14, paddingVertical: 12 },
   button: { height: TAVORIA.control.minHeight, minHeight: TAVORIA.control.minHeight, maxHeight: TAVORIA.control.minHeight, flexShrink: 0, paddingHorizontal: 22, borderRadius: TAVORIA.radius.pill, backgroundColor: TAVORIA.color.orange, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
   buttonText: { color: TAVORIA.color.white, fontSize: 14, fontWeight: "600" },
@@ -35,7 +30,7 @@ export function TalentInput({ label, labelSuffix, value, onChange, numeric = fal
   return <View style={[talentStyles.field, inline && talentStyles.inlineField]}><View style={labelSuffix ? talentStyles.labelRow : undefined}><Text style={talentStyles.label}>{label}</Text>{labelSuffix ? <Text style={talentStyles.labelSuffix}>({labelSuffix})</Text> : null}</View><TextInput accessibilityLabel={label} value={value} onChangeText={onChange} keyboardType={numeric ? "decimal-pad" : "default"} placeholder={placeholder} placeholderTextColor="#8B9088" style={talentStyles.input} /></View>;
 }
 export function TalentOption({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
-  return <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: selected }} onPress={onPress} style={({ hovered, pressed }) => [talentStyles.option, selected && talentStyles.selected, hovered && !selected && talentStyles.optionHovered, pressed && talentStyles.optionPressed]}><Text style={[talentStyles.optionText, selected && talentStyles.selectedText]}>{label}</Text></Pressable>;
+  return <Chip label={label} selected={selected} selectedTone="dark" size="compact" onPress={onPress} accessibilityRole="checkbox" accessibilityState={{ checked: selected }} />;
 }
 const numberValue = (s: string) => s.trim() ? Number(s.replace(",", ".")) : undefined;
 export function validPreferences(p: JobPreferences): boolean {

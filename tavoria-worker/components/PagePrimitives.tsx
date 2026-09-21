@@ -62,6 +62,7 @@ export function FormFlowHeader({
   closeOnRight = false,
   step,
   total,
+  contentMaxWidth,
 }: {
   title: string;
   subtitle?: string;
@@ -70,13 +71,19 @@ export function FormFlowHeader({
   closeOnRight?: boolean;
   step?: number;
   total?: number;
+  contentMaxWidth?: number;
 }) {
   const isDesktop = useIsDesktop();
   const showProgress = !isDesktop && step !== undefined && total !== undefined;
   const close = onClose ?? onBack;
 
   return (
-    <PageContainer style={styles.formFlowHeaderContainer}>
+    <PageContainer
+      style={[
+        styles.formFlowHeaderContainer,
+        contentMaxWidth !== undefined && { maxWidth: contentMaxWidth },
+      ]}
+    >
       <PageHeader
         title={title}
         showLeftOnDesktop={!closeOnRight}

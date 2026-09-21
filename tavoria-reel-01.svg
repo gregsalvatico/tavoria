@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">
+  <rect width="1080" height="1920" fill="#F7F4EE"/>
+  <circle cx="920" cy="144" r="22" fill="#F0531C"/>
+  <text x="78" y="150" fill="#0E1A24" font-family="Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="4">TAVORIA / 01</text>
+  <text x="78" y="720" fill="#0E1A24" font-family="Georgia, serif" font-size="128">Come funziona</text>
+  <text x="78" y="855" fill="#F0531C" font-family="Georgia, serif" font-size="128">Tavoria?</text>
+  <line x1="78" y1="930" x2="1002" y2="930" stroke="#0E1A24" stroke-opacity=".14"/>
+  <text x="78" y="1110" fill="#F0531C" font-family="monospace" font-size="26" font-weight="700" letter-spacing="3">01</text>
+  <text x="142" y="1110" fill="#0E1A24" font-family="Arial, sans-serif" font-size="34" font-weight="700">Trova un'opportunità.</text>
+  <text x="78" y="1255" fill="#F0531C" font-family="monospace" font-size="26" font-weight="700" letter-spacing="3">02</text>
+  <text x="142" y="1255" fill="#0E1A24" font-family="Arial, sans-serif" font-size="34" font-weight="700">Presentati in 30 secondi.</text>
+  <text x="78" y="1400" fill="#F0531C" font-family="monospace" font-size="26" font-weight="700" letter-spacing="3">03</text>
+  <text x="142" y="1400" fill="#0E1A24" font-family="Arial, sans-serif" font-size="34" font-weight="700">Candidati.</text>
+  <text x="78" y="1710" fill="#0E1A24" font-family="Georgia, serif" font-size="76">Niente CV.</text>
+  <text x="78" y="1805" fill="#0E1A24" font-family="Georgia, serif" font-size="76">Persone vere.</text>
+  <text x="78" y="1890" fill="#F0531C" font-family="Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="2">TAVORIA.  MILANO · ITALIA</text>
+</svg>

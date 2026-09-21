@@ -3,6 +3,7 @@ import { useGlobalSearchParams, useRouter } from "expo-router";
 import { setPostedShift } from "../lib/postedShift";
 import { getVenueProfile, patchVenueProfile } from "../lib/venueProfile";
 import { getCurrentVenueRow, insertShift } from "../lib/db";
+import { clearPostShiftDraft, getPostShiftDraft, patchPostShiftDraft } from "../lib/postShiftDraft";
 import { t, useLanguage } from "../lib/i18n";
 import { formatLocalizedDate, formatLocalizedMonthYear, getLocalizedCalendarDays } from "../lib/dateFormat";
 import { localizeRole } from "../lib/positions";
@@ -26,10 +27,12 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  StyleProp,
   StyleSheet,
   Text,
   TextInput,
   View,
+  ViewStyle,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -79,8 +82,6 @@ const PAY_UNITS: {
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 const PAY_ACCESSORY_ID = "pay-accessory";
 
-type Shift = { fromMins: number; toMins: number };
-
 // Format minutes-since-midnight to "HH:MM"
 const fmt = (mins: number) => {
   const h = Math.floor(mins / 60) % 24;
@@ -123,24 +124,24 @@ export default function PostShift() {
   const focusKey = typeof focus === "string" && POST_SHIFT_STEPS.includes(focus as PostShiftStep) ? focus as PostShiftStep : "roles";
   const stepIndex = POST_SHIFT_STEPS.indexOf(focusKey);
   const availableRoles = COMMON_ROLES;
-  const [roles, setRoles] = useState<string[]>([]);
-  const [requirements, setRequirements] = useState<WorkerRequirements>({});
-  const [contracts, setContracts] = useState<string[]>([]);
-  const [days, setDays] = useState<number[]>([]);
+  const [roles, setRoles] = useState<string[]>(() => getPostShiftDraft().roles);
+  const [requirements, setRequirements] = useState<WorkerRequirements>(() => getPostShiftDraft().requirements);
+  const [contracts, setContracts] = useState<string[]>(() => getPostShiftDraft().contracts);
+  const [days, setDays] = useState<number[]>(() => getPostShiftDraft().days);
   // The shifts table currently persists one interval per post. Keep the
   // creation flow honest until the schema supports multiple intervals.
-  const [shifts, setShifts] = useState<Shift[]>([{ fromMins: 0, toMins: 0 }]);
-  const [startWhen, setStartWhen] = useState<"now" | "asap" | "pickdate" | null>(null);
-  const [pickedDate, setPickedDate] = useState<Date | null>(null);
+  const [shifts, setShifts] = useState(() => getPostShiftDraft().shifts);
+  const [startWhen, setStartWhen] = useState(() => getPostShiftDraft().startWhen);
+  const [pickedDate, setPickedDate] = useState(() => getPostShiftDraft().pickedDate);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [customContract, setCustomContract] = useState("");
+  const [customContract, setCustomContract] = useState(() => getPostShiftDraft().customContract);
   const [customContractOpen, setCustomContractOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const [payUnit, setPayUnit] = useState<"hour" | "day" | "week" | "month" | "later">("hour");
-  const [payInput, setPayInput] = useState("");
-  const [payUnitTouched, setPayUnitTouched] = useState(false);
+  const [payUnit, setPayUnit] = useState(() => getPostShiftDraft().payUnit);
+  const [payInput, setPayInput] = useState(() => getPostShiftDraft().payInput);
+  const [payUnitTouched, setPayUnitTouched] = useState(() => getPostShiftDraft().payUnitTouched);
   const defaultPayUnitApplied = useRef(false);
 
   const goToStep = (index: number) => {
@@ -152,10 +153,11 @@ export default function PostShift() {
   // Contract defaults are only applied before the venue makes an explicit pay
   // choice. Once chosen, the amount and unit must remain stable.
   const onPickContract = (id: string) => {
-    setContracts((current) => {
-      if (current.includes(id)) return current.filter((value) => value !== id);
-      return [...current, id];
-    });
+    const next = contracts.includes(id)
+      ? contracts.filter((value) => value !== id)
+      : [...contracts, id];
+    setContracts(next);
+    patchPostShiftDraft({ contracts: next });
   };
 
   useEffect(() => {
@@ -164,12 +166,15 @@ export default function PostShift() {
     if (!first) return;
     defaultPayUnitApplied.current = true;
     setPayUnit(first.defaultUnit);
+    patchPostShiftDraft({ payUnit: first.defaultUnit });
   }, [contracts, payUnit, payUnitTouched]);
 
   const onPickPayUnit = (u: "hour" | "day" | "week" | "month" | "later") => {
     setPayUnit(u);
     setPayUnitTouched(true);
-    if (u === "later") setPayInput("");
+    const nextPayInput = u === "later" ? "" : payInput;
+    if (u === "later") setPayInput(nextPayInput);
+    patchPostShiftDraft({ payUnit: u, payUnitTouched: true, payInput: nextPayInput });
   };
 
   // Which time field is being edited (e.g. "0-from", "1-to") — controls the modal
@@ -177,35 +182,39 @@ export default function PostShift() {
 
   const setShiftTime = (idx: number, which: "from" | "to", date: Date) => {
     const mins = date.getHours() * 60 + date.getMinutes();
-    setShifts((cur) =>
-      cur.map((s, i) =>
-        i !== idx
-          ? s
-          : { ...s, [which === "from" ? "fromMins" : "toMins"]: mins }
-      )
+    const next = shifts.map((shift, i) =>
+      i !== idx
+        ? shift
+        : { ...shift, [which === "from" ? "fromMins" : "toMins"]: mins }
     );
+    setShifts(next);
+    patchPostShiftDraft({ shifts: next });
   };
 
-  const toggleRole = (r: string) =>
-    setRoles((cur) =>
-      cur.includes(r)
-        ? cur.filter((x) => x !== r)
-        : cur.length >= 3
-        ? cur
-        : [...cur, r]
-    );
+  const toggleRole = (r: string) => {
+    const next = roles.includes(r)
+      ? roles.filter((x) => x !== r)
+      : roles.length >= 3
+        ? roles
+        : [...roles, r];
+    setRoles(next);
+    patchPostShiftDraft({ roles: next });
+  };
 
-  const toggleDay = (i: number) =>
-    setDays((cur) =>
-      cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i].sort()
-    );
+  const toggleDay = (i: number) => {
+    const next = days.includes(i) ? days.filter((x) => x !== i) : [...days, i].sort();
+    setDays(next);
+    patchPostShiftDraft({ days: next });
+  };
 
   const selectStartMode = (mode: "now" | "asap" | "pickdate") => {
     setStartWhen(mode);
+    patchPostShiftDraft({ startWhen: mode });
     if (mode === "pickdate") {
       setCalendarOpen(true);
     } else {
       setPickedDate(null);
+      patchPostShiftDraft({ pickedDate: null });
     }
   };
 
@@ -249,6 +258,7 @@ export default function PostShift() {
         subtitle={t("post_shift.intro")}
         step={stepIndex}
         total={POST_SHIFT_STEPS.length}
+        contentMaxWidth={840}
         onBack={() => {
           if (stepIndex > 0) {
             goToStep(stepIndex - 1);
@@ -431,7 +441,7 @@ export default function PostShift() {
             </View>
           </Section> : null}
 
-          {focusKey === "pay" ? <Section title={t("post_shift.pay")}>
+          {focusKey === "pay" ? <Section title={t("post_shift.pay")} style={styles.paySection}>
             <View style={styles.payUnitRow}>
               {PAY_UNITS.map((unit) => {
                 const selected = payUnit === unit.id;
@@ -456,7 +466,11 @@ export default function PostShift() {
                   <TextInput
                     accessibilityLabel={t("shift_edit.pay")}
                     value={payInput}
-                    onChangeText={(value) => setPayInput(value.replace(/[^0-9,.]/g, ""))}
+                    onChangeText={(value) => {
+                      const next = value.replace(/[^0-9,.]/g, "");
+                      setPayInput(next);
+                      patchPostShiftDraft({ payInput: next });
+                    }}
                     keyboardType="decimal-pad"
                     style={styles.payInput}
                     placeholder="0"
@@ -468,8 +482,19 @@ export default function PostShift() {
                   <Text style={styles.payUnitLabel}>{t(`post_shift.per_${payUnit}`)}</Text>
                 </View>
                 <Text style={styles.payHint}>{t(`post_shift.pay_hint_${payUnit}`)}</Text>
-                <Pressable onPress={() => onPickPayUnit("later")} style={({ hovered, pressed }) => [styles.discussLaterLink, hovered && styles.discussLaterHovered, pressed && styles.controlPressed]}>
-                  <Feather name="message-circle" size={14} color={TAVORIA.color.muted} />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t("post_shift.skip_pay")}
+                  onPress={() => onPickPayUnit("later")}
+                  style={({ hovered, pressed }) => [
+                    styles.discussLaterLink,
+                    hovered && styles.discussLaterHovered,
+                    pressed && styles.controlPressed,
+                  ]}
+                >
+                  <View style={styles.discussLaterIcon}>
+                    <Feather name="message-circle" size={14} color={TAVORIA.color.muted} />
+                  </View>
                   <Text style={styles.discussLaterTxt}>{t("post_shift.skip_pay")}</Text>
                 </Pressable>
               </>
@@ -481,7 +506,15 @@ export default function PostShift() {
             )}
           </Section> : null}
 
-          {focusKey === "requirements" ? <RequirementFields value={requirements} onChange={setRequirements} /> : null}
+          {focusKey === "requirements" ? (
+            <RequirementFields
+              value={requirements}
+              onChange={(next) => {
+                setRequirements(next);
+                patchPostShiftDraft({ requirements: next });
+              }}
+            />
+          ) : null}
 
           {isReviewStep ? (
             <>
@@ -526,18 +559,26 @@ export default function PostShift() {
               setBusy(true);
               const contractLabel = contracts.map((id) => id === "custom" ? customContract.trim() : t(`post_shift.${CONTRACT_KEYS[id] ?? id}`)).filter(Boolean).join(" · ") || null;
               const contractValue = serializeContractTypes(contracts, customContract);
-              let venueId = getVenueProfile()?.id;
-              if (!venueId) {
-                try {
-                  const v = await getCurrentVenueRow();
-                  if (v?.id) {
-                    venueId = v.id as string;
-                    patchVenueProfile({ id: v.id, name: v.name, type: v.type });
-                  }
-                } catch (e) {
-                  console.warn("[post-shift] hydrate venue failed:", e);
+              const cachedVenue = getVenueProfile();
+              let venueId: string | undefined;
+              try {
+                // The in-memory venue can belong to a previous account after a
+                // sign-in or refresh. Prefer the row owned by the active
+                // session, and only fall back to the cache for a venue created
+                // moments ago whose ownership has not propagated yet.
+                const v = await getCurrentVenueRow();
+                if (v?.id) {
+                  venueId = v.id as string;
+                  patchVenueProfile({
+                    id: v.id,
+                    name: v.name ?? cachedVenue?.name ?? "",
+                    type: v.type ?? cachedVenue?.type,
+                  });
                 }
+              } catch (e) {
+                console.warn("[post-shift] hydrate venue failed:", e);
               }
+              venueId ??= cachedVenue?.id;
               if (!venueId) {
                 setErrorMsg(t("post_shift.err_no_venue"));
                 setBusy(false);
@@ -558,7 +599,9 @@ export default function PostShift() {
                   hours_end: fmtHHMM(currentShift.toMins),
                   start_when: startWhen ?? undefined,
                   start_date: startDate,
-                  pay_unit: payUnit,
+                  // "later" is a UI-only state. Store no unit when pay is
+                  // intentionally left for the interview.
+                  pay_unit: payUnit === "later" ? undefined : payUnit,
                   pay_amount: payUnit === "later" ? undefined : payAmount,
                 });
                 setPostedShift({
@@ -571,6 +614,7 @@ export default function PostShift() {
                   payUnit,
                   pay: payUnit === "later" ? 0 : payAmount,
                 });
+                clearPostShiftDraft();
                 router.replace("/venue-bonus");
               } catch (e: any) {
                 setErrorMsg(e?.message || t("post_shift.err_save_shift"));
@@ -618,6 +662,7 @@ export default function PostShift() {
             value={pickedDate ?? new Date()}
             onChange={(d) => {
               setPickedDate(d);
+              patchPostShiftDraft({ pickedDate: d });
             }}
           />
         </View>
@@ -641,7 +686,10 @@ export default function PostShift() {
           <View style={{ padding: 16, paddingBottom: 24 }}>
             <TextInput
               value={customContract}
-              onChangeText={setCustomContract}
+              onChangeText={(value) => {
+                setCustomContract(value);
+                patchPostShiftDraft({ customContract: value });
+              }}
               placeholder={t("post_shift.custom_placeholder")}
               placeholderTextColor="#9CA3AF"
               autoFocus
@@ -1070,15 +1118,17 @@ function Section({
   title,
   sub,
   children,
+  style,
 }: {
   title: string;
   sub?: string;
   children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
 }) {
   const first = title.charAt(0);
   const rest = title.slice(1);
   return (
-    <View style={styles.section}>
+    <View style={[styles.section, style]}>
       <Text style={styles.sectionTitle}>
         <Text style={styles.sectionTitleFirst}>{first}</Text>
         {rest}
@@ -1277,15 +1327,16 @@ const styles = StyleSheet.create({
   optionTitle: { color: TAVORIA.color.navy, fontSize: 15, fontWeight: "700" },
   optionSub: { color: TAVORIA.color.muted, fontSize: 12, lineHeight: 16, marginTop: 2 },
 
-  payUnitRow: { backgroundColor: "rgba(14,26,36,0.06)", borderRadius: TAVORIA.radius.small, flexDirection: "row", gap: 4, padding: 4 },
-  payUnitOption: { alignItems: "center", borderRadius: 7, flex: 1, justifyContent: "center", minHeight: 42, paddingHorizontal: 4 },
-  payUnitOptionOn: { backgroundColor: TAVORIA.color.white },
+  paySection: { marginTop: 18 },
+  payUnitRow: { backgroundColor: TAVORIA.color.paperDeep, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.medium, borderWidth: 1, flexDirection: "row", gap: 4, padding: 4 },
+  payUnitOption: { alignItems: "center", borderColor: "transparent", borderRadius: TAVORIA.radius.small, borderWidth: 1, flex: 1, height: 44, justifyContent: "center", paddingHorizontal: 8 },
+  payUnitOptionOn: { backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border },
   payUnitOptionHovered: { backgroundColor: "rgba(255,255,255,0.65)" },
-  payUnitText: { color: TAVORIA.color.muted, fontSize: 12, fontWeight: "600", textAlign: "center" },
+  payUnitText: { color: TAVORIA.color.muted, fontSize: 13, fontWeight: "600", textAlign: "center" },
   payUnitTextOn: { color: TAVORIA.color.navy },
-  payInputRow: { alignItems: "baseline", backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.small, borderWidth: 1, flexDirection: "row", gap: 5, marginTop: 12, minHeight: 56, paddingHorizontal: 14 },
+  payInputRow: { alignItems: "center", backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.medium, borderWidth: 1, flexDirection: "row", gap: 6, marginTop: 12, minHeight: 58, paddingHorizontal: 16 },
   payCurrency: { color: TAVORIA.color.navy, fontSize: 24, fontWeight: "800" },
-  payInput: { color: TAVORIA.color.navy, flex: 1, fontSize: 24, fontWeight: "700", padding: 0 },
+  payInput: { color: TAVORIA.color.navy, flex: 1, fontSize: 24, fontWeight: "700", padding: 0, textAlignVertical: "center" },
   payUnitLabel: { color: TAVORIA.color.muted, fontSize: 13 },
   discussLaterHovered: { backgroundColor: "rgba(14,26,36,0.06)" },
   reviewBox: { backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.small, borderWidth: 1, marginTop: 28, padding: 14 },
@@ -1532,14 +1583,26 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   discussLaterLink: {
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
+    backgroundColor: TAVORIA.color.white,
+    borderColor: TAVORIA.color.border,
+    borderRadius: TAVORIA.radius.medium,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
     marginTop: 10,
-    paddingVertical: 6,
+    minHeight: 52,
+    paddingHorizontal: 12,
   },
-  discussLaterTxt: { color: "#6B7280", fontSize: 13, fontWeight: "600" },
+  discussLaterIcon: {
+    alignItems: "center",
+    backgroundColor: TAVORIA.color.paperDeep,
+    borderRadius: TAVORIA.radius.small,
+    height: 30,
+    justifyContent: "center",
+    width: 30,
+  },
+  discussLaterTxt: { color: TAVORIA.color.navy, flex: 1, fontSize: 13, fontWeight: "700" },
 
   asapTile: {
     flexDirection: "row",

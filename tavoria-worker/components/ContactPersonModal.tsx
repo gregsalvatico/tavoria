@@ -3,7 +3,6 @@ import * as Clipboard from "expo-clipboard";
 import { useState } from "react";
 import {
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -12,8 +11,7 @@ import { mailtoUrl, mapsUrl, telUrl, whatsAppUrl } from "../lib/contact";
 import { openExternalLink } from "../lib/externalLinks";
 import { t } from "../lib/i18n";
 import { TAVORIA } from "../lib/designTokens";
-import { useIsDesktop } from "../lib/responsive";
-import ResponsiveModal from "./ResponsiveModal";
+import TavoriaModal from "./TavoriaModal";
 
 type Props = {
   visible: boolean;
@@ -35,7 +33,6 @@ export default function ContactPersonModal({
   visitAddress,
   recipientType = "venue",
 }: Props) {
-  const isDesktop = useIsDesktop();
   const [copied, setCopied] = useState(false);
   const open = (url: string | null, target: string) => openExternalLink(url, target);
   const copyEmail = async () => {
@@ -48,20 +45,12 @@ export default function ContactPersonModal({
     : t("contact_modal.venue");
 
   return (
-    <ResponsiveModal visible={visible} onClose={onClose} panelStyle={isDesktop && styles.desktopPanel}>
-        <ScrollView style={styles.sheet} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          {!isDesktop ? <View style={styles.handle} /> : null}
-          <View style={styles.titleRow}>
-            <View>
-              <Text style={styles.kicker}>{t("contact_modal.kicker")}</Text>
-              <Text style={styles.title}>{t("contact_modal.title", { name: name || recipientLabel })}</Text>
-            </View>
-            <Pressable style={styles.close} onPress={onClose} hitSlop={10}>
-              <Feather name="x" size={20} color="#0E1A24" />
-            </Pressable>
-          </View>
-
-          <Text style={styles.intro}>{t("contact_modal.intro")}</Text>
+    <TavoriaModal
+      visible={visible}
+      onClose={onClose}
+      title={t("contact_modal.title", { name: name || recipientLabel })}
+      subtitle={t("contact_modal.intro")}
+    >
 
           {email ? (
             <Pressable style={[styles.action, styles.emailAction]} onPress={() => void open(mailtoUrl(email, `Tavoria - ${name}`, ""), t("external_link.email"))}>
@@ -126,21 +115,11 @@ export default function ContactPersonModal({
           ) : null}
 
           {!email && !phone && !visitAddress ? <Text style={styles.noContact}>{t("contact_modal.no_contact", { recipient: recipientLabel.toLowerCase() })}</Text> : null}
-        </ScrollView>
-    </ResponsiveModal>
+    </TavoriaModal>
   );
 }
 
 const styles = StyleSheet.create({
-  desktopPanel: { maxWidth: 620 },
-  sheet: { maxHeight: "86%" },
-  content: { paddingBottom: 30, paddingHorizontal: 18, paddingTop: 11 },
-  handle: { alignSelf: "center", backgroundColor: "#C8CBCF", borderRadius: 999, height: 4, marginBottom: 17, width: 38 },
-  titleRow: { alignItems: "center", flexDirection: "row", justifyContent: "space-between" },
-  kicker: { color: TAVORIA.color.orange, fontSize: 10, fontWeight: "800", letterSpacing: 1.2 },
-  title: { color: TAVORIA.color.navy, fontFamily: "InstrumentSerif_400Regular", fontSize: 27, lineHeight: 31, marginTop: 2 },
-  close: { alignItems: "center", backgroundColor: TAVORIA.color.white, borderRadius: TAVORIA.radius.pill, height: 38, justifyContent: "center", width: 38 },
-  intro: { color: "#5D6670", fontSize: 13, lineHeight: 19, marginBottom: 8, marginTop: 10 },
   action: { alignItems: "center", backgroundColor: TAVORIA.color.white, borderColor: TAVORIA.color.border, borderRadius: TAVORIA.radius.medium, borderWidth: 1, flexDirection: "row", gap: 11, marginTop: 10, minHeight: 62, paddingHorizontal: 13 },
   emailAction: { marginTop: 12 },
   copyAction: { marginTop: 8 },

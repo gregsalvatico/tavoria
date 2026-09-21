@@ -8,7 +8,6 @@ import {
   Alert,
   ActivityIndicator,
   AppState,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -31,6 +30,7 @@ import { openExternalLink } from "../lib/externalLinks";
 import SignedInHome from "../components/SignedInHome";
 import DesktopLanding from "../components/DesktopLanding";
 import ShareTavoriaModal from "../components/ShareTavoriaModal";
+import TavoriaModal from "../components/TavoriaModal";
 import {
   getCachedHomeContext,
   setCachedHomeContext,
@@ -318,41 +318,25 @@ export default function Welcome() {
           </View>
         </View>
 
-        {/* Language picker modal */}
-        <Modal
-          visible={pickerOpen}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setPickerOpen(false)}
-        >
-          <Pressable
-            style={styles.modalBackdrop}
-            onPress={() => setPickerOpen(false)}
-          />
-          <View style={styles.langSheet}>
-            <View style={styles.langSheetHandle} />
-            <Text style={styles.langSheetTitle}>{t("language.pick")}</Text>
-            {LANGUAGES.map((l) => (
-              <Pressable
-                key={l.code}
-                onPress={async () => {
-                  await setLanguage(l.code);
-                  setLang(l.code);
-                  setPickerOpen(false);
-                }}
-                style={[styles.langRow, l.code === lang && styles.langRowOn]}
-              >
-                <Text style={styles.langRowFlag}>{l.flag}</Text>
-                <Text style={styles.langRowLbl}>{l.label}</Text>
-                <View style={styles.langRowCheck}>
-                  {l.code === lang && (
-                    <Feather name="check-circle" size={20} color="#F0531C" />
-                  )}
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        </Modal>
+        <TavoriaModal visible={pickerOpen} onClose={() => setPickerOpen(false)} title={t("language.pick")}>
+          {LANGUAGES.map((l) => (
+            <Pressable
+              key={l.code}
+              onPress={async () => {
+                await setLanguage(l.code);
+                setLang(l.code);
+                setPickerOpen(false);
+              }}
+              style={[styles.langRow, l.code === lang && styles.langRowOn]}
+            >
+              <Text style={styles.langRowFlag}>{l.flag}</Text>
+              <Text style={styles.langRowLbl}>{l.label}</Text>
+              <View style={styles.langRowCheck}>
+                {l.code === lang && <Feather name="check-circle" size={20} color="#F0531C" />}
+              </View>
+            </Pressable>
+          ))}
+        </TavoriaModal>
       </SafeAreaView>
     );
   }
@@ -368,23 +352,6 @@ export default function Welcome() {
       onChangeLanguage={async (language) => {
         await setLanguage(language);
         setLang(language);
-      }}
-      onPrintQr={async () => {
-        if (!ctx.venueId) return;
-        try {
-          const vp = getVenueProfile();
-          await downloadVenueQRPoster({
-            venueId: ctx.venueId,
-            venueName: ctx.venueName ?? vp?.name ?? "",
-            venueCity: ctx.venueCity ?? vp?.city,
-          });
-        } catch (error) {
-          console.warn("[home] downloadVenueQRPoster failed:", error);
-          Alert.alert(
-            t("home_in.print_qr"),
-            String((error as Error)?.message ?? error)
-          );
-        }
       }}
       onShare={onShare}
         onSignOut={signOut}
@@ -812,44 +779,25 @@ export default function Welcome() {
       <WhatsAppFAB />
       */}
 
-      {/* Language picker modal */}
-      <Modal
-        visible={pickerOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setPickerOpen(false)}
-      >
-        <Pressable
-          style={styles.modalBackdrop}
-          onPress={() => setPickerOpen(false)}
-        />
-        <View style={styles.langSheet}>
-          <View style={styles.langSheetHandle} />
-          <Text style={styles.langSheetTitle}>{t("language.pick")}</Text>
-          {LANGUAGES.map((l) => (
-            <Pressable
-              key={l.code}
-              onPress={async () => {
-                await setLanguage(l.code);
-                setLang(l.code);
-                setPickerOpen(false);
-              }}
-              style={[
-                styles.langRow,
-                l.code === lang && styles.langRowOn,
-              ]}
-            >
-              <Text style={styles.langRowFlag}>{l.flag}</Text>
-              <Text style={styles.langRowLbl}>{l.label}</Text>
-              <View style={styles.langRowCheck}>
-                {l.code === lang && (
-                  <Feather name="check-circle" size={20} color="#F0531C" />
-                )}
-              </View>
-            </Pressable>
-          ))}
-        </View>
-      </Modal>
+      <TavoriaModal visible={pickerOpen} onClose={() => setPickerOpen(false)} title={t("language.pick")}>
+        {LANGUAGES.map((l) => (
+          <Pressable
+            key={l.code}
+            onPress={async () => {
+              await setLanguage(l.code);
+              setLang(l.code);
+              setPickerOpen(false);
+            }}
+            style={[styles.langRow, l.code === lang && styles.langRowOn]}
+          >
+            <Text style={styles.langRowFlag}>{l.flag}</Text>
+            <Text style={styles.langRowLbl}>{l.label}</Text>
+            <View style={styles.langRowCheck}>
+              {l.code === lang && <Feather name="check-circle" size={20} color="#F0531C" />}
+            </View>
+          </Pressable>
+        ))}
+      </TavoriaModal>
 
     </SafeAreaView>
   );

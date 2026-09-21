@@ -4,7 +4,6 @@ import { ReactNode, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -22,7 +21,9 @@ import { getCachedHomeContext, setCachedHomeContext, type HomeContext } from "..
 import { getAccountMenuSections, type AccountMenuActionId } from "../lib/accountNavigation";
 import { supabase } from "../lib/supabase";
 import { TAVORIA } from "../lib/designTokens";
-import { openExternalLink } from "../lib/externalLinks";
+import ChangePinModal from "./ChangePinModal";
+import ContactTavoriaModal from "./ContactTavoriaModal";
+import TavoriaModal from "./TavoriaModal";
 import VenueQrFab from "./VenueQrFab";
 
 const FOCUSED_ROUTES = new Set([
@@ -430,6 +431,8 @@ function DesktopSidebar({ currentRoute, onLanguageChange }: { currentRoute: stri
   const [context, setContext] = useState<HomeContext | null>(() => getCachedHomeContext());
   const [contextLoading, setContextLoading] = useState(() => !getCachedHomeContext());
   const [languageOpen, setLanguageOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
+  const [changePinOpen, setChangePinOpen] = useState(false);
   const language = useLanguage();
 
   useEffect(() => {
@@ -504,14 +507,14 @@ function DesktopSidebar({ currentRoute, onLanguageChange }: { currentRoute: stri
       return;
     }
     if (id === "change_pin") {
-      router.push({ pathname: "/change-pin", params: { role: venueMode ? "venue" : "worker" } });
+      setChangePinOpen(true);
       return;
     }
     if (id === "share") {
       void share();
       return;
     }
-    void openExternalLink("mailto:hello@tavoriapp.com", t("external_link.email"));
+    setContactOpen(true);
   };
 
   if (contextLoading && currentRoute === "index") {
@@ -676,25 +679,26 @@ function DesktopSidebar({ currentRoute, onLanguageChange }: { currentRoute: stri
         </Pressable>
       </View>
 
-      <Modal transparent visible={languageOpen} animationType="fade" onRequestClose={() => setLanguageOpen(false)}>
-        <View style={styles.sidebarModalOverlay}>
-          <Pressable style={styles.sidebarModalBackdrop} onPress={() => setLanguageOpen(false)} />
-          <View style={styles.sidebarLanguageCard}>
-            <Text style={styles.sidebarLanguageTitle}>{t("language.pick")}</Text>
-            {LANGUAGES.map((option) => (
-              <Pressable
-                key={option.code}
-                onPress={() => void chooseLanguage(option.code)}
-                style={[styles.sidebarLanguageOption, option.code === language && styles.sidebarLanguageOptionActive]}
-              >
-                <Text style={styles.sidebarLanguageFlag}>{option.flag}</Text>
-                <Text style={styles.sidebarLanguageLabel}>{option.label}</Text>
-                {option.code === language ? <Feather name="check" size={17} color={TAVORIA.color.orange} /> : null}
-              </Pressable>
-            ))}
-          </View>
-        </View>
-      </Modal>
+      <TavoriaModal visible={languageOpen} onClose={() => setLanguageOpen(false)} title={t("language.pick")}>
+        {LANGUAGES.map((option) => (
+          <Pressable
+            key={option.code}
+            onPress={() => void chooseLanguage(option.code)}
+            style={({ hovered, pressed }) => [
+              styles.sidebarLanguageOption,
+              option.code === language && styles.sidebarLanguageOptionActive,
+              hovered && styles.sidebarLanguageOptionHovered,
+              pressed && styles.sidebarLanguageOptionPressed,
+            ]}
+          >
+            <Text style={styles.sidebarLanguageFlag}>{option.flag}</Text>
+            <Text style={styles.sidebarLanguageLabel}>{option.label}</Text>
+            {option.code === language ? <Feather name="check" size={17} color={TAVORIA.color.orange} /> : null}
+          </Pressable>
+        ))}
+      </TavoriaModal>
+      <ContactTavoriaModal visible={contactOpen} onClose={() => setContactOpen(false)} />
+      <ChangePinModal visible={changePinOpen} onClose={() => setChangePinOpen(false)} />
     </View>
   );
 }
@@ -879,12 +883,10 @@ const styles = StyleSheet.create({
   sidebarSignOutHovered: { backgroundColor: "rgba(14,26,36,0.07)", borderRadius: 10 },
   sidebarSignOutPressed: { opacity: 0.72 },
   sidebarSignOutText: { color: "rgba(14,26,36,0.62)", fontSize: 12, fontWeight: "700" },
-  sidebarModalOverlay: { alignItems: "flex-start", flex: 1, justifyContent: "center", paddingLeft: DESKTOP_SIDEBAR_WIDTH + 18, paddingRight: 24 },
-  sidebarModalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(14,26,36,0.2)" },
-  sidebarLanguageCard: { backgroundColor: TAVORIA.color.paper, borderColor: TAVORIA.color.borderStrong, borderRadius: TAVORIA.radius.large, borderWidth: 1, elevation: 8, maxWidth: 300, padding: 14, shadowColor: TAVORIA.color.navy, shadowOffset: { height: 8, width: 0 }, shadowOpacity: 0.14, shadowRadius: 20, width: "100%" },
-  sidebarLanguageTitle: { color: TAVORIA.color.navy, fontFamily: "InstrumentSerif_400Regular", fontSize: 24, marginBottom: 10 },
-  sidebarLanguageOption: { alignItems: "center", borderRadius: TAVORIA.radius.small, flexDirection: "row", gap: 10, minHeight: 44, paddingHorizontal: 10 },
+  sidebarLanguageOption: { alignItems: "center", backgroundColor: TAVORIA.color.paperDeep, borderRadius: TAVORIA.radius.small, flexDirection: "row", gap: 10, marginBottom: 8, minHeight: 44, paddingHorizontal: 10 },
   sidebarLanguageOptionActive: { backgroundColor: TAVORIA.color.orangeSoft },
+  sidebarLanguageOptionHovered: { backgroundColor: "#E9E7E1" },
+  sidebarLanguageOptionPressed: { opacity: 0.72 },
   sidebarLanguageFlag: { fontSize: 20, textAlign: "center", width: 25 },
   sidebarLanguageLabel: { color: TAVORIA.color.navy, flex: 1, fontSize: 13, fontWeight: "700" },
 });

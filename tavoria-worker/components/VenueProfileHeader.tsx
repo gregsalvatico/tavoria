@@ -5,6 +5,7 @@ import { t } from "../lib/i18n";
 import { mapsUrl, websiteLabel, websiteUrl } from "../lib/contact";
 import { openExternalLink } from "../lib/externalLinks";
 import AvatarActionModal from "./AvatarActionModal";
+import Chip from "./Chip";
 import ProfileMediaSection from "./ProfileMediaSection";
 import type { MediaItem } from "./mediaTypes";
 
@@ -89,26 +90,24 @@ export default function VenueProfileHeader({ venue, onEdit, onAvatarReplace }: {
       {(venue.address || website) ? (
         <View style={styles.infoChips}>
           {venue.address ? (
-            <Pressable
+            <Chip
+              label={venue.address}
+              icon="map-pin"
+              trailingIcon="arrow-up-right"
+              size="compact"
               accessibilityRole="link"
-              style={({ hovered, pressed }) => [styles.infoChip, hovered && styles.infoChipHovered, pressed && styles.infoChipPressed]}
               onPress={() => void openExternalLink(mapsUrl(venue.address!), t("external_link.maps"))}
-            >
-              <Feather name="map-pin" size={14} color="#626B78" />
-              <Text style={styles.infoChipText} numberOfLines={1}>{venue.address}</Text>
-              <Feather name="arrow-up-right" size={13} color="#626B78" />
-            </Pressable>
+            />
           ) : null}
           {website ? (
-            <Pressable
+            <Chip
+              label={websiteText}
+              icon="globe"
+              trailingIcon="arrow-up-right"
+              size="compact"
               accessibilityRole="link"
-              style={({ hovered, pressed }) => [styles.infoChip, hovered && styles.infoChipHovered, pressed && styles.infoChipPressed]}
               onPress={() => void openExternalLink(website, t("external_link.website"))}
-            >
-              <Feather name="globe" size={14} color="#626B78" />
-              <Text style={styles.infoChipText} numberOfLines={1}>{websiteText}</Text>
-              <Feather name="arrow-up-right" size={13} color="#626B78" />
-            </Pressable>
+            />
           ) : null}
         </View>
       ) : null}
@@ -157,10 +156,6 @@ const styles = StyleSheet.create({
   meta: { color: "#626B78", fontSize: 13 },
   edit: { alignItems: "center", backgroundColor: "#FFFFFF", borderColor: "rgba(14,26,36,0.16)", borderRadius: 22, borderWidth: 1, height: 42, justifyContent: "center", width: 42 },
   infoChips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  infoChip: { alignItems: "center", backgroundColor: "#FFFFFF", borderColor: "rgba(14,26,36,0.12)", borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, maxWidth: "100%", minHeight: 36, paddingHorizontal: 11 },
-  infoChipHovered: { backgroundColor: "#F1EFE8" },
-  infoChipPressed: { opacity: 0.72 },
-  infoChipText: { color: "#626B78", flexShrink: 1, fontSize: 12, fontWeight: "700" },
   previewModal: { alignItems: "center", backgroundColor: "rgba(14,26,36,.96)", flex: 1, justifyContent: "center", padding: 24 },
   previewClose: { padding: 12, position: "absolute", right: 24, top: 24, zIndex: 2 },
   previewImage: { height: "82%", maxWidth: 960, width: "100%" },

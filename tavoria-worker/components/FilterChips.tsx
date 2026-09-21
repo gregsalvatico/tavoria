@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
-import { Pressable, ScrollView, StyleProp, StyleSheet, Text, ViewStyle } from "react-native";
-import { TAVORIA } from "../lib/designTokens";
+import { ScrollView, StyleProp, StyleSheet, ViewStyle } from "react-native";
+import Chip from "./Chip";
 
 export type FilterChipOption<T extends string = string> = {
   id: T;
@@ -22,21 +22,15 @@ export function FilterToggleChip({
   desktop?: boolean;
 }) {
   return (
-    <Pressable
+    <Chip
+      label={label}
+      icon={active ? "check" : icon}
+      selected={active}
+      selectedTone="accent"
+      size={desktop ? "regular" : "compact"}
       onPress={onPress}
-      style={({ hovered, pressed }) => [
-        styles.chip,
-        desktop && styles.chipDesktop,
-        active && styles.chipActive,
-        hovered && !active && styles.chipHovered,
-        pressed && styles.chipPressed,
-      ]}
-      accessibilityRole="button"
       accessibilityState={{ selected: active }}
-    >
-      <Feather name={active ? "check" : icon} size={12} color={active ? TAVORIA.color.orange : "#46505A"} />
-      <Text style={[styles.label, desktop && styles.labelDesktop, active && styles.labelActive]}>{label}</Text>
-    </Pressable>
+    />
   );
 }
 
@@ -65,26 +59,16 @@ export default function FilterChips<T extends string>({
       {options.map((option) => {
         const active = option.id === value;
         return (
-          <Pressable
+          <Chip
             key={option.id}
+            label={option.label}
+            count={option.count}
+            selected={active}
+            selectedTone="accent"
+            size={desktop ? "regular" : "compact"}
             onPress={() => onChange(option.id)}
-            style={({ hovered, pressed }) => [
-              styles.chip,
-              desktop && styles.chipDesktop,
-              active && styles.chipActive,
-              hovered && !active && styles.chipHovered,
-              pressed && styles.chipPressed,
-            ]}
-            accessibilityRole="button"
             accessibilityState={{ selected: active }}
-          >
-              <Text style={[styles.label, desktop && styles.labelDesktop, active && styles.labelActive]}>
-              {option.label}
-            </Text>
-            {typeof option.count === "number" ? (
-              <Text style={[styles.count, desktop && styles.countDesktop, active && styles.countActive]}>{option.count}</Text>
-            ) : null}
-          </Pressable>
+          />
         );
       })}
     </ScrollView>
@@ -100,26 +84,4 @@ const styles = StyleSheet.create({
   rowMobile: { paddingBottom: 14 },
   rowDesktop: { paddingHorizontal: 24 },
   rowContained: { paddingHorizontal: 0 },
-  chip: {
-    alignItems: "center",
-    backgroundColor: TAVORIA.color.white,
-    borderColor: TAVORIA.color.border,
-    borderRadius: TAVORIA.radius.pill,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 6,
-    minHeight: 36,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  chipDesktop: { minHeight: 40, paddingHorizontal: 16 },
-  chipActive: { backgroundColor: TAVORIA.color.orangeSoft, borderColor: TAVORIA.color.orange },
-  chipHovered: { backgroundColor: "#F3F4F0" },
-  chipPressed: { opacity: 0.78 },
-  label: { color: "#46505A", fontSize: 12, fontWeight: "700" },
-  labelDesktop: { fontSize: 13 },
-  labelActive: { color: TAVORIA.color.orange },
-  count: { color: "#8A8F98", fontFamily: "DMMono_500Medium", fontSize: 10 },
-  countDesktop: { fontSize: 11 },
-  countActive: { color: TAVORIA.color.orange },
 });

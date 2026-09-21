@@ -1,8 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import {
-  Modal,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -13,6 +11,7 @@ import { t, useLanguage } from "../lib/i18n";
 import { formatLocalizedDate, formatLocalizedMonthYear, getLocalizedCalendarDays } from "../lib/dateFormat";
 import { TAVORIA } from "../lib/designTokens";
 import ActionButton from "./ActionButton";
+import TavoriaModal from "./TavoriaModal";
 
 export type ApplicationAction = "decline" | "star" | "interview" | "hire";
 export type InterviewSchedule = { scheduledAt: string; location: string };
@@ -92,31 +91,17 @@ export default function ApplicationActionModal({
   const minDateKey = defaultInterviewDate();
 
   return (
-    <Modal
-      transparent
-      animationType="none"
+    <TavoriaModal
       visible={visible}
-      onRequestClose={() => {
+      onClose={() => {
         if (!loading) onCancel();
       }}
+      title={t(`candidate_actions.confirm_${action}_title`)}
+      subtitle={t(`candidate_actions.confirm_${action}_body`)}
     >
-      <View style={styles.overlay}>
-        <ScrollView
-          style={styles.modalScroll}
-          contentContainerStyle={styles.card}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          showsHorizontalScrollIndicator={false}
-        >
-          <View style={[styles.icon, { backgroundColor: meta.background }]}>
+      <View style={[styles.icon, { backgroundColor: meta.background }]}>
             <Feather name={meta.icon} size={27} color={meta.color} />
           </View>
-          <Text style={styles.title}>
-            {t(`candidate_actions.confirm_${action}_title`)}
-          </Text>
-          <Text style={styles.body}>
-            {t(`candidate_actions.confirm_${action}_body`)}
-          </Text>
 
           {action === "interview" ? (
             <View style={styles.scheduleForm}>
@@ -267,28 +252,11 @@ export default function ApplicationActionModal({
           >
             <Text style={styles.cancelText}>{t("common.cancel")}</Text>
           </Pressable>
-        </ScrollView>
-      </View>
-    </Modal>
+    </TavoriaModal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 20,
-    backgroundColor: "rgba(14,26,36,0.42)",
-  },
-  card: {
-    width: "100%",
-    maxWidth: 430,
-    alignSelf: "center",
-    borderRadius: TAVORIA.radius.large,
-    backgroundColor: TAVORIA.color.paper,
-    padding: 22,
-  },
-  modalScroll: { maxHeight: "92%", width: "100%" },
   icon: {
     width: 52,
     height: 52,
@@ -296,18 +264,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
-  },
-  title: {
-    fontFamily: "InstrumentSerif_400Regular",
-    color: "#0E1A24",
-    fontSize: 27,
-    lineHeight: 31,
-  },
-  body: {
-    color: "#46505A",
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: 8,
   },
   scheduleForm: { marginTop: 18 },
   formLabel: { color: "#0E1A24", fontSize: 12, fontWeight: "700", marginBottom: 7, marginTop: 12 },

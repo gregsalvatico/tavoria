@@ -18,3 +18,7 @@ Your Mac and phone must be on the same wifi network.
 - `app/index.tsx` — Welcome screen
 - `app/scan.tsx` — QR scan placeholder (simulates a scan)
 - `app/candidate.tsx` — Venue-view demo (Greg as a candidate, 4 action buttons, paid-feature locks)
+
+## Content design
+
+See [`TAVORIA_CONTENT_GUIDE.md`](./TAVORIA_CONTENT_GUIDE.md) for the shared typography, color palette, chip rules, and social content layout guidance.

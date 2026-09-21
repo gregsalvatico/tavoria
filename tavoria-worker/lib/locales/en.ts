@@ -318,7 +318,7 @@ export default {
     pay_hint_hour: "Hourly rate — workers see this on the card.",
     pay_hint_day: "Daily rate — full day of work.",
     pay_hint_week: "Weekly rate — paid every week.",
-    pay_hint_month: "Monthly gross — what the worker takes home before tax.",
+    pay_hint_month: "Monthly gross pay before taxes.",
     pay_later_hint: "Pay will be discussed when you and the candidate talk.",
     pay_later_short: "Pay discussed",
     review: "Review",

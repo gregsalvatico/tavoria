@@ -1,12 +1,10 @@
 import { Feather } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Image,
-  Modal,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -14,25 +12,23 @@ import {
 import { getCurrentVenueRow } from "../lib/db";
 import { downloadVenueQRPoster } from "../lib/qrPoster";
 import { t } from "../lib/i18n";
+import TavoriaModal from "./TavoriaModal";
 
 type VenueInfo = { id: string; name?: string | null; city?: string | null };
 type Props = { variant?: "fab" | "sidebar" };
 
-export default function VenueQrFab({ variant = "fab" }: Props) {
-  const [open, setOpen] = useState(false);
+export function VenueQrModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const [loading, setLoading] = useState(false);
   const [venue, setVenue] = useState<VenueInfo | null>(null);
   const [dataUrl, setDataUrl] = useState<string | null>(null);
 
   const loadQr = async (force = false) => {
-    setOpen(true);
     if (dataUrl && !force) return;
     if (force) setDataUrl(null);
     setLoading(true);
     try {
       const currentVenue = await getCurrentVenueRow();
       if (!currentVenue) {
-        setOpen(false);
         return;
       }
       const venueInfo = currentVenue as VenueInfo;
@@ -52,6 +48,10 @@ export default function VenueQrFab({ variant = "fab" }: Props) {
     }
   };
 
+  useEffect(() => {
+    if (visible) void loadQr();
+  }, [visible]);
+
   const download = async () => {
     if (!venue) return;
     try {
@@ -67,6 +67,52 @@ export default function VenueQrFab({ variant = "fab" }: Props) {
   };
 
   return (
+    <TavoriaModal visible={visible} onClose={onClose} title={t("qr_modal.title")} subtitle={t("qr_modal.sub")}>
+      <View style={styles.posterPreview}>
+        {loading ? <ActivityIndicator color="#F0531C" size="large" /> : dataUrl ? (
+          <>
+            <Text style={styles.posterVenue} numberOfLines={2}>{venue?.name || "Tavoria"}</Text>
+            {venue?.city ? <Text style={styles.posterCity}>{venue.city}, Italia</Text> : null}
+            <Text style={styles.posterStaff}>CERCASI STAFF</Text>
+            <Text style={styles.posterNotMenu}>Non è il menù — è un’offerta di lavoro.</Text>
+            <View style={styles.posterQrFrame}>
+              <Image source={{ uri: dataUrl }} style={styles.posterQr} />
+            </View>
+            <Text style={styles.posterSub}>Inquadra il QR. Registrati in 5 minuti.</Text>
+            <Text style={styles.posterSub}>Lavora in giornata.</Text>
+            <View style={styles.posterFooter}>
+              <Text style={styles.posterBrand}><Text style={styles.posterBrandAccent}>T</Text>avoria.</Text>
+              <Text style={styles.posterUrl}>tavoriapp.com</Text>
+            </View>
+          </>
+        ) : (
+          <View style={styles.errorState}>
+            <Feather name="refresh-cw" size={18} color="#F0531C" />
+            <Text style={styles.error}>{t("common.try_again")}</Text>
+            <Pressable
+              style={styles.reloadButton}
+              onPress={() => void loadQr(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.try_again")}
+            >
+              <Feather name="refresh-cw" size={16} color="white" />
+              <Text style={styles.reloadText}>{t("common.try_again")}</Text>
+            </Pressable>
+          </View>
+        )}
+      </View>
+      <Pressable style={[styles.download, !venue && styles.downloadDisabled]} onPress={() => void download()} disabled={!venue}>
+        <Feather name="download" size={18} color="white" />
+        <Text style={styles.downloadText}>{t("home_in.print_qr")}</Text>
+      </Pressable>
+    </TavoriaModal>
+  );
+}
+
+export default function VenueQrFab({ variant = "fab" }: Props) {
+  const [open, setOpen] = useState(false);
+
+  return (
     <>
       {variant === "sidebar" ? (
         <Pressable
@@ -75,7 +121,7 @@ export default function VenueQrFab({ variant = "fab" }: Props) {
             hovered && styles.sidebarActionHovered,
             pressed && styles.sidebarActionPressed,
           ]}
-          onPress={() => void loadQr()}
+          onPress={() => setOpen(true)}
           accessibilityRole="button"
           accessibilityLabel={t("home_in.print_qr")}
         >
@@ -85,68 +131,14 @@ export default function VenueQrFab({ variant = "fab" }: Props) {
       ) : (
         <Pressable
           style={styles.fab}
-          onPress={() => void loadQr()}
+          onPress={() => setOpen(true)}
           accessibilityRole="button"
           accessibilityLabel={t("home_in.print_qr")}
         >
           <Feather name="maximize" size={21} color="white" />
         </Pressable>
       )}
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <View style={styles.backdrop}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setOpen(false)} />
-          <View style={styles.card}>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.cardContent}>
-              <View style={styles.header}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.title}>{t("qr_modal.title")}</Text>
-                  <Text style={styles.subtitle}>{t("qr_modal.sub")}</Text>
-                </View>
-                <Pressable onPress={() => setOpen(false)} hitSlop={10} style={styles.close}>
-                  <Feather name="x" size={19} color="#46505A" />
-                </Pressable>
-              </View>
-              <View style={styles.posterPreview}>
-                {loading ? <ActivityIndicator color="#F0531C" size="large" /> : dataUrl ? (
-                  <>
-                    <Text style={styles.posterVenue} numberOfLines={2}>{venue?.name || "Tavoria"}</Text>
-                    {venue?.city ? <Text style={styles.posterCity}>{venue.city}, Italia</Text> : null}
-                    <Text style={styles.posterStaff}>CERCASI STAFF</Text>
-                    <Text style={styles.posterNotMenu}>Non è il menù — è un’offerta di lavoro.</Text>
-                    <View style={styles.posterQrFrame}>
-                      <Image source={{ uri: dataUrl }} style={styles.posterQr} />
-                    </View>
-                    <Text style={styles.posterSub}>Inquadra il QR. Registrati in 5 minuti.</Text>
-                    <Text style={styles.posterSub}>Lavora in giornata.</Text>
-                    <View style={styles.posterFooter}>
-                      <Text style={styles.posterBrand}><Text style={styles.posterBrandAccent}>T</Text>avoria.</Text>
-                      <Text style={styles.posterUrl}>tavoriapp.com</Text>
-                    </View>
-                  </>
-                ) : (
-                  <View style={styles.errorState}>
-                    <Feather name="refresh-cw" size={18} color="#F0531C" />
-                    <Text style={styles.error}>{t("common.try_again")}</Text>
-                    <Pressable
-                      style={styles.reloadButton}
-                      onPress={() => void loadQr(true)}
-                      accessibilityRole="button"
-                      accessibilityLabel={t("common.try_again")}
-                    >
-                      <Feather name="refresh-cw" size={16} color="white" />
-                      <Text style={styles.reloadText}>{t("common.try_again")}</Text>
-                    </Pressable>
-                  </View>
-                )}
-              </View>
-              <Pressable style={[styles.download, !venue && styles.downloadDisabled]} onPress={() => void download()} disabled={!venue}>
-                <Feather name="download" size={18} color="white" />
-                <Text style={styles.downloadText}>{t("home_in.print_qr")}</Text>
-              </Pressable>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      <VenueQrModal visible={open} onClose={() => setOpen(false)} />
     </>
   );
 }
@@ -157,13 +149,6 @@ const styles = StyleSheet.create({
   sidebarActionHovered: { backgroundColor: "rgba(14,26,36,0.07)" },
   sidebarActionPressed: { opacity: 0.72 },
   sidebarActionText: { color: "rgba(14,26,36,0.72)", flex: 1, fontSize: 13, fontWeight: "700" },
-  backdrop: { alignItems: "center", backgroundColor: "rgba(14,26,36,0.52)", flex: 1, justifyContent: "center", padding: 20 },
-  card: { backgroundColor: "#F7F4EE", borderRadius: 20, maxHeight: "92%", maxWidth: 420, width: "100%" },
-  cardContent: { padding: 20 },
-  header: { alignItems: "flex-start", flexDirection: "row", gap: 12, justifyContent: "space-between" },
-  title: { color: "#0E1A24", fontSize: 19, fontWeight: "800", letterSpacing: -0.3 },
-  subtitle: { color: "#6B7280", fontSize: 12, lineHeight: 17, marginTop: 4 },
-  close: { alignItems: "center", backgroundColor: "#E9E7E1", borderRadius: 999, height: 34, justifyContent: "center", width: 34 },
   posterPreview: { alignItems: "center", backgroundColor: "white", borderColor: "rgba(14,26,36,0.1)", borderRadius: 12, borderWidth: 1, justifyContent: "flex-start", marginTop: 18, paddingHorizontal: 16, paddingTop: 18, width: "100%" },
   posterVenue: { color: "#0E1A24", fontFamily: "InstrumentSerif_400Regular", fontSize: 28, lineHeight: 31, textAlign: "center" },
   posterCity: { color: "#6B7280", fontSize: 10, marginTop: 2, textAlign: "center" },
