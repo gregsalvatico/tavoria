@@ -26,10 +26,10 @@ export default async function ProtectedAdminLayout({
       <header className="bg-white border-b border-stone-200 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/admin" className="font-extrabold text-xl tracking-tight">
-            <span className="text-orange-600">G</span>igi
+            <span className="text-orange-600">T</span>avoria
             <span className="text-stone-400 font-normal ml-2 text-sm">admin</span>
           </Link>
-          <nav className="flex items-center gap-6 text-sm font-semibold text-stone-700">
+          <nav className="flex items-center gap-5 overflow-x-auto text-sm font-semibold text-stone-700">
             <Link href="/admin" className="hover:text-orange-600">
               Dashboard
             </Link>
@@ -38,6 +38,12 @@ export default async function ProtectedAdminLayout({
             </Link>
             <Link href="/admin/workers" className="hover:text-orange-600">
               Workers
+            </Link>
+            <Link href="/admin/users" className="hover:text-orange-600">
+              Users
+            </Link>
+            <Link href="/admin/shifts" className="hover:text-orange-600">
+              Shifts
             </Link>
             <Link href="/admin/applications" className="hover:text-orange-600">
               Applications

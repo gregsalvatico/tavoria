@@ -29,7 +29,7 @@ export default async function AdminLogin({
     <main className="min-h-screen flex items-center justify-center bg-stone-100 p-6">
       <div className="w-full max-w-sm bg-white border border-stone-200 rounded-2xl p-8 shadow-sm">
         <h1 className="text-2xl font-extrabold tracking-tight text-stone-900 mb-1">
-          <span className="text-orange-600">G</span>igi admin
+          <span className="text-orange-600">T</span>avoria admin
         </h1>
         <p className="text-sm text-stone-500 mb-6">
           Enter the admin password to continue.

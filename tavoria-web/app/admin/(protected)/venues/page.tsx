@@ -16,8 +16,21 @@ async function getVenues() {
   return data ?? [];
 }
 
-export default async function VenuesPage() {
+export default async function VenuesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; deleted?: string }>;
+}) {
+  const params = await searchParams;
   const venues = await getVenues();
+  const query = (params.q ?? "").trim().toLocaleLowerCase();
+  const filtered = venues.filter((venue) =>
+    [venue.name, venue.type, venue.venue_style, venue.city, venue.email]
+      .filter(Boolean)
+      .join(" ")
+      .toLocaleLowerCase()
+      .includes(query),
+  );
 
   return (
     <div className="space-y-6">
@@ -27,13 +40,33 @@ export default async function VenuesPage() {
             Venues
           </h1>
           <p className="text-stone-500 text-sm mt-1">
-            {venues.length} {venues.length === 1 ? "venue" : "venues"} signed up
+            {filtered.length} of {venues.length} venues
           </p>
         </div>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+      {params.deleted && (
+        <p className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          Venue, its shifts, applications, and uploaded venue/shift media were deleted. The account remains active.
+        </p>
+      )}
+
+      <form method="get" className="flex gap-2">
+        <input
+          type="search"
+          name="q"
+          defaultValue={params.q}
+          placeholder="Search venue, type, or city"
+          aria-label="Search venues"
+          className="min-w-0 flex-1 rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm"
+        />
+        <button className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-white hover:bg-stone-700">
+          Search
+        </button>
+      </form>
+
+      <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white">
+        <table className="w-full min-w-[760px] text-sm">
           <thead className="bg-stone-50 text-stone-600 text-xs uppercase font-bold tracking-wider">
             <tr>
               <th className="text-left px-4 py-3">Name</th>
@@ -45,14 +78,14 @@ export default async function VenuesPage() {
             </tr>
           </thead>
           <tbody>
-            {venues.length === 0 && (
+            {filtered.length === 0 && (
               <tr>
                 <td colSpan={6} className="text-center py-12 text-stone-400">
-                  No venues yet. They&apos;ll appear here as they sign up.
+                  No venues found.
                 </td>
               </tr>
             )}
-            {venues.map((v) => (
+            {filtered.map((v) => (
               <tr
                 key={v.id}
                 className="border-t border-stone-100 hover:bg-stone-50"

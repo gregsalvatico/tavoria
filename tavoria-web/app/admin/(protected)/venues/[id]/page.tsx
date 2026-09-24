@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { deleteVenueAction, deleteUserAction } from "@/app/admin/actions";
 import { supabaseAdmin } from "@/lib/supabase";
+import AdminDeleteButton from "../../AdminDeleteButton";
 
 export const dynamic = "force-dynamic";
 
@@ -33,12 +35,38 @@ export default async function VenueDetail({
 
   return (
     <div className="space-y-8">
-      <Link
-        href="/admin/venues"
-        className="text-sm text-stone-500 hover:text-orange-600"
-      >
-        ← All venues
-      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          href="/admin/venues"
+          className="text-sm text-stone-500 hover:text-orange-600"
+        >
+          ← All venues
+        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          {venue.user_id && (
+            <Link
+              href={`/admin/users?q=${venue.user_id}`}
+              className="rounded-lg border border-stone-300 px-3 py-2 text-sm font-semibold text-stone-700 hover:bg-white"
+            >
+              View account
+            </Link>
+          )}
+          <AdminDeleteButton
+            action={deleteVenueAction}
+            id={venue.id}
+            label="Delete venue"
+            confirmation={`Permanently delete ${venue.name || "this venue"}, all its shifts, applications, and uploaded venue/shift media? The account itself will remain.`}
+          />
+          {venue.user_id && (
+            <AdminDeleteButton
+              action={deleteUserAction}
+              id={venue.user_id}
+              label="Delete account"
+              confirmation={`Permanently delete the account for ${venue.name || "this venue"}, all linked worker/venue profiles, applications, shifts, documents, and uploaded media?`}
+            />
+          )}
+        </div>
+      </div>
 
       {/* Hero */}
       <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden">

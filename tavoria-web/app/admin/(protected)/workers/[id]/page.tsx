@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { deleteUserAction } from "@/app/admin/actions";
 import { supabaseAdmin } from "@/lib/supabase";
+import AdminDeleteButton from "../../AdminDeleteButton";
 
 export const dynamic = "force-dynamic";
 
@@ -32,12 +34,30 @@ export default async function WorkerDetail({
 
   return (
     <div className="space-y-8">
-      <Link
-        href="/admin/workers"
-        className="text-sm text-stone-500 hover:text-orange-600"
-      >
-        ← All workers
-      </Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          href="/admin/workers"
+          className="text-sm text-stone-500 hover:text-orange-600"
+        >
+          ← All workers
+        </Link>
+        {worker.user_id && (
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/admin/users?q=${worker.user_id}`}
+              className="rounded-lg border border-stone-300 px-3 py-2 text-sm font-semibold text-stone-700 hover:bg-white"
+            >
+              View account
+            </Link>
+            <AdminDeleteButton
+              action={deleteUserAction}
+              id={worker.user_id}
+              label="Delete account"
+              confirmation={`Permanently delete ${fullName}'s account, all linked profiles, applications, shifts, documents, and uploaded media?`}
+            />
+          </div>
+        )}
+      </div>
 
       {/* Hero */}
       <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden">
