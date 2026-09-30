@@ -178,8 +178,8 @@ export default function Signup() {
 
         {isRoleChooser ? (
           <SignupRoleChooser
-            onChooseWorker={() => router.replace("/register?role=worker")}
-            onChooseVenue={() => router.replace("/venue-type")}
+            onChooseWorker={() => router.replace("/signin?role=worker")}
+            onChooseVenue={() => router.replace("/signin?role=venue")}
           />
         ) : <ScrollView
             style={styles.formScroll}

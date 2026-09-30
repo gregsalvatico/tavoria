@@ -480,7 +480,7 @@ export default function Welcome() {
 
               {/* Signup tiles */}
               <View style={styles.splitRow}>
-                <Link href="/register?next=worker-profile" asChild>
+                <Link href="/signin?role=worker" asChild>
                   <Pressable style={styles.tileWorker}>
                     <Text style={styles.splitEmoji}>👤</Text>
                     <Text style={styles.splitTitle}>
@@ -491,7 +491,7 @@ export default function Welcome() {
                     </Text>
                   </Pressable>
                 </Link>
-                <Link href="/venue-type" asChild>
+                <Link href="/signin?role=venue" asChild>
                   <Pressable style={styles.tileVenue}>
                     <Text style={styles.splitEmoji}>🏪</Text>
                     <Text style={styles.splitTitle}>
@@ -509,7 +509,7 @@ export default function Welcome() {
           {/* Signed in but no profiles yet: prompt to start */}
           {signedIn && !ctx.hasVenue && !ctx.hasWorker && (
             <View style={styles.splitRow}>
-              <Link href="/register?next=worker-profile" asChild>
+              <Link href="/signin?role=worker" asChild>
                 <Pressable style={styles.splitBtn}>
                   <Text style={styles.splitEmoji}>👤</Text>
                   <Text style={styles.splitTitle}>
@@ -520,7 +520,7 @@ export default function Welcome() {
                   </Text>
                 </Pressable>
               </Link>
-              <Link href="/venue-type" asChild>
+              <Link href="/signin?role=venue" asChild>
                 <Pressable style={styles.splitBtn}>
                   <Text style={styles.splitEmoji}>🏪</Text>
                   <Text style={styles.splitTitle}>

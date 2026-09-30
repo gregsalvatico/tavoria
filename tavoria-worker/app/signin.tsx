@@ -34,33 +34,35 @@ import { supabase } from "../lib/supabase";
 export default function SignIn() {
   const router = useRouter();
   const isDesktop = useIsDesktop();
-  const { next, shiftId, venueId, venueName } = useLocalSearchParams<{
+  const { role, next, shiftId, venueId, venueName } = useLocalSearchParams<{
+    role?: string;
     next?: string;
     shiftId?: string;
     venueId?: string;
     venueName?: string;
   }>();
+  const requestedRole: AccountRole | null = role === "worker" || role === "venue" ? role : null;
   const [username, setUsername] = useState("");
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [pinError, setPinError] = useState(false);
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>([]);
-  const [selectedRole, setSelectedRole] = useState<AccountRole | null>(null);
+  const [selectedRole, setSelectedRole] = useState<AccountRole | null>(requestedRole);
   const pinInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     (async () => {
       const accounts = await getSavedAccounts();
       setSavedAccounts(accounts);
-      if (accounts[0]) {
-        setUsername(accounts[0].username);
-        if (accounts[0].roles.length === 1) {
-          setSelectedRole(accounts[0].roles[0]);
-        }
+      if (accounts[0]) setUsername(accounts[0].username);
+      if (requestedRole) {
+        setSelectedRole(requestedRole);
+      } else if (accounts[0]?.roles.length === 1) {
+        setSelectedRole(accounts[0].roles[0]);
       }
     })();
-  }, []);
+  }, [requestedRole]);
 
   const chooseAccount = (account: SavedAccount) => {
     setUsername(account.username);
@@ -314,12 +316,23 @@ export default function SignIn() {
                 router.replace("/venue-type");
                 return;
               }
-              const registrationNext = next ?? (selectedRole === "worker" ? "worker-profile" : undefined);
+              if (selectedRole === "worker") {
+                router.replace({
+                  pathname: "/register",
+                  params: {
+                    role: "worker",
+                    ...(next ? { next } : { next: "worker-profile" }),
+                    ...(shiftId ? { shiftId } : {}),
+                    ...(venueId ? { venueId } : {}),
+                    ...(venueName ? { venueName } : {}),
+                  },
+                });
+                return;
+              }
               router.replace({
                 pathname: "/register",
                 params: {
-                  ...(selectedRole === "worker" ? { role: "worker" } : {}),
-                  ...(registrationNext ? { next: registrationNext } : {}),
+                  ...(next ? { next } : {}),
                   ...(shiftId ? { shiftId } : {}),
                   ...(venueId ? { venueId } : {}),
                   ...(venueName ? { venueName } : {}),
