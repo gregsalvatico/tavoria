@@ -382,7 +382,7 @@ export default function Home() {
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginBottom: 26 }}>
               <a
-                href={appRoute("/venue-type")}
+                href={appRoute("/signin?role=venue")}
                 className="landing-cta"
                 style={{
                   display: "inline-flex",
@@ -402,7 +402,7 @@ export default function Home() {
                 Sono un locale <span>→</span>
               </a>
               <a
-                href={appRoute("/signup?role=worker")}
+                href={appRoute("/signin?role=worker")}
                 className="landing-cta"
                 style={{
                   display: "inline-flex",
@@ -1246,7 +1246,7 @@ export default function Home() {
               }}
             >
               <a
-                href={appRoute("/venue-type")}
+                href={appRoute("/signin?role=venue")}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -1584,7 +1584,7 @@ export default function Home() {
               }}
             >
               <a
-                href={appRoute("/signup?role=worker")}
+                href={appRoute("/signin?role=worker")}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -1953,7 +1953,7 @@ export default function Home() {
                 </div>
               </div>
               <a
-                href={appRoute("/signup?role=worker")}
+                href={appRoute("/signin?role=worker")}
                 style={{
                   display: "block",
                   textAlign: "center",
@@ -2055,7 +2055,7 @@ export default function Home() {
                 </div>
               </div>
               <a
-                href={appRoute("/venue-type")}
+                href={appRoute("/signin?role=venue")}
                 style={{
                   display: "block",
                   textAlign: "center",
@@ -2435,7 +2435,7 @@ export default function Home() {
             }}
           >
             <a
-              href={appRoute("/venue-type")}
+              href={appRoute("/signin?role=venue")}
               className="landing-cta"
               style={{
                 display: "inline-flex",
@@ -2454,7 +2454,7 @@ export default function Home() {
               Sono un locale <span>→</span>
             </a>
             <a
-              href={appRoute("/signup?role=worker")}
+              href={appRoute("/signin?role=worker")}
               className="landing-cta"
               style={{
                 display: "inline-flex",

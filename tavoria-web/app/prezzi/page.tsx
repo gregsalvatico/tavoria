@@ -90,7 +90,7 @@ export default function Prezzi() {
               </ul>
               <div className="mt-10">
                 <Button
-                  href="https://app.tavoriapp.com/signup?role=worker"
+                  href="https://app.tavoriapp.com/signin?role=worker"
                   external
                   variant="navy-outline"
                   size="md"
@@ -145,7 +145,7 @@ export default function Prezzi() {
               </ul>
               <div className="mt-10">
                 <Button
-                  href="https://app.tavoriapp.com/venue-type"
+                  href="https://app.tavoriapp.com/signin?role=venue"
                   external
                   variant="orange"
                   size="md"

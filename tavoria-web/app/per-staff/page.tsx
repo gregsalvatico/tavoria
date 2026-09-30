@@ -75,7 +75,7 @@ export default function PerStaff() {
         >
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button
-              href="https://app.tavoriapp.com/signup?role=worker"
+              href="https://app.tavoriapp.com/signin?role=worker"
               external
               variant="orange"
               size="lg"
@@ -142,7 +142,7 @@ export default function PerStaff() {
         <Section tone="cream" centered heading="Pronti a iniziare?">
           <div className="flex flex-col items-center gap-4">
             <Button
-              href="https://app.tavoriapp.com/signup?role=worker"
+              href="https://app.tavoriapp.com/signin?role=worker"
               external
               variant="orange"
               size="lg"
