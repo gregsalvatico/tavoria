@@ -14,7 +14,7 @@ import { talentStyles, TalentOption } from "./TalentFields";
 import SheetModal from "./SheetModal";
 import VenueScreenHeader from "./VenueScreenHeader";
 import FilterChips from "./FilterChips";
-import { FilterBar, HeaderIconButton, ListRow, ListSurface, PageContainer, RefreshIconButton } from "./PagePrimitives";
+import { CurationBanner, FilterBar, HeaderIconButton, ListRow, ListSurface, PageContainer, RefreshIconButton } from "./PagePrimitives";
 import ApplicationActionModal, { type InterviewLocationType, type InterviewSchedule } from "./ApplicationActionModal";
 import PreviewMedia from "./PreviewMedia";
 
@@ -110,6 +110,7 @@ export default function WorkerDirectory({ embedded = false, returnTo = "/venue-b
         active="candidates"
       />
     </PageContainer>
+      {!error ? <PageContainer><CurationBanner title={t("list_curation.candidates_title")} body={t("list_curation.candidates_body")} /></PageContainer> : null}
     {!loading && !error ? (
       <FilterBar
         mobileOpen={filtersOpen}

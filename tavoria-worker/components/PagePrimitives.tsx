@@ -12,6 +12,7 @@ import {
 import { useIsDesktop } from "../lib/responsive";
 import { t } from "../lib/i18n";
 import { TAVORIA } from "../lib/designTokens";
+import { colors } from "../lib/theme";
 
 export const PAGE_MAX_WIDTH = 1180;
 
@@ -174,6 +175,24 @@ export function ListSurface({
   style?: StyleProp<ViewStyle>;
 }) {
   return <View style={[styles.listSurface, style]}>{children}</View>;
+}
+
+export function CurationBanner({ title, body }: { title: string; body: string }) {
+  return (
+    <View
+      accessible
+      accessibilityLabel={`${title}. ${body}`}
+      style={styles.curationBanner}
+    >
+      <View style={styles.curationIcon}>
+        <Feather name="trending-up" size={16} color={colors.workerBlue} />
+      </View>
+      <View style={styles.curationCopy}>
+        <Text style={styles.curationTitle}>{title}</Text>
+        <Text style={styles.curationBody}>{body}</Text>
+      </View>
+    </View>
+  );
 }
 
 export function ListRow({
@@ -384,6 +403,28 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: "hidden",
   },
+  curationBanner: {
+    alignItems: "flex-start",
+    backgroundColor: "#FFDDC7",
+    borderColor: "rgba(240,83,28,0.24)",
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 12,
+    padding: 12,
+  },
+  curationIcon: {
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.6)",
+    borderRadius: 8,
+    height: 30,
+    justifyContent: "center",
+    width: 30,
+  },
+  curationCopy: { flex: 1, gap: 2, minWidth: 0 },
+  curationTitle: { color: TAVORIA.color.navy, fontSize: 13, fontWeight: "700", lineHeight: 18 },
+  curationBody: { color: TAVORIA.color.muted, fontSize: 12, lineHeight: 17 },
   listRow: {
     alignItems: "center",
     backgroundColor: "transparent",

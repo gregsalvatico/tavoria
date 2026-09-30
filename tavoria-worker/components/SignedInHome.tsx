@@ -34,7 +34,7 @@ import ContactTavoriaModal from "./ContactTavoriaModal";
 import { VenueQrModal } from "./VenueQrFab";
 import WorkerDirectory from "./WorkerDirectory";
 import FilterChips, { FilterToggleChip } from "./FilterChips";
-import { FilterBar, ListRow, ListSurface, PageContainer, PageHeader, RefreshIconButton } from "./PagePrimitives";
+import { CurationBanner, FilterBar, ListRow, ListSurface, PageContainer, PageHeader, RefreshIconButton } from "./PagePrimitives";
 import SheetModal from "./SheetModal";
 import PreviewMedia from "./PreviewMedia";
 import TavoriaModal from "./TavoriaModal";
@@ -366,6 +366,7 @@ export default function SignedInHome({
       </PageContainer>
 
       {venueMode ? <WorkerDirectory embedded /> : <>
+      {!errorMsg ? <PageContainer><CurationBanner title={t("list_curation.venues_title")} body={t("list_curation.venues_body")} /></PageContainer> : null}
       <FilterBar
         mobileOpen={filtersOpen}
         mobileActive={hideApplied || timeFilter !== "all"}

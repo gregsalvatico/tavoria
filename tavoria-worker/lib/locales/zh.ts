@@ -76,6 +76,12 @@ export default {
     status_interview_pill: "面试",
     status_starred_pill: "已收藏",
   },
+  list_curation: {
+    candidates_title: "我们正在扩大候选人社区",
+    candidates_body: "Tavoria 团队会审核个人资料，尽量避免虚假或由 AI 生成的账号。",
+    venues_title: "我们正在邀请更多场所加入 Tavoria",
+    venues_body: "Tavoria 团队会审核场所和班次，尽量避免虚假或由 AI 生成的招聘信息。",
+  },
   shift_filters: {
     all: "全部",
     asap: "尽快",

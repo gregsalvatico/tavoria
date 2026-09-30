@@ -76,6 +76,12 @@ export default {
     status_interview_pill: "Interview",
     status_starred_pill: "Starred",
   },
+  list_curation: {
+    candidates_title: "We're growing our candidate community",
+    candidates_body: "Our team reviews profiles to help keep fake or AI-generated accounts off Tavoria.",
+    venues_title: "We're bringing more venues to Tavoria",
+    venues_body: "Our team reviews venues and shifts to help keep fake or AI-generated listings off Tavoria.",
+  },
   shift_filters: {
     all: "All",
     asap: "ASAP",

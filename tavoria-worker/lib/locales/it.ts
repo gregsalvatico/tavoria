@@ -76,6 +76,12 @@ export default {
     status_interview_pill: "Colloquio",
     status_starred_pill: "Preferito",
   },
+  list_curation: {
+    candidates_title: "Stiamo facendo crescere la community di candidati",
+    candidates_body: "Il team Tavoria controlla i profili per limitare gli account falsi o generati dall'IA.",
+    venues_title: "Stiamo portando più locali su Tavoria",
+    venues_body: "Il team Tavoria controlla locali e turni per limitare gli annunci falsi o generati dall'IA.",
+  },
   shift_filters: {
     all: "Tutti",
     asap: "Urgenti",

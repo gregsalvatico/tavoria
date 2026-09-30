@@ -76,6 +76,12 @@ export default {
     status_interview_pill: "Entretien",
     status_starred_pill: "Favori",
   },
+  list_curation: {
+    candidates_title: "Nous faisons grandir notre communauté de candidats",
+    candidates_body: "L'équipe Tavoria examine les profils pour limiter les faux comptes et ceux générés par l'IA.",
+    venues_title: "Nous accueillons plus d'établissements sur Tavoria",
+    venues_body: "L'équipe Tavoria examine les établissements et les offres pour limiter les fausses annonces et celles générées par l'IA.",
+  },
   shift_filters: {
     all: "Tous",
     asap: "Urgent",

@@ -76,6 +76,12 @@ export default {
     status_interview_pill: "Entrevista",
     status_starred_pill: "Favorito",
   },
+  list_curation: {
+    candidates_title: "Estamos haciendo crecer nuestra comunidad de candidatos",
+    candidates_body: "El equipo de Tavoria revisa los perfiles para evitar cuentas falsas o generadas por IA.",
+    venues_title: "Estamos sumando más locales a Tavoria",
+    venues_body: "El equipo de Tavoria revisa locales y turnos para evitar anuncios falsos o generados por IA.",
+  },
   shift_filters: {
     all: "Todos",
     asap: "Urgentes",

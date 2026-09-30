@@ -314,10 +314,12 @@ export default function SignIn() {
                 router.replace("/venue-type");
                 return;
               }
+              const registrationNext = next ?? (selectedRole === "worker" ? "worker-profile" : undefined);
               router.replace({
                 pathname: "/register",
                 params: {
-                  ...(next ? { next } : {}),
+                  ...(selectedRole === "worker" ? { role: "worker" } : {}),
+                  ...(registrationNext ? { next: registrationNext } : {}),
                   ...(shiftId ? { shiftId } : {}),
                   ...(venueId ? { venueId } : {}),
                   ...(venueName ? { venueName } : {}),
