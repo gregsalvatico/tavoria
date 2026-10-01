@@ -5,18 +5,18 @@ import Button from "@/components/Button";
 import Section, { Divider } from "@/components/Section";
 
 export const metadata: Metadata = {
-  title: "Tavoria — 19 € al mese per i locali",
+  title: "Tavoria — Gratis per i locali fino al 2027",
   description:
-    "30 giorni gratis per i locali, poi 19 € al mese. Il piano gratuito resta disponibile.",
+    "Tavoria è gratis per i locali fino al 2027. Da allora, Pro a 19 € al mese sblocca tutti i profili e i contatti.",
 };
 
 const VENUE_INCLUDED = [
   "QR personalizzato per il tuo locale",
   "Pubblica turni gratis",
-  "Fino a 3 candidature al mese gratis",
-  "Video di tutti i candidati",
-  "30 giorni gratis, senza carta all'iscrizione",
-  "Pausa o disdetta libera",
+  "Candidati arrivati dal QR del tuo locale",
+  "Dal 2027, candidature tramite app con profilo e contatti bloccati",
+  "Tavoria Pro sblocca tutti i profili e i contatti",
+  "Dal 2027, Tavoria Pro costa 19 € al mese",
 ];
 
 const STAFF_INCLUDED = [
@@ -40,7 +40,7 @@ export default function Prezzi() {
               Un prezzo chiaro. <em className="italic">Più candidati.</em>
             </>
           }
-          lede="30 giorni gratis, poi 19 € al mese per i locali. Il piano gratuito resta sempre disponibile."
+          lede="Gratis per i locali fino al 2027. Dal 2027, Pro a 19 € al mese sblocca tutti i profili e i contatti."
           centered
         />
 
@@ -104,17 +104,15 @@ export default function Prezzi() {
             {/* Venue card */}
             <div className="relative rounded-3xl bg-navy p-10 text-cream shadow-xl">
               <span className="absolute -top-3 left-10 rounded-full bg-orange px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white">
-                30 GIORNI GRATIS
+                GRATIS FINO AL 2027
               </span>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brass">
                 Per i locali
               </p>
-              <p className="mt-6 font-serif text-5xl leading-none">19 € al mese.</p>
-              <p className="mt-2 font-serif text-xl italic text-cream/80">
-                Dopo 30 giorni gratis.
-              </p>
+              <p className="mt-6 font-serif text-5xl leading-none">Gratis fino al 2027.</p>
+              <p className="mt-2 font-serif text-xl italic text-cream/80">Poi Pro a 19 € al mese.</p>
               <p className="mt-6 text-base leading-relaxed text-cream/80">
-                Nessuna carta all&apos;iscrizione. I primi 100 Locali Fondatori restano gratis per sempre.
+                Nel piano gratuito, le candidature inviate tramite app restano bloccate. Pro sblocca tutti i profili e i contatti.
               </p>
               <ul className="mt-8 space-y-3">
                 {VENUE_INCLUDED.map((item) => (
@@ -167,9 +165,9 @@ export default function Prezzi() {
           heading="Oggi è tutto incluso."
         >
           <div className="grid gap-8 md:grid-cols-2">
-            <Info title="Quanto costa per un locale?" body="Dopo 30 giorni gratis, Tavoria Pro costa 19 € al mese. Il piano gratuito resta disponibile." />
-            <Info title="Cosa include il piano gratuito?" body="Puoi pubblicare turni, ricevere fino a 3 candidature al mese e usare il QR del tuo locale senza pagare." />
-            <Info title="Serve una carta all'iscrizione?" body="No. La carta viene richiesta solo quando scegli di attivare Tavoria Pro dopo la prova gratuita." />
+            <Info title="Quanto costa per un locale?" body="Tavoria è gratis fino al 2027. Dal 2027, Tavoria Pro costa 19 € al mese e sblocca tutti i profili e i contatti." />
+            <Info title="Cosa include il piano gratuito dal 2027?" body="Puoi vedere i candidati arrivati dal QR del tuo locale. Le candidature inviate tramite app restano bloccate: per vedere i profili e contattare tutti i candidati serve Tavoria Pro." />
+            <Info title="Cosa sblocca Tavoria Pro?" body="A 19 € al mese, puoi vedere tutti i profili dei candidati, comprese le candidature inviate tramite app, e contattarli." />
             <Info title="Posso mettere in pausa o disdire?" body="Sì. Puoi mettere in pausa per uno o due mesi oppure disdire liberamente." />
           </div>
         </Section>

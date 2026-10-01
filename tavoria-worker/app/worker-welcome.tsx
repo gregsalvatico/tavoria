@@ -57,7 +57,7 @@ export default function WorkerWelcome() {
             style={[styles.ctaButton, isDesktop && desktopButtonStyle]}
           />
           <Text style={styles.tinyTxt}>
-            Tavoria is free for everyone until 2027.
+            Tavoria is always free for candidates.
           </Text>
         </View>
       </View>

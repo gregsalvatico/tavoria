@@ -23,7 +23,7 @@ type Faq = { q: string; a: string };
 const FAQS: Faq[] = [
   {
     q: "Quanto costa Tavoria per un locale?",
-    a: "Dopo 30 giorni gratis, Tavoria Pro costa 19 € al mese. Il piano gratuito resta disponibile: puoi pubblicare turni, ricevere fino a 3 candidature al mese e usare il QR del tuo locale.",
+    a: "Tavoria è gratis per i locali fino al 2027. Dal 2027 potrai vedere gratis i candidati arrivati dal QR del tuo locale; le candidature inviate tramite app avranno profilo e contatti bloccati. Con Tavoria Pro, a 19 € al mese, sblocchi tutti i profili e puoi contattare tutti i candidati.",
   },
   {
     q: "Come funziona il QR?",
@@ -434,10 +434,10 @@ export default function Home() {
               }}
             >
               <span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}>
-                <span style={{ color: "#1F9D6B" }}>✓</span> 30 giorni gratis per i locali
+                <span style={{ color: "#1F9D6B" }}>✓</span> Gratis per i locali fino al 2027
               </span>
               <span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}>
-                <span style={{ color: "#1F9D6B" }}>✓</span> 19 € al mese dopo la prova
+                <span style={{ color: "#1F9D6B" }}>✓</span> Dal 2027, Pro a 19 € al mese
               </span>
               <span style={{ display: "inline-flex", gap: 7, alignItems: "center" }}>
                 <span style={{ color: "#1F9D6B" }}>✓</span> GDPR · server UE
@@ -1875,7 +1875,7 @@ export default function Home() {
                 margin: 0,
               }}
             >
-              30 giorni gratis, poi 19 € al mese per i locali. Il piano gratuito resta sempre disponibile.
+              Gratis per i locali fino al 2027. Dal 2027, Pro a 19 € al mese sblocca tutti i profili e i contatti.
             </p>
           </div>
           <div
@@ -1994,7 +1994,7 @@ export default function Home() {
                   borderRadius: 999,
                 }}
               >
-                  30 GIORNI GRATIS
+                  GRATIS FINO AL 2027
               </span>
               <div
                 style={{
@@ -2017,10 +2017,10 @@ export default function Home() {
                 }}
               >
                 <span style={{ fontFamily: FONT_SERIF, fontSize: 54, lineHeight: 1 }}>
-                  19 €
+                  Gratis
                 </span>
                 <span style={{ fontSize: 15, color: "rgba(247,244,238,0.7)" }}>
-                  al mese
+                  fino al 2027
                 </span>
               </div>
               <p
@@ -2031,7 +2031,7 @@ export default function Home() {
                   lineHeight: 1.5,
                 }}
               >
-                Nessuna carta all&apos;iscrizione. I primi 100 Locali Fondatori restano gratis per sempre.
+                Dal 2027, Tavoria Pro costa 19 € al mese e sblocca tutti i profili e i contatti.
               </p>
               <div
                 style={{
@@ -2045,10 +2045,10 @@ export default function Home() {
                   <span style={{ color: "#F0531C" }}>✓</span> Pubblica turni gratis
                 </div>
                 <div style={{ display: "flex", gap: 10, fontSize: 14.5 }}>
-                  <span style={{ color: "#F0531C" }}>✓</span> Fino a 3 candidature al mese gratis
+                  <span style={{ color: "#F0531C" }}>✓</span> Candidati arrivati dal QR del locale
                 </div>
                 <div style={{ display: "flex", gap: 10, fontSize: 14.5 }}>
-                  <span style={{ color: "#F0531C" }}>✓</span> Video da ogni candidato
+                  <span style={{ color: "#F0531C" }}>✓</span> Dal 2027, candidature via app bloccate nel piano gratuito
                 </div>
                 <div style={{ display: "flex", gap: 10, fontSize: 14.5 }}>
                   <span style={{ color: "#F0531C" }}>✓</span> Pausa o disdetta libera
@@ -2424,7 +2424,7 @@ export default function Home() {
             }}
           >
             Pubblica un turno in due minuti. Stampa il QR. Assumi entro la
-            giornata. 30 giorni gratis, poi 19 € al mese.
+            giornata. Gratis fino al 2027; poi Pro a 19 € al mese per sbloccare tutti i profili e i contatti.
           </p>
           <div
             style={{

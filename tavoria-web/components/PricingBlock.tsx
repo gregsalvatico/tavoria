@@ -8,10 +8,10 @@ const STAFF_ROWS = [
 ];
 
 const VENUE_ROWS = [
-  "30 giorni gratis, senza carta all'iscrizione",
-  "Pubblica turni e ricevi fino a 3 candidature al mese gratis",
-  "Video di ogni candidato",
-  "Pausa o disdetta libera",
+  "Candidati arrivati dal QR del tuo locale",
+  "Dal 2027, le candidature tramite app sono bloccate nel piano gratuito",
+  "Tavoria Pro sblocca tutti i profili e i contatti",
+  "Dal 2027, Tavoria Pro costa 19 € al mese",
   "QR personalizzato incluso",
 ];
 
@@ -106,15 +106,15 @@ export default function PricingBlock() {
 
         <div className="mt-8 flex items-baseline gap-3">
           <span className="font-serif text-[72px] font-medium leading-none text-cream tnum sm:text-[88px]">
-            19 €
+            Gratis
           </span>
           <span className="font-serif text-xl italic text-cream/70">
-            al mese.
+            fino al 2027.
           </span>
         </div>
 
         <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-cream/75">
-          30 giorni gratis. I primi 100 Locali Fondatori restano gratis per sempre.
+          Dal 2027, Tavoria Pro costa 19 € al mese e sblocca tutti i profili e i contatti.
         </p>
 
         <ul className="mt-10 space-y-0">

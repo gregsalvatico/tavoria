@@ -8,7 +8,7 @@ import StepCard from "@/components/StepCard";
 export const metadata: Metadata = {
   title: "Per locali — Assumi camerieri, baristi e cuochi in 24 ore",
   description:
-    "Pubblica un turno in 2 minuti. Stampa il QR. Vedi i video dei candidati. 30 giorni gratis, poi 19 € al mese.",
+    "Pubblica un turno in 2 minuti. Stampa il QR e ricevi candidature. Gratis fino al 2027; poi Tavoria Pro a 19 € al mese sblocca tutti i profili e i contatti.",
 };
 
 const STEPS = [
@@ -35,8 +35,8 @@ const BENEFITS = [
     body: "Vedi e senti la persona. Capisci in 30 secondi se è la persona giusta per il tuo locale.",
   },
   {
-    title: "Solo locali",
-    body: "I candidati arrivano dal QR sulla tua porta. Sono già davanti al tuo locale. Conoscono il quartiere.",
+    title: "Dal QR e dall'app",
+    body: "Ricevi candidature da chi scansiona il QR del locale e da chi trova i tuoi turni nell'app. Dal 2027, Pro sblocca profili e contatti delle candidature via app.",
   },
   {
     title: "Identità verificata",
@@ -44,7 +44,7 @@ const BENEFITS = [
   },
   {
     title: "Un prezzo semplice",
-    body: "30 giorni gratis, poi 19 € al mese. Il piano gratuito resta disponibile per pubblicare turni e ricevere fino a 3 candidature al mese.",
+    body: "Gratis fino al 2027. Dal 2027 il piano gratuito mostra i candidati arrivati dal QR del locale; le candidature tramite app restano bloccate. Tavoria Pro costa 19 € al mese e sblocca tutti i profili e i contatti.",
   },
   {
     title: "Pronto in 24 ore",
@@ -166,7 +166,7 @@ export default function PerLocali() {
               Inizia gratis →
             </Button>
             <p className="text-sm text-mute">
-              30 giorni gratis, poi 19 € al mese. I primi 100 Locali Fondatori restano gratis per sempre.
+              Gratis fino al 2027. Dal 2027, Tavoria Pro costa 19 € al mese per sbloccare tutti i profili e i contatti.
             </p>
           </div>
         </Section>

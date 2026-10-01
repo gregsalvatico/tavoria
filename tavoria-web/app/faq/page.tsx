@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const ITEMS = [
   {
     q: "Quanto costa Tavoria per un locale?",
-    a: "Dopo 30 giorni gratis, Tavoria Pro costa 19 € al mese. Il piano gratuito resta disponibile: puoi pubblicare turni, ricevere fino a 3 candidature al mese e usare il QR del tuo locale.",
+    a: "Tavoria è gratis per i locali fino al 2027. Dal 2027 potrai vedere gratis i candidati arrivati dal QR del tuo locale; le candidature inviate tramite app avranno profilo e contatti bloccati. Con Tavoria Pro, a 19 € al mese, sblocchi tutti i profili e puoi contattare tutti i candidati.",
   },
   {
     q: "Come funziona il QR?",
